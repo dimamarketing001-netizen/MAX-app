@@ -12,19 +12,12 @@ import {
     Button,
     Grid,
 } from '@maxhub/max-ui';
-
-// Временная заглушка для иконки редактирования
-const IconEditPlaceholder = () => (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M5.83331 20.4167H7.58331L17.5 10.5L15.75 8.75002L5.83331 18.6667V20.4167ZM21.5416 8.75002L19.5 6.70835L21.5416 4.66669L23.5833 6.70835L21.5416 8.75002ZM17.5 6.70835L4.66665 19.5417V23.3334H8.45831L21.2916 10.5L17.5 6.70835Z" fill="var(--max--color-icon-accent)"/>
-    </svg>
-);
+import { Icon28EditOutline } from '@maxhub/icons';
 
 export const ProfileScreen = ({ user, profileDetails }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editableDetails, setEditableDetails] = useState(profileDetails);
 
-    // Синхронизируем состояние, если исходные данные изменятся
     useEffect(() => {
         setEditableDetails(profileDetails);
     }, [profileDetails]);
@@ -36,13 +29,11 @@ export const ProfileScreen = ({ user, profileDetails }) => {
 
     const handleSave = () => {
         console.log('Сохранение данных:', editableDetails);
-        // Здесь в будущем будет отправка данных на бэкенд
-        // После успешной отправки нужно будет обновить profileDetails в App.jsx
         setIsEditing(false);
     };
 
     const handleCancel = () => {
-        setEditableDetails(profileDetails); // Возвращаем исходные значения
+        setEditableDetails(profileDetails);
         setIsEditing(false);
     };
 
@@ -59,13 +50,13 @@ export const ProfileScreen = ({ user, profileDetails }) => {
                     </Flex>
                     {!isEditing && (
                         <IconButton aria-label="Редактировать" onClick={() => setIsEditing(true)}>
-                            <IconEditPlaceholder />
+                            <Icon28EditOutline />
                         </IconButton>
                     )}
                 </Flex>
 
                 {/* --- Списки с данными --- */}
-                <CellList header={<Typography.Body weight="3">Контактная информация</Typography.Body>}>
+                <CellList header={<Typography.Headline variant="small-caps">Контактная информация</Typography.Headline>}>
                     {isEditing ? (
                         <>
                             <CellInput before="Телефон" name="phone" value={editableDetails.phone} onChange={handleInputChange} />
@@ -79,7 +70,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
                     )}
                 </CellList>
 
-                <CellList header={<Typography.Body weight="3" style={{marginTop: 16}}>Документы (нередактируемые)</Typography.Body>}>
+                <CellList header={<Typography.Headline variant="small-caps" style={{marginTop: 16}}>Документы (нередактируемые)</Typography.Headline>}>
                     <CellSimple title="Серия паспорта">{profileDetails.passport_series}</CellSimple>
                     <CellSimple title="Номер паспорта">{profileDetails.passport_number}</CellSimple>
                 </CellList>

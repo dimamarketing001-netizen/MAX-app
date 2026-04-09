@@ -1,16 +1,12 @@
 import React from 'react';
 import { Flex, ToolButton } from '@maxhub/max-ui';
-// В будущем здесь можно будет импортировать настоящие иконки
-// import { Icon28UserCircleOutline, Icon28HelpCircleOutline, Icon28UsersOutline, Icon28HomeOutline } from '@maxhub/icons';
-
-// Используем временные заглушки для иконок
-const IconPlaceholder = () => <div style={{ width: 28, height: 28 }} />;
+import { Icon28UserCircleOutline, Icon28HelpCircleOutline, Icon28UsersOutline, Icon28HomeOutline } from '@maxhub/icons';
 
 const tabs = [
-    { id: 'home', title: 'Главная' },
-    { id: 'profile', title: 'Профиль' },
-    { id: 'help', title: 'Помощь' },
-    { id: 'partners', title: 'Партнерам' },
+    { id: 'home', title: 'Главная', icon: <Icon28HomeOutline /> },
+    { id: 'profile', title: 'Профиль', icon: <Icon28UserCircleOutline /> },
+    { id: 'help', title: 'Помощь', icon: <Icon28HelpCircleOutline /> },
+    { id: 'partners', title: 'Партнерам', icon: <Icon28UsersOutline /> },
 ];
 
 export const TabBar = ({ activeTab, onTabChange }) => {
@@ -26,9 +22,9 @@ export const TabBar = ({ activeTab, onTabChange }) => {
                 <ToolButton
                     key={tab.id}
                     onClick={() => onTabChange(tab.id)}
-                    icon={<IconPlaceholder />}
+                    icon={tab.icon} // Используем реальную иконку
                     appearance={activeTab === tab.id ? 'themed' : 'default'}
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: 0 }} // flex:1 для равномерного распределения, minWidth:0 для корректного сжатия
                 >
                     {tab.title}
                 </ToolButton>

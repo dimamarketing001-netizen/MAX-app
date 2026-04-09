@@ -34,7 +34,6 @@ export const HelpScreen = () => {
 
     const sendTicket = () => {
         console.log('Отправка запроса в поддержку:', ticketData);
-        // Здесь будет fetch-запрос на бэкенд для создания тикета в Bitrix24
         setTicketStep(3);
     };
     
@@ -47,7 +46,7 @@ export const HelpScreen = () => {
 
     const renderInitialState = () => (
         <>
-            <CellList header={<Typography.Body weight="3">Часто задаваемые вопросы</Typography.Body>}>
+            <CellList header={<Typography.Headline variant="small-caps">Часто задаваемые вопросы</Typography.Headline>}>
                 {FAQ_DATA.map(({ id, question, answer }) => (
                     <React.Fragment key={id}>
                         <CellSimple onClick={() => handleFaqClick(id)} showChevron={openFaqId !== id} style={{ cursor: 'pointer' }}>

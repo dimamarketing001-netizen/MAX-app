@@ -42,7 +42,7 @@ export const PartnersScreen = () => {
 
                 {/* --- Блок с реферальной ссылкой --- */}
                 <div style={{ marginTop: 24 }}>
-                    <Typography.Body weight="3" style={{ marginBottom: 8 }}>Ваша реферальная ссылка:</Typography.Body>
+                    <Typography.Headline variant="small-caps" style={{ marginBottom: 8 }}>Ваша реферальная ссылка:</Typography.Headline>
                     <Panel mode="secondary" style={{ padding: '12px', wordBreak: 'break-all' }}>
                         <Typography.Body>{REFERRAL_LINK}</Typography.Body>
                     </Panel>
@@ -64,15 +64,15 @@ export const PartnersScreen = () => {
                     </Typography.Title>
                     <Flex justify="between">
                         <Typography.Body>Переходы по ссылке:</Typography.Body>
-                        <Typography.Body weight="2">{MOCK_STATS.clicks}</Typography.Body>
+                        <Typography.Body variant="medium">{MOCK_STATS.clicks}</Typography.Body>
                     </Flex>
                     <Flex justify="between" style={{ marginTop: 8 }}>
                         <Typography.Body>Успешные сделки:</Typography.Body>
-                        <Typography.Body weight="2">{MOCK_STATS.successfulDeals}</Typography.Body>
+                        <Typography.Body variant="medium">{MOCK_STATS.successfulDeals}</Typography.Body>
                     </Flex>
                     <Flex justify="between" style={{ marginTop: 8 }}>
                         <Typography.Body>Бонусный баланс:</Typography.Body>
-                        <Typography.Body weight="2">{MOCK_STATS.balance}</Typography.Body>
+                        <Typography.Body variant="medium">{MOCK_STATS.balance}</Typography.Body>
                     </Flex>
                 </div>
             </Container>
