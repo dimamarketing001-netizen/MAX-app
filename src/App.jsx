@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flex, Spinner, Panel, Container, Typography, Button } from '@maxhub/max-ui'; // Добавил Panel, Container, Typography, Button
+import { Flex, Spinner, Panel, Container, Typography, Button, MaxUI } from '@maxhub/max-ui'; // Добавил MaxUI
 
 import { TabBar } from './components/TabBar';
 import { HomeScreen } from './screens/Home';
@@ -39,14 +39,19 @@ function App() {
     const [payments, setPayments] = useState([]);
     const [profileDetails, setProfileDetails] = useState({});
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null); // Добавил состояние ошибки
+    const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('home');
+    const [platform, setPlatform] = useState('web'); // Добавил состояние для платформы
 
     const webApp = window.WebApp;
 
     useEffect(() => {
         if (webApp && webApp.ready) {
             webApp.ready();
+        }
+        // Получаем платформу из WebApp, если доступно
+        if (webApp && webApp.platform) {
+            setPlatform(webApp.platform);
         }
 
         const loadAppData = async () => {
@@ -55,7 +60,6 @@ function App() {
 
             const initData = webApp ? webApp.initDataUnsafe : MOCK_USER_DATA;
 
-            // Проверяем, что данные пользователя существуют
             if (initData && initData.user) {
                 currentUser = initData.user;
             } else {
@@ -64,10 +68,9 @@ function App() {
                 return;
             }
 
-            setUser(currentUser); // Устанавливаем пользователя как только он доступен
+            setUser(currentUser);
 
             try {
-                // Имитируем загрузку других данных
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 setDeals(MOCK_DEALS);
                 setPayments(MOCK_PAYMENTS);
@@ -83,9 +86,8 @@ function App() {
     }, []);
 
     const renderScreen = () => {
-        // Убедимся, что user и profileDetails не null перед передачей
         if (!user || !profileDetails) {
-            return null; // Или можно показать ошибку, если это не должно происходить
+            return null;
         }
 
         switch (activeTab) {
@@ -110,7 +112,6 @@ function App() {
         );
     }
 
-    // Если загрузка завершена, но есть ошибка или user все еще null
     if (error || !user) {
         return (
             <Panel>
@@ -124,12 +125,14 @@ function App() {
     }
 
     return (
-        <Flex direction="column" style={{ height: '100vh' }}>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-                {renderScreen()}
-            </div>
-            <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-        </Flex>
+        <MaxUI platform={platform}> {/* Оборачиваем все в MaxUI и передаем платформу */}
+            <Flex direction="column" style={{ height: '100vh' }}>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {renderScreen()}
+                </div>
+                <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            </Flex>
+        </MaxUI>
     );
 }
 
