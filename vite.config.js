@@ -10,4 +10,7 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: ['xn--b1ajdba5acbodeeeaj1qb.xn--p1ai'],
   },
+  build: {
+    assetsDir: "page4/assets"
+  }
 })
