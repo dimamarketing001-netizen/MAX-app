@@ -11,11 +11,11 @@ import {
     IconButton,
     Button,
     Grid,
-    CellHeader, // Добавлено
-    Switch,     // Добавлено
-    Counter,    // Добавлено
-    ToolButton, // Добавлено
-    CellAction, // Добавлено
+    CellHeader,
+    Switch,
+    Counter,
+    ToolButton,
+    CellAction,
 } from '@maxhub/max-ui';
 
 // --- SVG иконки для ProfileScreen ---
@@ -86,9 +86,9 @@ export const ProfileScreen = ({ user, profileDetails }) => {
 
     return (
         <Panel>
-            <Flex direction="column" gap={24}>
+            <Flex direction="column" gap={24} style={{ width: '100%' }}> {/* Добавил width: '100%' */}
                 {/* --- Header Section --- */}
-                <Container>
+                <Container style={{ width: '100%' }}> {/* Добавил width: '100%' */}
                     <Flex direction="column" align="center" gap={16}>
                         <Avatar.Container size={96} rightBottomCorner={<Avatar.OnlineDot />}>
                             <Avatar.Image fallback="ME" src={user.photo_url} />
@@ -110,7 +110,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
 
                 {/* --- About Me Section --- */}
                 <CellList mode="island" header={<CellHeader>О себе</CellHeader>}>
-                    <CellSimple height="compact" title="Frontend engineer 👨‍💻" /> {/* Placeholder for actual data */}
+                    <CellSimple height="compact" title="Frontend engineer 👨‍💻" />
                 </CellList>
 
                 {/* --- Contact Info Section --- */}
@@ -165,7 +165,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
                 </CellList>
 
                 {/* --- Bottom Actions --- */}
-                <Container style={{ marginBottom: 16 }}>
+                <Container style={{ marginBottom: 16, width: '100%' }}> {/* Добавил width: '100%' */}
                     {isEditing ? (
                         <Grid cols={2} gap={8}>
                             <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel}>
@@ -181,7 +181,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
                                 Выйти
                             </Button>
                             <IconButton size="large" mode="secondary" appearance="neutral" onClick={() => console.log('Дополнительное действие')}>
-                                <MoreIcon /> {/* Используем иконку "Еще" */}
+                                <MoreIcon />
                             </IconButton>
                         </Flex>
                     )}
