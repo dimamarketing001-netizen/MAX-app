@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // base: '/page3/', // Убрали эту строку
+  base: '/page4/', // Указываем, что проект будет в подпапке /page4/
   plugins: [react()],
   server: {
     port: 5004,
