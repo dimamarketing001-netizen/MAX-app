@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5004,
-    host: '0.0.0.0', // Слушать все сетевые интерфейсы
+    host: '0.0.0.0',
+    allowedHosts: ['xn--b1ajdba5acbodeeeaj1qb.xn--p1ai'],
   },
 })
