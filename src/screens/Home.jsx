@@ -10,6 +10,7 @@ import {
     CellHeader,
     Counter
 } from '@maxhub/max-ui';
+import styles from './Home.module.css';
 
 export const HomeScreen = ({ user, deals, payments }) => {
     const getStatusAppearance = (status) => {
@@ -19,50 +20,52 @@ export const HomeScreen = ({ user, deals, payments }) => {
     };
 
     return (
-        <Panel mode="secondary">
+        <Panel mode="secondary" className={styles.page}>
             <Flex direction="column" gap={24}>
-                <Container>
+                <Container className={styles.header}>
                     <Flex align="center" gap={16}>
                         <Avatar.Container size={64}>
                             <Avatar.Image src={user.photo_url} />
                         </Avatar.Container>
-                        <Flex direction="column">
+                        <Flex direction="column" className={styles.details}>
                             <Typography.Title variant="large-strong">{`${user.first_name} ${user.last_name || ''}`}</Typography.Title>
-                            <Typography.Body variant="small" className="vkui--color_text_secondary">Личный кабинет</Typography.Body>
+                            <Typography.Body variant="small" className={styles.subsLabel}>Личный кабинет</Typography.Body>
                         </Flex>
                     </Flex>
                 </Container>
 
-                <CellList
-                    mode="island"
-                    header={<CellHeader>Мои сделки</CellHeader>}
-                >
-                    {deals.map(deal => (
-                        <React.Fragment key={deal.id}>
-                            <CellSimple
-                                overline={`Статус: ${deal.status}`}
-                                title={deal.name}
-                                subtitle={`Срок: ${deal.deadline}`}
-                                after={<Typography.Title variant="medium-strong">{deal.price}</Typography.Title>}
-                            />
-                            {payments.filter(p => p.dealId === deal.id).map(p => (
+                <Flex direction="column" gap={16} className={styles.body}>
+                    <CellList
+                        mode="island"
+                        header={<CellHeader>Мои сделки</CellHeader>}
+                    >
+                        {deals.map(deal => (
+                            <React.Fragment key={deal.id}>
                                 <CellSimple
-                                    key={p.id}
-                                    title={p.date}
-                                    subtitle={p.amount}
-                                    after={
-                                        <Counter
-                                            mode="filled"
-                                            appearance={getStatusAppearance(p.status)}
-                                        >
-                                            {p.status}
-                                        </Counter>
-                                    }
+                                    overline={`Статус: ${deal.status}`}
+                                    title={deal.name}
+                                    subtitle={`Срок: ${deal.deadline}`}
+                                    after={<Typography.Title variant="medium-strong">{deal.price}</Typography.Title>}
                                 />
-                            ))}
-                        </React.Fragment>
-                    ))}
-                </CellList>
+                                {payments.filter(p => p.dealId === deal.id).map(p => (
+                                    <CellSimple
+                                        key={p.id}
+                                        title={p.date}
+                                        subtitle={p.amount}
+                                        after={
+                                            <Counter
+                                                mode="filled"
+                                                appearance={getStatusAppearance(p.status)}
+                                            >
+                                                {p.status}
+                                            </Counter>
+                                        }
+                                    />
+                                ))}
+                            </React.Fragment>
+                        ))}
+                    </CellList>
+                </Flex>
             </Flex>
         </Panel>
     );

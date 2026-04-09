@@ -11,6 +11,7 @@ import {
     CellHeader,
     CellAction
 } from '@maxhub/max-ui';
+import styles from './Help.module.css';
 
 // --- Моковые данные ---
 const FAQ_DATA = [
@@ -82,9 +83,11 @@ export const HelpScreen = () => {
                 );
             case 3:
                 return (
-                    <Flex direction="column" align="center" justify="center" gap={16} style={{ textAlign: 'center', minHeight: '50vh' }}>
-                        <Typography.Title variant="large-strong">Запрос отправлен!</Typography.Title>
-                        <Typography.Body>Ваш запрос зарегистрирован. Менеджер свяжется с вами в ближайшее время.</Typography.Body>
+                    <Flex direction="column" align="center" justify="center" gap={16} className={styles.successScreen}>
+                        <Flex direction="column" align="center" gap={8}>
+                            <Typography.Title variant="large-strong">Запрос отправлен!</Typography.Title>
+                            <Typography.Body>Ваш запрос зарегистрирован. Менеджер свяжется с вами в ближайшее время.</Typography.Body>
+                        </Flex>
                         <Button size="large" stretched onClick={resetTicketFlow}>
                             Вернуться на главный экран
                         </Button>
@@ -117,8 +120,8 @@ export const HelpScreen = () => {
     };
 
     return (
-        <Panel mode="secondary">
-            <Container>
+        <Panel mode="secondary" className={styles.page}>
+            <Container className={styles.mainContent}>
                 {renderContent()}
             </Container>
         </Panel>

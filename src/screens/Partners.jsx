@@ -10,6 +10,7 @@ import {
     CellSimple,
     CellAction
 } from '@maxhub/max-ui';
+import styles from './Partners.module.css';
 
 // --- Моковые данные ---
 const MOCK_STATS = {
@@ -52,9 +53,9 @@ export const PartnersScreen = () => {
     };
 
     return (
-        <Panel mode="secondary">
+        <Panel mode="secondary" className={styles.page}>
             <Flex direction="column" gap={24}>
-                <Container>
+                <Container className={styles.header}>
                     <Typography.Title variant="large-strong">
                         Партнерская программа
                     </Typography.Title>
@@ -63,35 +64,36 @@ export const PartnersScreen = () => {
                     </Typography.Body>
                 </Container>
 
-                <CellList
-                    mode="island"
-                    header={<CellHeader>Ваша реферальная ссылка</CellHeader>}
-                >
-                    <CellAction
-                        onClick={handleCopy}
-                        title={REFERRAL_LINK}
-                        style={{ wordBreak: 'break-all' }}
-                    />
-                </CellList>
-
-                <Container>
-                    <Button
-                        size="large"
-                        stretched
-                        onClick={handleShare}
+                <Flex direction="column" gap={16} className={styles.body}>
+                    <CellList
+                        mode="island"
+                        header={<CellHeader>Ваша реферальная ссылка</CellHeader>}
                     >
-                        Поделиться ссылкой
-                    </Button>
-                </Container>
+                        <CellAction
+                            onClick={handleCopy}
+                            title={REFERRAL_LINK}
+                        />
+                    </CellList>
 
-                <CellList
-                    mode="island"
-                    header={<CellHeader>Ваша статистика</CellHeader>}
-                >
-                    <CellSimple title="Переходы по ссылке" after={<Typography.Body variant="medium-strong">{MOCK_STATS.clicks}</Typography.Body>} />
-                    <CellSimple title="Успешные сделки" after={<Typography.Body variant="medium-strong">{MOCK_STATS.successfulDeals}</Typography.Body>} />
-                    <CellSimple title="Бонусный баланс" after={<Typography.Body variant="medium-strong">{MOCK_STATS.balance}</Typography.Body>} />
-                </CellList>
+                    <Container className={styles.actions}>
+                        <Button
+                            size="large"
+                            stretched
+                            onClick={handleShare}
+                        >
+                            Поделиться ссылкой
+                        </Button>
+                    </Container>
+
+                    <CellList
+                        mode="island"
+                        header={<CellHeader>Ваша статистика</CellHeader>}
+                    >
+                        <CellSimple title="Переходы по ссылке" after={<Typography.Body variant="medium-strong">{MOCK_STATS.clicks}</Typography.Body>} />
+                        <CellSimple title="Успешные сделки" after={<Typography.Body variant="medium-strong">{MOCK_STATS.successfulDeals}</Typography.Body>} />
+                        <CellSimple title="Бонусный баланс" after={<Typography.Body variant="medium-strong">{MOCK_STATS.balance}</Typography.Body>} />
+                    </CellList>
+                </Flex>
             </Flex>
         </Panel>
     );

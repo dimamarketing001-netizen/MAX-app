@@ -8,15 +8,14 @@ import {
     CellList,
     CellSimple,
     CellInput,
-    IconButton,
     Button,
     Grid,
     CellHeader,
     Switch,
     CellAction,
-    ToolButton,
-    Icon28Placeholder
+    ToolButton
 } from '@maxhub/max-ui';
+import styles from './Profile.module.css';
 
 export const ProfileScreen = ({ user, profileDetails }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -42,21 +41,21 @@ export const ProfileScreen = ({ user, profileDetails }) => {
     };
 
     return (
-        <Panel mode="secondary">
+        <Panel mode="secondary" className={styles.page}>
             <Flex direction="column" gap={24}>
-                <Container>
+                <Container className={styles.header}>
                     <Flex direction="column" align="center" gap={16}>
                         <Avatar.Container size={96}>
                             <Avatar.Image src={user.photo_url} />
                         </Avatar.Container>
 
-                        <Flex direction="column" align="center">
+                        <Flex direction="column" align="center" className={styles.details}>
                             <Typography.Headline variant="large-strong">{`${user.first_name} ${user.last_name || ''}`}</Typography.Headline>
                         </Flex>
 
                         {!isEditing && (
-                            <Grid cols={1} gap={8}>
-                                <ToolButton icon={<Icon28Placeholder />} onClick={() => setIsEditing(true)}>
+                            <Grid cols={1} gap={8} className={styles.actions}>
+                                <ToolButton onClick={() => setIsEditing(true)}>
                                     Редактировать
                                 </ToolButton>
                             </Grid>
@@ -64,48 +63,48 @@ export const ProfileScreen = ({ user, profileDetails }) => {
                     </Flex>
                 </Container>
 
-                <Flex direction="column" gap={16}>
+                <Flex direction="column" gap={16} className={styles.body}>
                     <CellList mode="island" header={<CellHeader>Контактная информация</CellHeader>}>
                         {isEditing ? (
                             <>
-                                <CellInput before={<Icon28Placeholder />} placeholder="Телефон" name="phone" defaultValue={editableDetails.phone} onChange={handleInputChange} />
-                                <CellInput before={<Icon28Placeholder />} placeholder="Email" name="email" defaultValue={editableDetails.email} onChange={handleInputChange} />
+                                <CellInput placeholder="Телефон" name="phone" defaultValue={editableDetails.phone} onChange={handleInputChange} />
+                                <CellInput placeholder="Email" name="email" defaultValue={editableDetails.email} onChange={handleInputChange} />
                             </>
                         ) : (
                             <>
-                                <CellAction before={<Icon28Placeholder />} subtitle="Телефон">{profileDetails.phone}</CellAction>
-                                <CellAction before={<Icon28Placeholder />} subtitle="Email">{profileDetails.email}</CellAction>
+                                <CellAction subtitle="Телефон">{profileDetails.phone}</CellAction>
+                                <CellAction subtitle="Email">{profileDetails.email}</CellAction>
                             </>
                         )}
                     </CellList>
 
                     <CellList mode="island" header={<CellHeader>Документы</CellHeader>}>
-                        <CellSimple before={<Icon28Placeholder />} subtitle="Серия паспорта">{profileDetails.passport_series}</CellSimple>
-                        <CellSimple before={<Icon28Placeholder />} subtitle="Номер паспорта">{profileDetails.passport_number}</CellSimple>
+                        <CellSimple subtitle="Серия паспорта">{profileDetails.passport_series}</CellSimple>
+                        <CellSimple subtitle="Номер паспорта">{profileDetails.passport_number}</CellSimple>
                     </CellList>
 
                     <CellList mode="island" header={<CellHeader>Настройки</CellHeader>}>
-                        <CellAction before={<Icon28Placeholder />} showChevron title="Изменить пароль" />
-                        <CellSimple as="label" before={<Icon28Placeholder />} title="Push-уведомления" after={<Switch defaultChecked />} />
+                        <CellAction showChevron title="Изменить пароль" />
+                        <CellSimple as="label" title="Push-уведомления" after={<Switch defaultChecked />} />
                     </CellList>
                 </Flex>
 
                 {isEditing && (
-                    <Container>
+                    <Container className={styles.actions}>
                         <Flex gap={8} justify="center">
-                            <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel} before={<Icon28Placeholder />}>
+                            <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel}>
                                 Отмена
                             </Button>
-                            <Button size="large" mode="primary" appearance="themed" stretched onClick={handleSave} before={<Icon28Placeholder />}>
+                            <Button size="large" mode="primary" appearance="themed" stretched onClick={handleSave}>
                                 Сохранить
                             </Button>
                         </Flex>
                     </Container>
                 )}
 
-                <Container>
+                <Container className={styles.actions}>
                     <Flex gap={8} justify="center">
-                        <Button size="large" mode="secondary" appearance="negative" stretched before={<Icon28Placeholder />}>
+                        <Button size="large" mode="secondary" appearance="negative" stretched>
                             Выйти
                         </Button>
                     </Flex>
