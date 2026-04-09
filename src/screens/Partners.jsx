@@ -1,5 +1,15 @@
 import React from 'react';
-import { Panel, Container, Typography, Button, Flex } from '@maxhub/max-ui';
+import {
+    Panel,
+    Container,
+    Typography,
+    Button,
+    Flex,
+    CellList,
+    CellHeader,
+    CellSimple,
+    CellAction
+} from '@maxhub/max-ui';
 
 // --- Моковые данные ---
 const MOCK_STATS = {
@@ -30,52 +40,59 @@ export const PartnersScreen = () => {
         }
     };
 
+    const handleCopy = () => {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(REFERRAL_LINK).then(() => {
+                // Можно добавить уведомление об успешном копировании
+                if (webApp && webApp.HapticFeedback) {
+                    webApp.HapticFeedback.notificationOccurred('success');
+                }
+            });
+        }
+    };
+
     return (
-        <Panel>
-            <Container>
-                <Typography.Title level={1} weight="1" style={{ marginBottom: 8 }}>
-                    Партнерская программа
-                </Typography.Title>
-                <Typography.Body>
-                    Пригласите друга и получите 10% от стоимости его первой услуги на ваш бонусный счет.
-                </Typography.Body>
-
-                {/* --- Блок с реферальной ссылкой --- */}
-                <div style={{ marginTop: 24 }}>
-                    <Typography.Headline variant="small-caps" style={{ marginBottom: 8 }}>Ваша реферальная ссылка:</Typography.Headline>
-                    <Panel mode="secondary" style={{ padding: '12px', wordBreak: 'break-all' }}>
-                        <Typography.Body>{REFERRAL_LINK}</Typography.Body>
-                    </Panel>
-                </div>
-
-                <Button
-                    size="large"
-                    stretched
-                    onClick={handleShare}
-                    style={{ marginTop: 16 }}
-                >
-                    Поделиться ссылкой
-                </Button>
-
-                {/* --- Блок статистики --- */}
-                <div style={{ marginTop: 32 }}>
-                    <Typography.Title level={2} weight="2" style={{ marginBottom: 16 }}>
-                        Ваша статистика
+        <Panel mode="secondary">
+            <Flex direction="column" gap={24}>
+                <Container>
+                    <Typography.Title variant="large-strong">
+                        Партнерская программа
                     </Typography.Title>
-                    <Flex justify="between">
-                        <Typography.Body>Переходы по ссылке:</Typography.Body>
-                        <Typography.Body variant="medium">{MOCK_STATS.clicks}</Typography.Body>
-                    </Flex>
-                    <Flex justify="between" style={{ marginTop: 8 }}>
-                        <Typography.Body>Успешные сделки:</Typography.Body>
-                        <Typography.Body variant="medium">{MOCK_STATS.successfulDeals}</Typography.Body>
-                    </Flex>
-                    <Flex justify="between" style={{ marginTop: 8 }}>
-                        <Typography.Body>Бонусный баланс:</Typography.Body>
-                        <Typography.Body variant="medium">{MOCK_STATS.balance}</Typography.Body>
-                    </Flex>
-                </div>
-            </Container>
+                    <Typography.Body>
+                        Пригласите друга и получите 10% от стоимости его первой услуги на ваш бонусный счет.
+                    </Typography.Body>
+                </Container>
+
+                <CellList
+                    mode="island"
+                    header={<CellHeader>Ваша реферальная ссылка</CellHeader>}
+                >
+                    <CellAction
+                        onClick={handleCopy}
+                        title={REFERRAL_LINK}
+                        style={{ wordBreak: 'break-all' }}
+                    />
+                </CellList>
+
+                <Container>
+                    <Button
+                        size="large"
+                        stretched
+                        onClick={handleShare}
+                    >
+                        Поделиться ссылкой
+                    </Button>
+                </Container>
+
+                <CellList
+                    mode="island"
+                    header={<CellHeader>Ваша статистика</CellHeader>}
+                >
+                    <CellSimple title="Переходы по ссылке" after={<Typography.Body variant="medium-strong">{MOCK_STATS.clicks}</Typography.Body>} />
+                    <CellSimple title="Успешные сделки" after={<Typography.Body variant="medium-strong">{MOCK_STATS.successfulDeals}</Typography.Body>} />
+                    <CellSimple title="Бонусный баланс" after={<Typography.Body variant="medium-strong">{MOCK_STATS.balance}</Typography.Body>} />
+                </CellList>
+            </Flex>
         </Panel>
     );
 };
