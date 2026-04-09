@@ -15,8 +15,7 @@ import {
     Switch,
     CellAction,
     ToolButton,
-    Icon28Placeholder,
-    Icon24Placeholder
+    Icon28Placeholder
 } from '@maxhub/max-ui';
 
 export const ProfileScreen = ({ user, profileDetails }) => {
@@ -57,7 +56,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
 
                         {!isEditing && (
                             <Grid cols={1} gap={8}>
-                                <ToolButton icon={<Icon24Placeholder />} onClick={() => setIsEditing(true)}>
+                                <ToolButton icon={<Icon28Placeholder />} onClick={() => setIsEditing(true)}>
                                     Редактировать
                                 </ToolButton>
                             </Grid>
@@ -94,10 +93,10 @@ export const ProfileScreen = ({ user, profileDetails }) => {
                 {isEditing && (
                     <Container>
                         <Flex gap={8} justify="center">
-                            <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel} before={<Icon24Placeholder />}>
+                            <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel} before={<Icon28Placeholder />}>
                                 Отмена
                             </Button>
-                            <Button size="large" mode="primary" appearance="themed" stretched onClick={handleSave} before={<Icon24Placeholder />}>
+                            <Button size="large" mode="primary" appearance="themed" stretched onClick={handleSave} before={<Icon28Placeholder />}>
                                 Сохранить
                             </Button>
                         </Flex>
@@ -106,7 +105,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
 
                 <Container>
                     <Flex gap={8} justify="center">
-                        <Button size="large" mode="secondary" appearance="negative" stretched before={<Icon24Placeholder />}>
+                        <Button size="large" mode="secondary" appearance="negative" stretched before={<Icon28Placeholder />}>
                             Выйти
                         </Button>
                     </Flex>
