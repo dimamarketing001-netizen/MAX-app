@@ -15,19 +15,9 @@ import {
     Switch,
     CellAction,
     ToolButton,
+    Icon28Placeholder,
+    Icon24Placeholder
 } from '@maxhub/max-ui';
-import {
-    Icon24User,
-    Icon24Envelope,
-    Icon24Document,
-    Icon24Key,
-    Icon24Settings,
-    Icon24Logout,
-    Icon24Edit,
-    Icon24Check,
-    Icon24Cross,
-} from '@maxhub/max-ui/icons';
-
 
 export const ProfileScreen = ({ user, profileDetails }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -67,7 +57,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
 
                         {!isEditing && (
                             <Grid cols={1} gap={8}>
-                                <ToolButton icon={<Icon24Edit />} onClick={() => setIsEditing(true)}>
+                                <ToolButton icon={<Icon24Placeholder />} onClick={() => setIsEditing(true)}>
                                     Редактировать
                                 </ToolButton>
                             </Grid>
@@ -79,35 +69,35 @@ export const ProfileScreen = ({ user, profileDetails }) => {
                     <CellList mode="island" header={<CellHeader>Контактная информация</CellHeader>}>
                         {isEditing ? (
                             <>
-                                <CellInput before={<Icon24User />} placeholder="Телефон" name="phone" defaultValue={editableDetails.phone} onChange={handleInputChange} />
-                                <CellInput before={<Icon24Envelope />} placeholder="Email" name="email" defaultValue={editableDetails.email} onChange={handleInputChange} />
+                                <CellInput before={<Icon28Placeholder />} placeholder="Телефон" name="phone" defaultValue={editableDetails.phone} onChange={handleInputChange} />
+                                <CellInput before={<Icon28Placeholder />} placeholder="Email" name="email" defaultValue={editableDetails.email} onChange={handleInputChange} />
                             </>
                         ) : (
                             <>
-                                <CellAction before={<Icon24User />} subtitle="Телефон">{profileDetails.phone}</CellAction>
-                                <CellAction before={<Icon24Envelope />} subtitle="Email">{profileDetails.email}</CellAction>
+                                <CellAction before={<Icon28Placeholder />} subtitle="Телефон">{profileDetails.phone}</CellAction>
+                                <CellAction before={<Icon28Placeholder />} subtitle="Email">{profileDetails.email}</CellAction>
                             </>
                         )}
                     </CellList>
 
                     <CellList mode="island" header={<CellHeader>Документы</CellHeader>}>
-                        <CellSimple before={<Icon24Document />} subtitle="Серия паспорта">{profileDetails.passport_series}</CellSimple>
-                        <CellSimple before={<Icon24Document />} subtitle="Номер паспорта">{profileDetails.passport_number}</CellSimple>
+                        <CellSimple before={<Icon28Placeholder />} subtitle="Серия паспорта">{profileDetails.passport_series}</CellSimple>
+                        <CellSimple before={<Icon28Placeholder />} subtitle="Номер паспорта">{profileDetails.passport_number}</CellSimple>
                     </CellList>
 
                     <CellList mode="island" header={<CellHeader>Настройки</CellHeader>}>
-                        <CellAction before={<Icon24Key />} showChevron title="Изменить пароль" />
-                        <CellSimple as="label" before={<Icon24Settings />} title="Push-уведомления" after={<Switch defaultChecked />} />
+                        <CellAction before={<Icon28Placeholder />} showChevron title="Изменить пароль" />
+                        <CellSimple as="label" before={<Icon28Placeholder />} title="Push-уведомления" after={<Switch defaultChecked />} />
                     </CellList>
                 </Flex>
 
                 {isEditing && (
                     <Container>
                         <Flex gap={8} justify="center">
-                            <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel} before={<Icon24Cross />}>
+                            <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel} before={<Icon24Placeholder />}>
                                 Отмена
                             </Button>
-                            <Button size="large" mode="primary" appearance="themed" stretched onClick={handleSave} before={<Icon24Check />}>
+                            <Button size="large" mode="primary" appearance="themed" stretched onClick={handleSave} before={<Icon24Placeholder />}>
                                 Сохранить
                             </Button>
                         </Flex>
@@ -116,7 +106,7 @@ export const ProfileScreen = ({ user, profileDetails }) => {
 
                 <Container>
                     <Flex gap={8} justify="center">
-                        <Button size="large" mode="secondary" appearance="negative" stretched before={<Icon24Logout />}>
+                        <Button size="large" mode="secondary" appearance="negative" stretched before={<Icon24Placeholder />}>
                             Выйти
                         </Button>
                     </Flex>
