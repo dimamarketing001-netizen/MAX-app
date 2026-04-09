@@ -1,24 +1,20 @@
-/* Стили для ProfileScreen */
+
 .page {
-  /* Добавьте свои стили здесь */
+  padding: 16px;
 }
 
 .header {
-  /* Добавьте свои стили здесь */
+  text-align: center;
 }
 
 .details {
-  /* Добавьте свои стили здесь */
+  margin-top: 16px;
 }
 
 .actions {
-  /* Добавьте свои стили здесь */
+  margin-top: 16px;
 }
 
 .body {
-  /* Добавьте свои стили здесь */
-}
-
-.subsLabel {
-  /* Добавьте свои стили здесь */
+  margin-top: 24px;
 }

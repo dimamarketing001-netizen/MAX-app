@@ -1,16 +1,17 @@
-/* Стили для PartnersScreen */
+
 .page {
-  /* Добавьте свои стили здесь */
+  padding: 16px;
 }
 
 .header {
-  /* Добавьте свои стили здесь */
+  text-align: center;
+  padding-bottom: 16px; /* Добавим немного отступа снизу для заголовка */
 }
 
 .body {
-  /* Добавьте свои стили здесь */
+  margin-top: 24px;
 }
 
 .actions {
-  /* Добавьте свои стили здесь */
+  margin-top: 16px;
 }
