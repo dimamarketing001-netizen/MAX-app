@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Flex, Spinner, Panel, Container, Typography, Button, MaxUI } from '@maxhub/max-ui';
 
-import { TabBar } from './components/TabBar';
 import { HomeScreen } from './screens/Home';
 import { ProfileScreen } from './screens/Profile';
 import { HelpScreen } from './screens/Help';
