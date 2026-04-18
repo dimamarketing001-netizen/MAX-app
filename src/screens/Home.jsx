@@ -1,328 +1,316 @@
-import React, { useState, useEffect } from 'react';
-import { Flex, Spinner, Panel, Container, Typography, Button, MaxUI } from '@maxhub/max-ui';
+import React, { useState } from 'react';
+import { Panel, Container, Flex, Avatar, Button } from '@maxhub/max-ui';
+import { DealDetail } from './DealDetail';
+import {
+    getDealName,
+    formatMoney,
+    getStageDisplay,
+    getPaymentStatus,
+    isDealWon,
+} from '../utils/deals';
 
-import { HomeScreen } from './screens/Home';
-import { ProfileScreen } from './screens/Profile';
-import { HelpScreen } from './screens/Help';
-import { PartnersScreen } from './screens/Partners';
+// ─── Прогресс-бар ─────────────────────────────────────────────────────────────
+const ProgressBar = ({ paid, total }) => {
+    const pct = total > 0 ? Math.min(100, (paid / total) * 100) : 0;
+    return (
+        <div>
+            <div style={{
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: 'var(--max--color-separator)',
+                overflow: 'hidden',
+                marginTop: 8,
+            }}>
+                <div style={{
+                    height: '100%',
+                    width: `${pct}%`,
+                    borderRadius: 2,
+                    backgroundColor: pct >= 100 ? '#2e7d32' : '#1976d2',
+                }} />
+            </div>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 3,
+                fontSize: 10,
+                color: 'var(--max--color-text-secondary)',
+            }}>
+                <span>{pct.toFixed(0)}%</span>
+                <span>{formatMoney(paid)} / {formatMoney(total)}</span>
+            </div>
+        </div>
+    );
+};
 
-// ─── Ждём пока MAX Bridge инициализирует WebApp ───────────────────────────────
-async function waitForWebApp(timeout = 5000) {
-    return new Promise((resolve) => {
-        if (window.WebApp?.initDataUnsafe?.user?.id) {
-            return resolve(window.WebApp);
-        }
-        const start = Date.now();
-        const interval = setInterval(() => {
-            if (window.WebApp?.initDataUnsafe?.user?.id) {
-                clearInterval(interval);
-                resolve(window.WebApp);
-            } else if (Date.now() - start > timeout) {
-                clearInterval(interval);
-                resolve(null);
-            }
-        }, 50);
-    });
-}
+// ─── Бейдж стадии ─────────────────────────────────────────────────────────────
+const StageBadge = ({ stageId }) => {
+    const { label, color } = getStageDisplay(stageId);
+    return (
+        <span style={{
+            display: 'inline-block',
+            padding: '3px 10px',
+            borderRadius: 20,
+            fontSize: 11,
+            fontWeight: 600,
+            backgroundColor: color + '22',
+            color: color,
+            whiteSpace: 'nowrap',
+        }}>
+            {label}
+        </span>
+    );
+};
 
-function safeGet(obj, path, fallback = null) {
-    try {
-        return path.split('.').reduce((acc, key) => acc?.[key], obj) ?? fallback;
-    } catch {
-        return fallback;
-    }
-}
+// ─── Карточка сделки ──────────────────────────────────────────────────────────
+const DealCard = ({ deal, onClick }) => {
+    if (deal.CATEGORY_ID === 16 || deal.CATEGORY_ID === 18) return null;
 
-function App() {
-    const [user, setUser] = useState(null);
-    const [deals, setDeals] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('home');
-    const [platform, setPlatform] = useState('web');
-    const [theme, setTheme] = useState('light');
+    const dealName = getDealName(deal.TYPE_ID);
+    const totalAmount = parseFloat(deal.OPPORTUNITY || 0);
+    const paidAmount = deal.paidAmount || 0;
 
-    useEffect(() => {
-        const loadAppData = async () => {
-            setLoading(true);
+    return (
+        <div
+            onClick={() => onClick(deal)}
+            style={{
+                borderRadius: 12,
+                padding: '14px 16px',
+                backgroundColor: 'var(--max--color-background-content)',
+                cursor: 'pointer',
+            }}
+        >
+            <Flex direction="column" gap={8}>
+                <Flex justify="space-between" align="flex-start" gap={8}>
+                    <span style={{
+                        fontWeight: 600,
+                        fontSize: 14,
+                        lineHeight: 1.3,
+                        color: 'var(--max--color-text-primary)',
+                        flex: 1,
+                    }}>
+                        {dealName}
+                    </span>
+                    <StageBadge stageId={deal.STAGE_ID} />
+                </Flex>
 
-            // ── Шаг 1: Ждём WebApp от MAX Bridge ──────────────────────────
-            const webApp = await waitForWebApp(5000);
-            const initDataUnsafe = webApp?.initDataUnsafe || null;
+                <Flex justify="space-between" align="center">
+                    <span style={{ fontSize: 12, color: 'var(--max--color-text-secondary)' }}>
+                        Сумма договора
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--max--color-text-primary)' }}>
+                        {formatMoney(totalAmount)}
+                    </span>
+                </Flex>
 
-            // ── Шаг 2: Определяем тему ─────────────────────────────────────
-            const colorScheme = webApp?.colorScheme ||
-                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            setTheme(colorScheme);
+                <Flex justify="space-between" align="center">
+                    <span style={{ fontSize: 12, color: 'var(--max--color-text-secondary)' }}>
+                        Оплачено
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#2e7d32' }}>
+                        {formatMoney(paidAmount)}
+                    </span>
+                </Flex>
 
-            // ── Шаг 3: Логируем на сервер ──────────────────────────────────
-            const logData = {
-                ts: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                href: window.location.href,
-                hasWebApp: !!webApp,
-                platform: safeGet(webApp, 'platform'),
-                version: safeGet(webApp, 'version'),
-                colorScheme,
-                initDataRaw: (() => {
-                    try { return webApp?.initData || null; } catch { return 'ERROR'; }
-                })(),
-                initDataUnsafe,
-                userId: safeGet(initDataUnsafe, 'user.id'),
-            };
-
-            fetch('/api/debug', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(logData),
-            }).catch(() => {});
-
-            // ── Шаг 4: ready() и platform ─────────────────────────────────
-            try {
-                if (webApp && typeof webApp.ready === 'function') webApp.ready();
-            } catch (e) {
-                console.warn('webApp.ready() error:', e);
-            }
-
-            try {
-                const p = webApp?.platform;
-                if (p && typeof p === 'string') setPlatform(p);
-            } catch (e) {
-                console.warn('platform error:', e);
-            }
-
-            // ── Шаг 5: Получаем userId ─────────────────────────────────────
-            const maxUserId = safeGet(initDataUnsafe, 'user.id');
-
-            if (!maxUserId) {
-                setError(
-                    `ID пользователя не получен за 5 секунд.\n\n` +
-                    `WebApp: ${logData.hasWebApp}\n` +
-                    `initData: ${logData.initDataRaw}\n` +
-                    `initDataUnsafe: ${JSON.stringify(initDataUnsafe)}\n` +
-                    `URL: ${window.location.href}\n` +
-                    `UA: ${navigator.userAgent}`
-                );
-                setLoading(false);
-                return;
-            }
-
-            // ── Шаг 6: Запрос данных пользователя ─────────────────────────
-            try {
-                const userRes = await fetch(`/api/user/${maxUserId}`);
-                const contentType = userRes.headers.get('content-type') || '';
-                const responseText = await userRes.text();
-
-                // Логируем ответ API
-                fetch('/api/debug', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ts: new Date().toISOString(),
-                        type: 'api_response',
-                        url: `/api/user/${maxUserId}`,
-                        status: userRes.status,
-                        contentType,
-                        responsePreview: responseText.substring(0, 500),
-                    }),
-                }).catch(() => {});
-
-                if (!userRes.ok) {
-                    throw new Error(
-                        `HTTP ${userRes.status}\n` +
-                        `Content-Type: ${contentType}\n` +
-                        `Ответ: ${responseText.substring(0, 300)}`
-                    );
-                }
-
-                let userData;
-                try {
-                    userData = JSON.parse(responseText);
-                } catch {
-                    throw new Error(`Ответ не JSON:\n${responseText.substring(0, 200)}`);
-                }
-
-                // Добавляем фото из MAX
-                userData.photo_url = safeGet(initDataUnsafe, 'user.photo_url') || '';
-                setUser(userData);
-
-                // ── Шаг 7: Запрос сделок (расширенные данные) ─────────────
-                try {
-                    const dealsRes = await fetch(`/api/deals-full/${maxUserId}`);
-                    if (dealsRes.ok) {
-                        const dealsData = await dealsRes.json();
-                        setDeals(dealsData.deals || []);
-                    } else {
-                        console.warn('Сделки не загружены:', dealsRes.status);
-                    }
-                } catch (dealsErr) {
-                    console.warn('Ошибка загрузки сделок:', dealsErr.message);
-                }
-
-            } catch (e) {
-                setError(`Ошибка загрузки данных:\n${e.message}`);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadAppData();
-    }, []);
-
-    // ── Обработчики ────────────────────────────────────────────────────────────
-
-    const handleProfileSave = async (updatedFields) => {
-        if (!user) return;
-        try {
-            const res = await fetch(`/api/user/${user.id}/update`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedFields),
-            });
-            if (!res.ok) throw new Error('Ошибка сохранения');
-            setUser(prev => ({ ...prev, ...updatedFields }));
-        } catch (e) {
-            console.error('handleProfileSave:', e);
-        }
-    };
-
-    const handleSupportTicket = async (topic, message) => {
-        if (!user) return false;
-        try {
-            const res = await fetch('/api/support', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    maxUserId: user.id,
-                    topic,
-                    message,
-                }),
-            });
-            return res.ok;
-        } catch {
-            return false;
-        }
-    };
-
-    const handleContactLawyer = () => {
-        try {
-            const webApp = window.WebApp;
-            if (webApp?.openMaxLink) {
-                webApp.openMaxLink('https://max.ru/id6658577091_bot');
-            }
-        } catch (e) {
-            console.warn('openMaxLink error:', e);
-        }
-    };
-
-    // ── Рендер экранов ─────────────────────────────────────────────────────────
-
-    const renderScreen = () => {
-        if (!user) return null;
-        switch (activeTab) {
-            case 'home':
-                return (
-                    <HomeScreen
-                        user={user}
-                        deals={deals}
-                        onContactLawyer={handleContactLawyer}
-                    />
-                );
-            case 'profile':
-                return (
-                    <ProfileScreen
-                        user={user}
-                        onSave={handleProfileSave}
-                    />
-                );
-            case 'help':
-                return (
-                    <HelpScreen
-                        onSendTicket={handleSupportTicket}
-                    />
-                );
-            case 'partners':
-                return (
-                    <PartnersScreen
-                        userId={user.id}
-                    />
-                );
-            default:
-                return (
-                    <HomeScreen
-                        user={user}
-                        deals={deals}
-                        onContactLawyer={handleContactLawyer}
-                    />
-                );
-        }
-    };
-
-    // ── Экран загрузки ─────────────────────────────────────────────────────────
-    if (loading) {
-        return (
-            <Flex
-                style={{ height: '100dvh' }}
-                justify="center"
-                align="center"
-            >
-                <Spinner size={44} />
+                <ProgressBar paid={paidAmount} total={totalAmount} />
             </Flex>
+        </div>
+    );
+};
+
+// ─── Карточка платежа ─────────────────────────────────────────────────────────
+const PaymentCard = ({ product, paidAmount, index, products }) => {
+    const status = getPaymentStatus(product, paidAmount, index, products);
+    if (status === 'paid') return null;
+
+    const amount = parseFloat(product.PRICE || 0) * parseFloat(product.QUANTITY || 1);
+    const dateMatch = product.PRODUCT_NAME?.match(/(\d{2}[.\-/]\d{2}[.\-/]\d{4})/);
+    const date = dateMatch ? dateMatch[1] : (product.PRODUCT_NAME || `Платёж ${index + 1}`);
+
+    const statusConfig = {
+        pending: { label: '⏳ Ожидает оплаты', color: '#e65100', bg: '#fff3e0' },
+        overdue: { label: '⚠ Просрочено',      color: '#c62828', bg: '#fce4ec' },
+    };
+    const sc = statusConfig[status] || statusConfig.pending;
+
+    return (
+        <div style={{
+            borderRadius: 12,
+            padding: '14px 16px',
+            backgroundColor: 'var(--max--color-background-content)',
+            border: status === 'overdue' ? '1px solid #ffcdd2' : 'none',
+        }}>
+            <Flex justify="space-between" align="center" gap={8}>
+                <Flex direction="column" gap={4}>
+                    <span style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: 'var(--max--color-text-primary)',
+                    }}>
+                        {date}
+                    </span>
+                    <span style={{
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: 10,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        backgroundColor: sc.bg,
+                        color: sc.color,
+                        alignSelf: 'flex-start',
+                    }}>
+                        {sc.label}
+                    </span>
+                </Flex>
+                <Flex direction="column" align="flex-end" gap={6}>
+                    <span style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: 'var(--max--color-text-primary)',
+                    }}>
+                        {formatMoney(amount)}
+                    </span>
+                    <Button
+                        size="s"
+                        appearance="accent"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        Оплатить
+                    </Button>
+                </Flex>
+            </Flex>
+        </div>
+    );
+};
+
+// ─── Главный экран ────────────────────────────────────────────────────────────
+export const HomeScreen = ({ user, deals, onContactLawyer }) => {
+    const [selectedDeal, setSelectedDeal] = useState(null);
+
+    if (selectedDeal) {
+        return (
+            <DealDetail
+                deal={selectedDeal}
+                onBack={() => setSelectedDeal(null)}
+            />
         );
     }
 
-    // ── Экран ошибки ───────────────────────────────────────────────────────────
-    if (error || !user) {
-        return (
-            <Panel mode="secondary">
-                <Container>
-                    <Flex direction="column" gap={16} style={{ padding: 16 }}>
-                        <span style={{
-                            fontSize: 18,
-                            fontWeight: 700,
-                            color: 'var(--max--color-text-primary)',
-                        }}>
-                            Ошибка запуска
-                        </span>
-                        <div style={{
-                            background: '#0d0d0d',
-                            color: '#00ff41',
-                            padding: 12,
-                            borderRadius: 8,
-                            fontSize: 10,
-                            fontFamily: 'monospace',
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
-                            maxHeight: '75vh',
-                            overflowY: 'auto',
-                            border: '1px solid #333',
-                        }}>
-                            {error || 'Нет данных пользователя'}
-                        </div>
+    const upcomingPayments = deals.flatMap(deal => {
+        if (deal.CATEGORY_ID === 16 || deal.CATEGORY_ID === 18) return [];
+        return (deal.products || []).map((p, i) => ({
+            product: p,
+            paidAmount: deal.paidAmount || 0,
+            index: i,
+            products: deal.products,
+        }));
+    }).filter(item =>
+        getPaymentStatus(item.product, item.paidAmount, item.index, item.products) !== 'paid'
+    );
+
+    const mainDeals = deals.filter(d => d.CATEGORY_ID !== 16 && d.CATEGORY_ID !== 18);
+
+    return (
+        <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
+
+            {/* Приветствие */}
+            <Container style={{ padding: '20px 16px 16px' }}>
+                <Flex justify="space-between" align="center" gap={12}>
+                    <Flex align="center" gap={12}>
+                        <Avatar.Container size={48} form="squircle">
+                            {user.photo_url
+                                ? <Avatar.Image src={user.photo_url} />
+                                : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
+                            }
+                        </Avatar.Container>
+                        <Flex direction="column" gap={2}>
+                            <span style={{
+                                fontSize: 18,
+                                fontWeight: 700,
+                                color: 'var(--max--color-text-primary)',
+                                lineHeight: 1.2,
+                            }}>
+                                Привет, {user.first_name}!
+                            </span>
+                            <span style={{
+                                fontSize: 13,
+                                color: 'var(--max--color-text-secondary)',
+                            }}>
+                                Ваш личный кабинет
+                            </span>
+                        </Flex>
+                    </Flex>
+                </Flex>
+
+                <Button
+                    size="l"
+                    appearance="accent"
+                    stretched
+                    style={{ marginTop: 14 }}
+                    onClick={() => onContactLawyer?.()}
+                >
+                    💬 Связаться с юристом
+                </Button>
+            </Container>
+
+            {/* Мои сделки */}
+            <Container style={{ padding: '0 16px 20px' }}>
+                <div style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: 'var(--max--color-text-primary)',
+                    marginBottom: 10,
+                }}>
+                    Мои сделки
+                </div>
+
+                {mainDeals.length === 0 ? (
+                    <div style={{
+                        borderRadius: 12,
+                        padding: 16,
+                        backgroundColor: 'var(--max--color-background-content)',
+                        fontSize: 14,
+                        color: 'var(--max--color-text-secondary)',
+                    }}>
+                        Нет активных сделок
+                    </div>
+                ) : (
+                    <Flex direction="column" gap={8}>
+                        {mainDeals.map(deal => (
+                            <DealCard
+                                key={deal.ID}
+                                deal={deal}
+                                onClick={setSelectedDeal}
+                            />
+                        ))}
+                    </Flex>
+                )}
+            </Container>
+
+            {/* Ближайшие платежи */}
+            {upcomingPayments.length > 0 && (
+                <Container style={{ padding: '0 16px 32px' }}>
+                    <div style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: 'var(--max--color-text-primary)',
+                        marginBottom: 10,
+                    }}>
+                        Ближайшие платежи
+                    </div>
+                    <Flex direction="column" gap={8}>
+                        {upcomingPayments.slice(0, 5).map((item, i) => (
+                            <PaymentCard
+                                key={i}
+                                product={item.product}
+                                paidAmount={item.paidAmount}
+                                index={item.index}
+                                products={item.products}
+                            />
+                        ))}
                     </Flex>
                 </Container>
-            </Panel>
-        );
-    }
+            )}
 
-    // ── Основной экран ─────────────────────────────────────────────────────────
-    return (
-        <MaxUI platform={platform} appearance={theme}>
-            <Flex
-                direction="column"
-                style={{
-                    height: '100dvh',
-                    width: '100%',
-                    overflow: 'hidden',
-                }}
-            >
-                <div style={{ flex: 1, overflowY: 'auto', width: '100%' }}>
-                    {renderScreen()}
-                </div>
-                <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-            </Flex>
-        </MaxUI>
+        </Panel>
     );
-}
-
-export default App;
+};
