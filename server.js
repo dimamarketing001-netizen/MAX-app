@@ -233,6 +233,135 @@ app.post('/api/support', async (req, res) => {
     }
 });
 
+// ─── API: Получить детали сделки ─────────────────────────────────────────────
+app.get('/api/deal/:dealId', async (req, res) => {
+    const { dealId } = req.params;
+    const axios = (await import('axios')).default;
+
+    try {
+        // Основная сделка
+        const dealRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.get`, {
+            params: { id: dealId }
+        });
+        const deal = dealRes.data.result;
+
+        // Товары сделки (график платежей)
+        const productsRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.productrows.get`, {
+            params: { id: dealId }
+        });
+        const products = productsRes.data.result || [];
+
+        // Счета (category_id=16) — дочерние сделки
+        const invoicesRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
+            params: {
+                filter: {
+                    'PARENT_ID': dealId,
+                    'CATEGORY_ID': 16
+                },
+                select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'CLOSEDATE', 'DATE_CREATE']
+            }
+        });
+        const invoices = invoicesRes.data.result || [];
+
+        // Депозиты (category_id=18)
+        const depositsRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
+            params: {
+                filter: {
+                    'PARENT_ID': dealId,
+                    'CATEGORY_ID': 18
+                },
+                select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'CLOSEDATE', 'DATE_CREATE']
+            }
+        });
+        const deposits = depositsRes.data.result || [];
+
+        res.json({ deal, products, invoices, deposits });
+
+    } catch (error) {
+        console.error('❌ Ошибка /api/deal:', error.message);
+        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    }
+});
+
+// ─── API: Получить все сделки пользователя (расширенные данные) ───────────────
+app.get('/api/deals-full/:maxUserId', async (req, res) => {
+    const { maxUserId } = req.params;
+    const axios = (await import('axios')).default;
+
+    try {
+        const [rows] = await pool.query(
+            'SELECT bitrix_contact_id FROM users WHERE max_user_id = ?',
+            [maxUserId]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: 'Не найден' });
+
+        const contactId = rows[0].bitrix_contact_id;
+
+        // Все сделки контакта category_id=0 (основные)
+        const dealsRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
+            params: {
+                filter: {
+                    CONTACT_ID: contactId,
+                    CATEGORY_ID: 0
+                },
+                select: [
+                    'ID', 'TITLE', 'STAGE_ID', 'OPPORTUNITY',
+                    'CURRENCY_ID', 'DATE_CREATE', 'CLOSEDATE',
+                    'TYPE_ID', 'CATEGORY_ID', 'UF_CRM_CONTRACT_NUM'
+                ]
+            }
+        });
+        const deals = dealsRes.data.result || [];
+
+        // Для каждой сделки получаем товары и счета
+        const enrichedDeals = await Promise.all(deals.map(async (deal) => {
+            // Товары (график платежей)
+            const productsRes = await axios.get(
+                `${process.env.B24_WEBHOOK_URL}/crm.deal.productrows.get`,
+                { params: { id: deal.ID } }
+            );
+            const products = productsRes.data.result || [];
+
+            // Счета (дочерние сделки category_id=16)
+            const invoicesRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
+                params: {
+                    filter: { 'PARENT_ID': deal.ID, 'CATEGORY_ID': 16 },
+                    select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE']
+                }
+            });
+            const invoices = invoicesRes.data.result || [];
+
+            // Депозиты (category_id=18)
+            const depositsRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
+                params: {
+                    filter: { 'PARENT_ID': deal.ID, 'CATEGORY_ID': 18 },
+                    select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE']
+                }
+            });
+            const deposits = depositsRes.data.result || [];
+
+            // Оплаченная сумма = сумма счетов со стадией DT31_2:P
+            const paidAmount = invoices
+                .filter(inv => inv.STAGE_ID === 'DT31_2:P')
+                .reduce((sum, inv) => sum + parseFloat(inv.OPPORTUNITY || 0), 0);
+
+            return {
+                ...deal,
+                products,
+                invoices,
+                deposits,
+                paidAmount,
+            };
+        }));
+
+        res.json({ deals: enrichedDeals });
+
+    } catch (error) {
+        console.error('❌ Ошибка /api/deals-full:', error.message);
+        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    }
+});
+
 // ─── Статика под /page4/ (ПОСЛЕ всех API) ────────────────────────────────────
 app.use('/page4', express.static(staticPath));
 

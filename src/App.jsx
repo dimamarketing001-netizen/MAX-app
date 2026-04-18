@@ -70,6 +70,11 @@ function App() {
                 body: JSON.stringify(logData),
             }).catch(() => {});
 
+            const colorScheme = webApp?.colorScheme ||
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            setPlatform(webApp?.platform || 'web');
+            setTheme(colorScheme);
+
             // ── Шаг 3: ready() и platform ─────────────────────────────────
             try {
                 if (webApp && typeof webApp.ready === 'function') webApp.ready();
@@ -231,8 +236,10 @@ function App() {
         );
     }
 
+    const [theme, setTheme] = useState('light');
+
     return (
-        <MaxUI platform={platform}>
+        <MaxUI platform={platform} appearance={theme}>
             <Flex direction="column" style={{ height: '100vh' }}>
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {renderScreen()}
