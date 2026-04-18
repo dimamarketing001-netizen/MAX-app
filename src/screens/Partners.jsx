@@ -2,47 +2,41 @@ import React from 'react';
 import {
     Panel,
     Container,
+    Flex,
+    Grid,
     Typography,
     Button,
-    Flex,
-    CellList,
-    CellHeader,
-    CellSimple,
-    CellAction
 } from '@maxhub/max-ui';
-import styles from './Partners.module.css';
 
-// --- Моковые данные ---
-const MOCK_STATS = {
-    clicks: 15,
-    successfulDeals: 2,
-    balance: '5 400 руб.'
-};
+const BOT_NAME = 'id6658577091_bot';
 
-// Формируем реферальную ссылку
-const BOT_NAME = 'id6658577091_bot'; // Имя вашего бота
-const SHARE_TEXT = 'Привет! Рекомендую отличную юридическую компанию. Зарегистрируйся по моей ссылке и получи бонус!';
+const BENEFITS = [
+    { emoji: '💰', title: '10% с каждой сделки', desc: 'Получайте бонус от суммы первой услуги приглашённого' },
+    { emoji: '📊', title: 'Статистика в реальном времени', desc: 'Следите за переходами и успешными сделками' },
+    { emoji: '🚀', title: 'Мгновенные выплаты', desc: 'Бонусы начисляются сразу после завершения сделки' },
+    { emoji: '🔗', title: 'Уникальная ссылка', desc: 'Ваша персональная реферальная ссылка всегда доступна' },
+];
 
 export const PartnersScreen = ({ userId }) => {
-    const REFERRAL_LINK = `https://max.ru/${BOT_NAME}?startapp=ref_${userId}`;
+    const referralLink = `https://max.ru/${BOT_NAME}?startapp=ref_${userId}`;
 
     const handleShare = () => {
-        if (webApp && webApp.shareMaxContent) {
+        const webApp = window.WebApp;
+        if (webApp?.shareMaxContent) {
             webApp.shareMaxContent({
-                text: SHARE_TEXT,
-                link: REFERRAL_LINK
+                text: `Привет! Рекомендую надёжную юридическую компанию. Регистрируйся по моей ссылке:`,
+                link: referralLink,
             });
         } else {
-            // Для отладки в браузере
-            alert(`В реальном приложении будет открыт экран "Поделиться" со ссылкой: ${REFERRAL_LINK}`);
+            alert(`Ваша реферальная ссылка:\n${referralLink}`);
         }
     };
 
     const handleCopy = () => {
         if (navigator.clipboard) {
-            navigator.clipboard.writeText(REFERRAL_LINK).then(() => {
-                // Можно добавить уведомление об успешном копировании
-                if (webApp && webApp.HapticFeedback) {
+            navigator.clipboard.writeText(referralLink).then(() => {
+                const webApp = window.WebApp;
+                if (webApp?.HapticFeedback) {
                     webApp.HapticFeedback.notificationOccurred('success');
                 }
             });
@@ -50,48 +44,115 @@ export const PartnersScreen = ({ userId }) => {
     };
 
     return (
-        <Panel mode="secondary" className={styles.page}>
-            <Flex direction="column" gap={24}>
-                <Container className={styles.header}>
-                    <Typography.Title variant="large-strong">
-                        Партнерская программа
+        <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
+
+            {/* Заголовок */}
+            <Container style={{ padding: '24px 16px 20px' }}>
+                <Flex direction="column" align="center" gap={8}>
+                    <span style={{ fontSize: 48 }}>🤝</span>
+                    <Typography.Title style={{
+                        margin: 0,
+                        fontSize: 20,
+                        textAlign: 'center',
+                    }}>
+                        Партнёрская программа
                     </Typography.Title>
-                    <Typography.Body>
-                        Пригласите друга и получите 10% от стоимости его первой услуги на ваш бонусный счет.
-                    </Typography.Body>
-                </Container>
-
-                <Flex direction="column" gap={16} className={styles.body}>
-                    <CellList
-                        mode="island"
-                        header={<CellHeader>Ваша реферальная ссылка</CellHeader>}
-                    >
-                        <CellAction
-                            onClick={handleCopy}
-                            title={REFERRAL_LINK}
-                        />
-                    </CellList>
-
-                    <Container className={styles.actions}>
-                        <Button
-                            size="large"
-                            stretched
-                            onClick={handleShare}
-                        >
-                            Поделиться ссылкой
-                        </Button>
-                    </Container>
-
-                    <CellList
-                        mode="island"
-                        header={<CellHeader>Ваша статистика</CellHeader>}
-                    >
-                        <CellSimple title="Переходы по ссылке" after={<Typography.Body variant="medium-strong">{MOCK_STATS.clicks}</Typography.Body>} />
-                        <CellSimple title="Успешные сделки" after={<Typography.Body variant="medium-strong">{MOCK_STATS.successfulDeals}</Typography.Body>} />
-                        <CellSimple title="Бонусный баланс" after={<Typography.Body variant="medium-strong">{MOCK_STATS.balance}</Typography.Body>} />
-                    </CellList>
+                    <Typography.Text style={{
+                        color: 'var(--max--color-text-secondary)',
+                        textAlign: 'center',
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                    }}>
+                        Приглашайте друзей и получайте{'\n'}
+                        <strong>10%</strong> от стоимости их первой услуги
+                    </Typography.Text>
                 </Flex>
-            </Flex>
+            </Container>
+
+            {/* Преимущества */}
+            <Container style={{ padding: '0 16px 20px' }}>
+                <Grid gap={8} cols={1}>
+                    {BENEFITS.map((b, i) => (
+                        <Panel key={i} mode="base" style={{
+                            borderRadius: 12,
+                            padding: '14px 16px',
+                        }}>
+                            <Flex align="center" gap={14}>
+                                <span style={{ fontSize: 28, flexShrink: 0 }}>{b.emoji}</span>
+                                <Flex direction="column" gap={2}>
+                                    <Typography.Text style={{
+                                        fontWeight: 600,
+                                        fontSize: 14,
+                                        color: 'var(--max--color-text-primary)',
+                                    }}>
+                                        {b.title}
+                                    </Typography.Text>
+                                    <Typography.Text style={{
+                                        color: 'var(--max--color-text-secondary)',
+                                        fontSize: 12,
+                                        lineHeight: 1.4,
+                                    }}>
+                                        {b.desc}
+                                    </Typography.Text>
+                                </Flex>
+                            </Flex>
+                        </Panel>
+                    ))}
+                </Grid>
+            </Container>
+
+            {/* Реферальная ссылка */}
+            <Container style={{ padding: '0 16px 16px' }}>
+                <Typography.Title style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    margin: '0 0 10px',
+                }}>
+                    Ваша ссылка
+                </Typography.Title>
+
+                <div
+                    onClick={handleCopy}
+                    style={{
+                        borderRadius: 12,
+                        padding: '14px 16px',
+                        backgroundColor: 'var(--max--color-background-content)',
+                        border: '1px solid var(--max--color-separator)',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <Flex justify="space-between" align="center" gap={8}>
+                        <Typography.Text style={{
+                            fontSize: 12,
+                            color: 'var(--max--color-text-secondary)',
+                            wordBreak: 'break-all',
+                            flex: 1,
+                        }}>
+                            {referralLink}
+                        </Typography.Text>
+                        <span style={{
+                            fontSize: 18,
+                            flexShrink: 0,
+                            color: 'var(--max--color-text-secondary)',
+                        }}>
+                            📋
+                        </span>
+                    </Flex>
+                </div>
+            </Container>
+
+            {/* Кнопка */}
+            <Container style={{ padding: '0 16px 32px' }}>
+                <Button
+                    size="l"
+                    appearance="accent"
+                    stretched
+                    onClick={handleShare}
+                >
+                    Поделиться ссылкой
+                </Button>
+            </Container>
+
         </Panel>
     );
 };

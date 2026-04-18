@@ -1,119 +1,216 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Panel, Container, Typography, Flex, Avatar,
-    CellList, CellSimple, CellInput, Button,
-    Grid, CellHeader, Switch, CellAction, ToolButton
+    Panel,
+    Container,
+    Flex,
+    Typography,
+    Avatar,
+    Button,
 } from '@maxhub/max-ui';
-import styles from './Profile.module.css';
+
+const inputStyle = {
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: 10,
+    border: '1px solid var(--max--color-separator)',
+    background: 'var(--max--color-background-content)',
+    color: 'var(--max--color-text-primary)',
+    fontSize: 15,
+    boxSizing: 'border-box',
+    outline: 'none',
+    fontFamily: 'inherit',
+};
+
+const labelStyle = {
+    fontSize: 12,
+    color: 'var(--max--color-text-secondary)',
+    marginBottom: 4,
+    display: 'block',
+};
+
+const sectionStyle = {
+    borderRadius: 12,
+    padding: '16px',
+    backgroundColor: 'var(--max--color-background-content)',
+    marginBottom: 12,
+};
 
 export const ProfileScreen = ({ user, onSave }) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [editableDetails, setEditableDetails] = useState({
+    const [fields, setFields] = useState({
         phone: user.phone || '',
         email: user.email || '',
     });
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        setEditableDetails({ phone: user.phone || '', email: user.email || '' });
+        setFields({ phone: user.phone || '', email: user.email || '' });
     }, [user]);
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setEditableDetails(prev => ({ ...prev, [name]: value }));
+    const handleChange = (e) => {
+        setFields(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSave = async () => {
-        await onSave(editableDetails);
+        setSaving(true);
+        await onSave(fields);
+        setSaving(false);
         setIsEditing(false);
     };
 
     const handleCancel = () => {
-        setEditableDetails({ phone: user.phone || '', email: user.email || '' });
+        setFields({ phone: user.phone || '', email: user.email || '' });
         setIsEditing(false);
     };
 
     return (
-        <Panel mode="secondary" className={styles.page}>
-            <Flex direction="column" gap={24}>
-                <Container className={styles.header}>
-                    <Flex direction="column" align="center" gap={16}>
-                        <Avatar.Container size={96}>
-                            <Avatar.Image src={user.photo_url} />
-                        </Avatar.Container>
-                        <Flex direction="column" align="center" className={styles.details}>
-                            <Typography.Headline variant="large-strong">
-                                {`${user.first_name} ${user.last_name || ''}`}
-                            </Typography.Headline>
-                        </Flex>
-                        {!isEditing && (
-                            <Grid cols={1} gap={8} className={styles.actions}>
-                                <ToolButton onClick={() => setIsEditing(true)}>
-                                    Редактировать
-                                </ToolButton>
-                            </Grid>
-                        )}
+        <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
+
+            {/* Аватар и имя */}
+            <Container style={{ padding: '32px 16px 20px' }}>
+                <Flex direction="column" align="center" gap={12}>
+                    <Avatar.Container size={80} form="squircle">
+                        {user.photo_url
+                            ? <Avatar.Image src={user.photo_url} />
+                            : <Avatar.Text style={{ fontSize: 28 }}>
+                                {user.first_name?.[0] || '?'}
+                            </Avatar.Text>
+                        }
+                    </Avatar.Container>
+                    <Flex direction="column" align="center" gap={2}>
+                        <Typography.Title style={{ margin: 0, fontSize: 20 }}>
+                            {user.first_name} {user.last_name || ''}
+                        </Typography.Title>
+                        <Typography.Text style={{
+                            color: 'var(--max--color-text-secondary)',
+                            fontSize: 13,
+                        }}>
+                            ID: {user.id}
+                        </Typography.Text>
                     </Flex>
-                </Container>
+                </Flex>
+            </Container>
 
-                <Flex direction="column" gap={16} className={styles.body}>
-                    <CellList mode="island" header={<CellHeader>Контактная информация</CellHeader>}>
-                        {isEditing ? (
-                            <>
-                                <CellInput
-                                    placeholder="Телефон"
+            {/* Контактные данные */}
+            <Container style={{ padding: '0 16px 16px' }}>
+                <Typography.Title style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    margin: '0 0 10px',
+                }}>
+                    Контактная информация
+                </Typography.Title>
+
+                <div style={sectionStyle}>
+                    <Flex direction="column" gap={14}>
+                        <div>
+                            <span style={labelStyle}>Телефон</span>
+                            {isEditing ? (
+                                <input
+                                    style={inputStyle}
                                     name="phone"
-                                    defaultValue={editableDetails.phone}
-                                    onChange={handleInputChange}
+                                    value={fields.phone}
+                                    onChange={handleChange}
+                                    placeholder="+7 (999) 000-00-00"
+                                    type="tel"
                                 />
-                                <CellInput
-                                    placeholder="Email"
-                                    name="email"
-                                    defaultValue={editableDetails.email}
-                                    onChange={handleInputChange}
-                                />
-                            </>
-                        ) : (
-                            <>
-                                <CellAction subtitle="Телефон">{user.phone || '—'}</CellAction>
-                                <CellAction subtitle="Email">{user.email || '—'}</CellAction>
-                            </>
-                        )}
-                    </CellList>
+                            ) : (
+                                <Typography.Text style={{ fontSize: 15 }}>
+                                    {user.phone || '—'}
+                                </Typography.Text>
+                            )}
+                        </div>
 
-                    {/* Паспортные данные из Б24 (если заполнены) */}
-                    {(user.passport_series || user.passport_number) && (
-                        <CellList mode="island" header={<CellHeader>Документы</CellHeader>}>
+                        <div>
+                            <span style={labelStyle}>Email</span>
+                            {isEditing ? (
+                                <input
+                                    style={inputStyle}
+                                    name="email"
+                                    value={fields.email}
+                                    onChange={handleChange}
+                                    placeholder="example@mail.ru"
+                                    type="email"
+                                />
+                            ) : (
+                                <Typography.Text style={{ fontSize: 15 }}>
+                                    {user.email || '—'}
+                                </Typography.Text>
+                            )}
+                        </div>
+                    </Flex>
+                </div>
+            </Container>
+
+            {/* Документы (если есть) */}
+            {(user.passport_series || user.passport_number) && (
+                <Container style={{ padding: '0 16px 16px' }}>
+                    <Typography.Title style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        margin: '0 0 10px',
+                    }}>
+                        Документы
+                    </Typography.Title>
+                    <div style={sectionStyle}>
+                        <Flex direction="column" gap={12}>
                             {user.passport_series && (
-                                <CellSimple subtitle="Серия паспорта">
-                                    {user.passport_series}
-                                </CellSimple>
+                                <div>
+                                    <span style={labelStyle}>Серия паспорта</span>
+                                    <Typography.Text style={{ fontSize: 15 }}>
+                                        {user.passport_series}
+                                    </Typography.Text>
+                                </div>
                             )}
                             {user.passport_number && (
-                                <CellSimple subtitle="Номер паспорта">
-                                    {user.passport_number}
-                                </CellSimple>
+                                <div>
+                                    <span style={labelStyle}>Номер паспорта</span>
+                                    <Typography.Text style={{ fontSize: 15 }}>
+                                        {user.passport_number}
+                                    </Typography.Text>
+                                </div>
                             )}
-                        </CellList>
-                    )}
-
-                    <CellList mode="island" header={<CellHeader>Настройки</CellHeader>}>
-                        <CellSimple as="label" title="Push-уведомления" after={<Switch defaultChecked />} />
-                    </CellList>
-                </Flex>
-
-                {isEditing && (
-                    <Container className={styles.actions}>
-                        <Flex gap={8} justify="center">
-                            <Button size="large" mode="secondary" appearance="neutral" stretched onClick={handleCancel}>
-                                Отмена
-                            </Button>
-                            <Button size="large" mode="primary" appearance="themed" stretched onClick={handleSave}>
-                                Сохранить
-                            </Button>
                         </Flex>
-                    </Container>
+                    </div>
+                </Container>
+            )}
+
+            {/* Кнопки */}
+            <Container style={{ padding: '0 16px 32px' }}>
+                {isEditing ? (
+                    <Flex direction="column" gap={8}>
+                        <Button
+                            size="l"
+                            appearance="accent"
+                            stretched
+                            onClick={handleSave}
+                            disabled={saving}
+                        >
+                            {saving ? 'Сохранение...' : 'Сохранить'}
+                        </Button>
+                        <Button
+                            size="l"
+                            appearance="neutral"
+                            mode="secondary"
+                            stretched
+                            onClick={handleCancel}
+                        >
+                            Отмена
+                        </Button>
+                    </Flex>
+                ) : (
+                    <Button
+                        size="l"
+                        appearance="accent"
+                        mode="secondary"
+                        stretched
+                        onClick={() => setIsEditing(true)}
+                    >
+                        Редактировать
+                    </Button>
                 )}
-            </Flex>
+            </Container>
+
         </Panel>
     );
 };
