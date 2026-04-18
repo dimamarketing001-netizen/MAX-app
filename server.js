@@ -21,20 +21,19 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5004;
 
-// ─── staticPath объявляем СРАЗУ ───────────────────────────────────────────────
+// staticPath — сразу после импортов
 const staticPath = path.join(__dirname, 'dist');
 
 app.use(cors());
 app.use(express.json());
 
-// ─── Логирование всех запросов ────────────────────────────────────────────────
+// ─── Логирование ──────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
-    const time = new Date().toISOString();
-    console.log(`[${time}] ${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
-// ─── Debug endpoint от клиента ────────────────────────────────────────────────
+// ─── Debug endpoint ───────────────────────────────────────────────────────────
 app.post('/api/debug', (req, res) => {
     const d = req.body;
     console.log('\n' + '═'.repeat(60));
@@ -50,6 +49,13 @@ app.post('/api/debug', (req, res) => {
     console.log(`📄 initData raw:  ${d.initDataRaw}`);
     console.log(`📋 initDataUnsafe:`);
     console.log(JSON.stringify(d.initDataUnsafe, null, 2));
+    if (d.type === 'api_response') {
+        console.log(`\n🔁 API ОТВЕТ:`);
+        console.log(`   URL:    ${d.url}`);
+        console.log(`   Status: ${d.status}`);
+        console.log(`   Type:   ${d.contentType}`);
+        console.log(`   Body:   ${d.responsePreview}`);
+    }
     console.log('═'.repeat(60) + '\n');
     res.json({ ok: true });
 });
@@ -57,6 +63,7 @@ app.post('/api/debug', (req, res) => {
 // ─── API: Получить данные пользователя ───────────────────────────────────────
 app.get('/api/user/:maxUserId', async (req, res) => {
     const { maxUserId } = req.params;
+    console.log(`👤 Запрос пользователя: ${maxUserId}`);
 
     try {
         const [rows] = await pool.query(
@@ -65,13 +72,16 @@ app.get('/api/user/:maxUserId', async (req, res) => {
         );
 
         if (rows.length === 0) {
+            console.log(`❌ Пользователь ${maxUserId} не найден в БД`);
             return res.status(404).json({ error: 'Пользователь не найден в базе данных' });
         }
 
         const dbUser = rows[0];
         const contactId = dbUser.bitrix_contact_id;
+        console.log(`✅ Найден в БД. Bitrix contact_id: ${contactId}`);
 
         const contact = await getContact(contactId);
+        console.log(`✅ Контакт из Б24: ${contact.NAME} ${contact.LAST_NAME}`);
 
         const userData = {
             id: dbUser.max_user_id,
@@ -95,6 +105,7 @@ app.get('/api/user/:maxUserId', async (req, res) => {
 // ─── API: Получить сделки и платежи ──────────────────────────────────────────
 app.get('/api/deals/:maxUserId', async (req, res) => {
     const { maxUserId } = req.params;
+    console.log(`📋 Запрос сделок для: ${maxUserId}`);
 
     try {
         const [rows] = await pool.query(
@@ -108,6 +119,7 @@ app.get('/api/deals/:maxUserId', async (req, res) => {
 
         const contactId = rows[0].bitrix_contact_id;
         const b24Deals = await getDealsByContact(contactId);
+        console.log(`✅ Сделок из Б24: ${b24Deals.length}`);
 
         const deals = [];
         const payments = [];
@@ -221,15 +233,19 @@ app.post('/api/support', async (req, res) => {
     }
 });
 
-// ─── Статика (ПОСЛЕ всех API роутов) ─────────────────────────────────────────
-app.use(express.static(staticPath));
+// ─── Статика под /page4/ (ПОСЛЕ всех API) ────────────────────────────────────
+app.use('/page4', express.static(staticPath));
 
-// ─── Fallback → index.html ────────────────────────────────────────────────────
-app.get('*', (req, res) => {
+// ─── Fallback для React Router ────────────────────────────────────────────────
+app.get('/page4', (req, res) => {
+    res.sendFile(path.join(staticPath, 'index.html'));
+});
+app.get('/page4/*', (req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Сервер запущен на порту ${PORT}`);
-    console.log(`📁 Статика из: ${staticPath}\n`);
+    console.log(`📁 Статика из: ${staticPath}`);
+    console.log(`🌐 Приложение: https://xn--b1ajdba5acbodeeeaj1qb.xn--p1ai/page4/\n`);
 });

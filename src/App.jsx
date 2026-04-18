@@ -1,35 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { Flex, Spinner, Panel, Container, Typography, Button, MaxUI } from '@maxhub/max-ui';
-
 import { TabBar } from './components/TabBar';
 import { HomeScreen } from './screens/Home';
 import { ProfileScreen } from './screens/Profile';
 import { HelpScreen } from './screens/Help';
 import { PartnersScreen } from './screens/Partners';
 
-// ─── Безопасное получение WebApp ─────────────────────────────────────────────
-function getWebApp() {
-    try {
-        return window.WebApp || null;
-    } catch (e) {
-        return null;
-    }
+// ─── Ждём пока MAX Bridge инициализирует WebApp ───────────────────────────────
+async function waitForWebApp(timeout = 5000) {
+    return new Promise((resolve) => {
+        // Уже готов
+        if (window.WebApp?.initDataUnsafe?.user?.id) {
+            return resolve(window.WebApp);
+        }
+        const start = Date.now();
+        const interval = setInterval(() => {
+            if (window.WebApp?.initDataUnsafe?.user?.id) {
+                clearInterval(interval);
+                resolve(window.WebApp);
+            } else if (Date.now() - start > timeout) {
+                clearInterval(interval);
+                resolve(null); // таймаут — вернём null
+            }
+        }, 50);
+    });
 }
 
-// ─── Безопасное получение initDataUnsafe ─────────────────────────────────────
-function getInitDataUnsafe(webApp) {
-    try {
-        return webApp?.initDataUnsafe || null;
-    } catch (e) {
-        return null;
-    }
-}
-
-// ─── Безопасное получение поля из объекта ────────────────────────────────────
 function safeGet(obj, path, fallback = null) {
     try {
         return path.split('.').reduce((acc, key) => acc?.[key], obj) ?? fallback;
-    } catch (e) {
+    } catch {
         return fallback;
     }
 }
@@ -47,50 +47,41 @@ function App() {
         const loadAppData = async () => {
             setLoading(true);
 
-            // ── Шаг 1: Получаем WebApp безопасно ──────────────────────────
-            const webApp = getWebApp();
-            const initDataUnsafe = getInitDataUnsafe(webApp);
+            // ── Шаг 1: Ждём WebApp от MAX Bridge ──────────────────────────
+            const webApp = await waitForWebApp(5000);
+            const initDataUnsafe = webApp?.initDataUnsafe || null;
 
-            // Логируем на сервер
+            // ── Шаг 2: Логируем на сервер ──────────────────────────────────
             const logData = {
                 ts: new Date().toISOString(),
                 userAgent: navigator.userAgent,
                 href: window.location.href,
-                webAppType: typeof window.WebApp,
                 hasWebApp: !!webApp,
                 platform: safeGet(webApp, 'platform'),
                 version: safeGet(webApp, 'version'),
-                initDataRaw: (() => {
-                    try { return webApp?.initData || null; } catch { return 'ERROR_READING'; }
-                })(),
-                initDataUnsafe: initDataUnsafe,
+                initDataRaw: (() => { try { return webApp?.initData || null; } catch { return 'ERROR'; } })(),
+                initDataUnsafe,
                 userId: safeGet(initDataUnsafe, 'user.id'),
             };
 
-            // Отправляем лог на сервер (не ждём)
             fetch('/api/debug', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(logData),
             }).catch(() => {});
 
-            // ── Шаг 2: Вызываем ready() только если метод существует ──────
+            // ── Шаг 3: ready() и platform ─────────────────────────────────
             try {
-                if (webApp && typeof webApp.ready === 'function') {
-                    webApp.ready();
-                }
+                if (webApp && typeof webApp.ready === 'function') webApp.ready();
             } catch (e) {
-                console.warn('webApp.ready() failed:', e);
+                console.warn('webApp.ready() error:', e);
             }
 
-            // ── Шаг 3: Получаем платформу ─────────────────────────────────
             try {
                 const p = webApp?.platform;
-                if (p && typeof p === 'string') {
-                    setPlatform(p);
-                }
+                if (p && typeof p === 'string') setPlatform(p);
             } catch (e) {
-                console.warn('platform read failed:', e);
+                console.warn('platform error:', e);
             }
 
             // ── Шаг 4: Получаем userId ─────────────────────────────────────
@@ -98,11 +89,12 @@ function App() {
 
             if (!maxUserId) {
                 setError(
-                    `ID пользователя не получен.\n\n` +
+                    `ID пользователя не получен за 5 секунд.\n\n` +
                     `WebApp: ${logData.hasWebApp}\n` +
-                    `initDataUnsafe: ${JSON.stringify(initDataUnsafe)}\n` +
                     `initData: ${logData.initDataRaw}\n` +
-                    `UserAgent: ${navigator.userAgent}`
+                    `initDataUnsafe: ${JSON.stringify(initDataUnsafe)}\n` +
+                    `URL: ${window.location.href}\n` +
+                    `UA: ${navigator.userAgent}`
                 );
                 setLoading(false);
                 return;
@@ -111,20 +103,42 @@ function App() {
             // ── Шаг 5: Запросы к API ───────────────────────────────────────
             try {
                 const userRes = await fetch(`/api/user/${maxUserId}`);
+                const contentType = userRes.headers.get('content-type') || '';
+                const responseText = await userRes.text();
+
+                // Логируем ответ API
+                fetch('/api/debug', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ts: new Date().toISOString(),
+                        type: 'api_response',
+                        url: `/api/user/${maxUserId}`,
+                        status: userRes.status,
+                        contentType,
+                        responsePreview: responseText.substring(0, 500),
+                    }),
+                }).catch(() => {});
 
                 if (!userRes.ok) {
-                    const err = await userRes.json().catch(() => ({}));
-                    throw new Error(err.error || `HTTP ${userRes.status}`);
+                    throw new Error(
+                        `HTTP ${userRes.status}\n` +
+                        `Content-Type: ${contentType}\n` +
+                        `Ответ: ${responseText.substring(0, 300)}`
+                    );
                 }
 
-                const userData = await userRes.json();
+                let userData;
+                try {
+                    userData = JSON.parse(responseText);
+                } catch {
+                    throw new Error(`Ответ не JSON:\n${responseText.substring(0, 200)}`);
+                }
 
-                // Добавляем фото из MAX (в Б24 не хранится)
                 userData.photo_url = safeGet(initDataUnsafe, 'user.photo_url') || '';
-
                 setUser(userData);
 
-                // Сделки и платежи
+                // Сделки
                 const dealsRes = await fetch(`/api/deals/${maxUserId}`);
                 if (dealsRes.ok) {
                     const dealsData = await dealsRes.json();
@@ -133,7 +147,7 @@ function App() {
                 }
 
             } catch (e) {
-                setError(`Ошибка загрузки данных: ${e.message}`);
+                setError(`Ошибка загрузки данных:\n${e.message}`);
             } finally {
                 setLoading(false);
             }
@@ -174,20 +188,14 @@ function App() {
     const renderScreen = () => {
         if (!user) return null;
         switch (activeTab) {
-            case 'home':
-                return <HomeScreen user={user} deals={deals} payments={payments} />;
-            case 'profile':
-                return <ProfileScreen user={user} onSave={handleProfileSave} />;
-            case 'help':
-                return <HelpScreen onSendTicket={handleSupportTicket} />;
-            case 'partners':
-                return <PartnersScreen userId={user.id} />;
-            default:
-                return <HomeScreen user={user} deals={deals} payments={payments} />;
+            case 'home':     return <HomeScreen user={user} deals={deals} payments={payments} />;
+            case 'profile':  return <ProfileScreen user={user} onSave={handleProfileSave} />;
+            case 'help':     return <HelpScreen onSendTicket={handleSupportTicket} />;
+            case 'partners': return <PartnersScreen userId={user.id} />;
+            default:         return <HomeScreen user={user} deals={deals} payments={payments} />;
         }
     };
 
-    // ── Экран загрузки ─────────────────────────────────────────────────────────
     if (loading) {
         return (
             <Flex style={{ height: '100vh' }} justify="center" align="center">
@@ -196,7 +204,6 @@ function App() {
         );
     }
 
-    // ── Экран ошибки с debug-инфо ──────────────────────────────────────────────
     if (error || !user) {
         return (
             <Panel mode="secondary">
@@ -214,7 +221,7 @@ function App() {
                             wordBreak: 'break-all',
                             maxHeight: '75vh',
                             overflowY: 'auto',
-                            border: '1px solid #00ff41',
+                            border: '1px solid #333',
                         }}>
                             {error || 'Нет данных пользователя'}
                         </div>
@@ -224,7 +231,6 @@ function App() {
         );
     }
 
-    // ── Основной экран ─────────────────────────────────────────────────────────
     return (
         <MaxUI platform={platform}>
             <Flex direction="column" style={{ height: '100vh' }}>
