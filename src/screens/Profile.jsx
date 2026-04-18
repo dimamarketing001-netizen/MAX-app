@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Panel,
-    Container,
-    Flex,
-    Typography,
-    Avatar,
-    Button,
-} from '@maxhub/max-ui';
+import { Panel, Container, Flex, Avatar, Button } from '@maxhub/max-ui';
 
 const inputStyle = {
     width: '100%',
@@ -24,15 +17,8 @@ const inputStyle = {
 const labelStyle = {
     fontSize: 12,
     color: 'var(--max--color-text-secondary)',
-    marginBottom: 4,
+    marginBottom: 6,
     display: 'block',
-};
-
-const sectionStyle = {
-    borderRadius: 12,
-    padding: '16px',
-    backgroundColor: 'var(--max--color-background-content)',
-    marginBottom: 12,
 };
 
 export const ProfileScreen = ({ user, onSave }) => {
@@ -66,43 +52,51 @@ export const ProfileScreen = ({ user, onSave }) => {
     return (
         <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
 
-            {/* Аватар и имя */}
+            {/* Аватар */}
             <Container style={{ padding: '32px 16px 20px' }}>
                 <Flex direction="column" align="center" gap={12}>
                     <Avatar.Container size={80} form="squircle">
                         {user.photo_url
                             ? <Avatar.Image src={user.photo_url} />
-                            : <Avatar.Text style={{ fontSize: 28 }}>
-                                {user.first_name?.[0] || '?'}
-                            </Avatar.Text>
+                            : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
                         }
                     </Avatar.Container>
-                    <Flex direction="column" align="center" gap={2}>
-                        <Typography.Title style={{ margin: 0, fontSize: 20 }}>
+                    <Flex direction="column" align="center" gap={4}>
+                        <span style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            color: 'var(--max--color-text-primary)',
+                        }}>
                             {user.first_name} {user.last_name || ''}
-                        </Typography.Title>
-                        <Typography.Text style={{
-                            color: 'var(--max--color-text-secondary)',
+                        </span>
+                        <span style={{
                             fontSize: 13,
+                            color: 'var(--max--color-text-secondary)',
                         }}>
                             ID: {user.id}
-                        </Typography.Text>
+                        </span>
                     </Flex>
                 </Flex>
             </Container>
 
-            {/* Контактные данные */}
+            {/* Контакты */}
             <Container style={{ padding: '0 16px 16px' }}>
-                <Typography.Title style={{
+                <div style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    margin: '0 0 10px',
+                    color: 'var(--max--color-text-primary)',
+                    marginBottom: 10,
                 }}>
                     Контактная информация
-                </Typography.Title>
+                </div>
 
-                <div style={sectionStyle}>
-                    <Flex direction="column" gap={14}>
+                <div style={{
+                    borderRadius: 12,
+                    padding: '16px',
+                    backgroundColor: 'var(--max--color-background-content)',
+                    marginBottom: 12,
+                }}>
+                    <Flex direction="column" gap={16}>
                         <div>
                             <span style={labelStyle}>Телефон</span>
                             {isEditing ? (
@@ -115,12 +109,11 @@ export const ProfileScreen = ({ user, onSave }) => {
                                     type="tel"
                                 />
                             ) : (
-                                <Typography.Text style={{ fontSize: 15 }}>
+                                <span style={{ fontSize: 15, color: 'var(--max--color-text-primary)' }}>
                                     {user.phone || '—'}
-                                </Typography.Text>
+                                </span>
                             )}
                         </div>
-
                         <div>
                             <span style={labelStyle}>Email</span>
                             {isEditing ? (
@@ -133,41 +126,42 @@ export const ProfileScreen = ({ user, onSave }) => {
                                     type="email"
                                 />
                             ) : (
-                                <Typography.Text style={{ fontSize: 15 }}>
+                                <span style={{ fontSize: 15, color: 'var(--max--color-text-primary)' }}>
                                     {user.email || '—'}
-                                </Typography.Text>
+                                </span>
                             )}
                         </div>
                     </Flex>
                 </div>
             </Container>
 
-            {/* Документы (если есть) */}
+            {/* Документы */}
             {(user.passport_series || user.passport_number) && (
                 <Container style={{ padding: '0 16px 16px' }}>
-                    <Typography.Title style={{
+                    <div style={{
                         fontSize: 15,
                         fontWeight: 700,
-                        margin: '0 0 10px',
+                        color: 'var(--max--color-text-primary)',
+                        marginBottom: 10,
                     }}>
                         Документы
-                    </Typography.Title>
-                    <div style={sectionStyle}>
+                    </div>
+                    <div style={{
+                        borderRadius: 12,
+                        padding: '16px',
+                        backgroundColor: 'var(--max--color-background-content)',
+                    }}>
                         <Flex direction="column" gap={12}>
                             {user.passport_series && (
                                 <div>
                                     <span style={labelStyle}>Серия паспорта</span>
-                                    <Typography.Text style={{ fontSize: 15 }}>
-                                        {user.passport_series}
-                                    </Typography.Text>
+                                    <span style={{ fontSize: 15 }}>{user.passport_series}</span>
                                 </div>
                             )}
                             {user.passport_number && (
                                 <div>
                                     <span style={labelStyle}>Номер паспорта</span>
-                                    <Typography.Text style={{ fontSize: 15 }}>
-                                        {user.passport_number}
-                                    </Typography.Text>
+                                    <span style={{ fontSize: 15 }}>{user.passport_number}</span>
                                 </div>
                             )}
                         </Flex>
@@ -179,33 +173,15 @@ export const ProfileScreen = ({ user, onSave }) => {
             <Container style={{ padding: '0 16px 32px' }}>
                 {isEditing ? (
                     <Flex direction="column" gap={8}>
-                        <Button
-                            size="l"
-                            appearance="accent"
-                            stretched
-                            onClick={handleSave}
-                            disabled={saving}
-                        >
+                        <Button size="l" appearance="accent" stretched onClick={handleSave} disabled={saving}>
                             {saving ? 'Сохранение...' : 'Сохранить'}
                         </Button>
-                        <Button
-                            size="l"
-                            appearance="neutral"
-                            mode="secondary"
-                            stretched
-                            onClick={handleCancel}
-                        >
+                        <Button size="l" appearance="neutral" mode="secondary" stretched onClick={handleCancel}>
                             Отмена
                         </Button>
                     </Flex>
                 ) : (
-                    <Button
-                        size="l"
-                        appearance="accent"
-                        mode="secondary"
-                        stretched
-                        onClick={() => setIsEditing(true)}
-                    >
+                    <Button size="l" appearance="accent" mode="secondary" stretched onClick={() => setIsEditing(true)}>
                         Редактировать
                     </Button>
                 )}

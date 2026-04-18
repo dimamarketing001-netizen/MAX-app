@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-    Panel,
-    Container,
-    Flex,
-    Typography,
-    Button,
-} from '@maxhub/max-ui';
+import { Panel, Container, Flex, Button } from '@maxhub/max-ui';
 
 const TOPICS = [
     'Финансовый вопрос',
@@ -21,11 +15,11 @@ const FAQ = [
     },
     {
         q: 'Какие документы нужны?',
-        a: 'Скан паспорта (основная страница и прописка) и ИНН. Загрузите в личном кабинете.',
+        a: 'Скан паспорта (основная страница и прописка) и ИНН.',
     },
 ];
 
-const selectStyle = {
+const fieldStyle = {
     width: '100%',
     padding: '12px 14px',
     borderRadius: 10,
@@ -36,32 +30,6 @@ const selectStyle = {
     boxSizing: 'border-box',
     outline: 'none',
     fontFamily: 'inherit',
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    cursor: 'pointer',
-};
-
-const textareaStyle = {
-    width: '100%',
-    padding: '12px 14px',
-    borderRadius: 10,
-    border: '1px solid var(--max--color-separator)',
-    background: 'var(--max--color-background-content)',
-    color: 'var(--max--color-text-primary)',
-    fontSize: 15,
-    boxSizing: 'border-box',
-    outline: 'none',
-    fontFamily: 'inherit',
-    resize: 'none',
-    minHeight: 120,
-    lineHeight: 1.5,
-};
-
-const sectionStyle = {
-    borderRadius: 12,
-    backgroundColor: 'var(--max--color-background-content)',
-    overflow: 'hidden',
-    marginBottom: 12,
 };
 
 export const HelpScreen = ({ onSendTicket }) => {
@@ -79,12 +47,6 @@ export const HelpScreen = ({ onSendTicket }) => {
         if (ok) setSent(true);
     };
 
-    const handleReset = () => {
-        setSent(false);
-        setMessage('');
-        setTopic(TOPICS[0]);
-    };
-
     if (sent) {
         return (
             <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
@@ -96,20 +58,23 @@ export const HelpScreen = ({ onSendTicket }) => {
                     style={{ minHeight: '60vh', padding: '0 32px' }}
                 >
                     <span style={{ fontSize: 64 }}>✅</span>
-                    <Flex direction="column" align="center" gap={8}>
-                        <Typography.Title style={{ margin: 0, textAlign: 'center' }}>
-                            Запрос отправлен!
-                        </Typography.Title>
-                        <Typography.Text style={{
-                            color: 'var(--max--color-text-secondary)',
-                            textAlign: 'center',
-                            fontSize: 14,
-                            lineHeight: 1.5,
-                        }}>
-                            Менеджер свяжется с вами в ближайшее время
-                        </Typography.Text>
-                    </Flex>
-                    <Button size="l" appearance="accent" stretched onClick={handleReset}>
+                    <span style={{
+                        fontSize: 20,
+                        fontWeight: 700,
+                        textAlign: 'center',
+                        color: 'var(--max--color-text-primary)',
+                    }}>
+                        Запрос отправлен!
+                    </span>
+                    <span style={{
+                        fontSize: 14,
+                        color: 'var(--max--color-text-secondary)',
+                        textAlign: 'center',
+                        lineHeight: 1.5,
+                    }}>
+                        Менеджер свяжется с вами в ближайшее время
+                    </span>
+                    <Button size="l" appearance="accent" stretched onClick={() => { setSent(false); setMessage(''); }}>
                         Вернуться
                     </Button>
                 </Flex>
@@ -122,15 +87,20 @@ export const HelpScreen = ({ onSendTicket }) => {
 
             {/* FAQ */}
             <Container style={{ padding: '20px 16px 16px' }}>
-                <Typography.Title style={{
+                <div style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    margin: '0 0 10px',
+                    color: 'var(--max--color-text-primary)',
+                    marginBottom: 10,
                 }}>
                     Частые вопросы
-                </Typography.Title>
+                </div>
 
-                <div style={sectionStyle}>
+                <div style={{
+                    borderRadius: 12,
+                    backgroundColor: 'var(--max--color-background-content)',
+                    overflow: 'hidden',
+                }}>
                     {FAQ.map((item, i) => (
                         <div key={i}>
                             {i > 0 && (
@@ -142,38 +112,35 @@ export const HelpScreen = ({ onSendTicket }) => {
                             )}
                             <div
                                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                style={{
-                                    padding: '14px 16px',
-                                    cursor: 'pointer',
-                                }}
+                                style={{ padding: '14px 16px', cursor: 'pointer' }}
                             >
                                 <Flex justify="space-between" align="center" gap={8}>
-                                    <Typography.Text style={{
+                                    <span style={{
                                         fontWeight: 600,
                                         fontSize: 14,
                                         flex: 1,
+                                        color: 'var(--max--color-text-primary)',
                                     }}>
                                         {item.q}
-                                    </Typography.Text>
+                                    </span>
                                     <span style={{
-                                        fontSize: 16,
+                                        fontSize: 18,
                                         color: 'var(--max--color-text-secondary)',
+                                        transform: openFaq === i ? 'rotate(90deg)' : 'none',
                                         transition: 'transform 0.2s',
-                                        transform: openFaq === i ? 'rotate(180deg)' : 'none',
                                     }}>
                                         ›
                                     </span>
                                 </Flex>
                                 {openFaq === i && (
-                                    <Typography.Text style={{
+                                    <div style={{
                                         fontSize: 13,
                                         color: 'var(--max--color-text-secondary)',
                                         marginTop: 8,
                                         lineHeight: 1.5,
-                                        display: 'block',
                                     }}>
                                         {item.a}
-                                    </Typography.Text>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -181,61 +148,47 @@ export const HelpScreen = ({ onSendTicket }) => {
                 </div>
             </Container>
 
-            {/* Форма обращения */}
+            {/* Форма */}
             <Container style={{ padding: '0 16px 32px' }}>
-                <Typography.Title style={{
+                <div style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    margin: '0 0 10px',
+                    color: 'var(--max--color-text-primary)',
+                    marginBottom: 10,
                 }}>
                     Написать в поддержку
-                </Typography.Title>
+                </div>
 
                 <Flex direction="column" gap={10}>
                     <div>
-                        <span style={{
+                        <div style={{
                             fontSize: 12,
                             color: 'var(--max--color-text-secondary)',
-                            display: 'block',
-                            marginBottom: 4,
+                            marginBottom: 6,
                         }}>
                             Тема обращения
-                        </span>
-                        <div style={{ position: 'relative' }}>
-                            <select
-                                style={selectStyle}
-                                value={topic}
-                                onChange={e => setTopic(e.target.value)}
-                            >
-                                {TOPICS.map(t => (
-                                    <option key={t} value={t}>{t}</option>
-                                ))}
-                            </select>
-                            <span style={{
-                                position: 'absolute',
-                                right: 14,
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                pointerEvents: 'none',
-                                color: 'var(--max--color-text-secondary)',
-                                fontSize: 12,
-                            }}>
-                                ▾
-                            </span>
                         </div>
+                        <select
+                            style={{ ...fieldStyle, appearance: 'none' }}
+                            value={topic}
+                            onChange={e => setTopic(e.target.value)}
+                        >
+                            {TOPICS.map(t => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div>
-                        <span style={{
+                        <div style={{
                             fontSize: 12,
                             color: 'var(--max--color-text-secondary)',
-                            display: 'block',
-                            marginBottom: 4,
+                            marginBottom: 6,
                         }}>
                             Сообщение
-                        </span>
+                        </div>
                         <textarea
-                            style={textareaStyle}
+                            style={{ ...fieldStyle, resize: 'none', minHeight: 120, lineHeight: 1.5 }}
                             placeholder="Опишите вашу ситуацию..."
                             value={message}
                             onChange={e => setMessage(e.target.value)}

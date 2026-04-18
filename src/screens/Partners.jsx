@@ -1,17 +1,10 @@
 import React from 'react';
-import {
-    Panel,
-    Container,
-    Flex,
-    Grid,
-    Typography,
-    Button,
-} from '@maxhub/max-ui';
+import { Panel, Container, Flex, Button } from '@maxhub/max-ui';
 
 const BOT_NAME = 'id6658577091_bot';
 
 const BENEFITS = [
-    { emoji: '💰', title: '10% с каждой сделки', desc: 'Получайте бонус от суммы первой услуги приглашённого' },
+    { emoji: '💰', title: '10% с каждой сделки', desc: 'Бонус от суммы первой услуги приглашённого' },
     { emoji: '📊', title: 'Статистика в реальном времени', desc: 'Следите за переходами и успешными сделками' },
     { emoji: '🚀', title: 'Мгновенные выплаты', desc: 'Бонусы начисляются сразу после завершения сделки' },
     { emoji: '🔗', title: 'Уникальная ссылка', desc: 'Ваша персональная реферальная ссылка всегда доступна' },
@@ -24,7 +17,7 @@ export const PartnersScreen = ({ userId }) => {
         const webApp = window.WebApp;
         if (webApp?.shareMaxContent) {
             webApp.shareMaxContent({
-                text: `Привет! Рекомендую надёжную юридическую компанию. Регистрируйся по моей ссылке:`,
+                text: 'Привет! Рекомендую надёжную юридическую компанию. Регистрируйся по моей ссылке:',
                 link: referralLink,
             });
         } else {
@@ -35,10 +28,9 @@ export const PartnersScreen = ({ userId }) => {
     const handleCopy = () => {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(referralLink).then(() => {
-                const webApp = window.WebApp;
-                if (webApp?.HapticFeedback) {
-                    webApp.HapticFeedback.notificationOccurred('success');
-                }
+                try {
+                    window.WebApp?.HapticFeedback?.notificationOccurred('success');
+                } catch (e) {}
             });
         }
     };
@@ -50,67 +42,68 @@ export const PartnersScreen = ({ userId }) => {
             <Container style={{ padding: '24px 16px 20px' }}>
                 <Flex direction="column" align="center" gap={8}>
                     <span style={{ fontSize: 48 }}>🤝</span>
-                    <Typography.Title style={{
-                        margin: 0,
+                    <span style={{
                         fontSize: 20,
+                        fontWeight: 700,
+                        color: 'var(--max--color-text-primary)',
                         textAlign: 'center',
                     }}>
                         Партнёрская программа
-                    </Typography.Title>
-                    <Typography.Text style={{
+                    </span>
+                    <span style={{
+                        fontSize: 14,
                         color: 'var(--max--color-text-secondary)',
                         textAlign: 'center',
-                        fontSize: 14,
                         lineHeight: 1.5,
                     }}>
-                        Приглашайте друзей и получайте{'\n'}
-                        <strong>10%</strong> от стоимости их первой услуги
-                    </Typography.Text>
+                        Приглашайте друзей и получайте <strong>10%</strong> от стоимости их первой услуги
+                    </span>
                 </Flex>
             </Container>
 
             {/* Преимущества */}
             <Container style={{ padding: '0 16px 20px' }}>
-                <Grid gap={8} cols={1}>
+                <Flex direction="column" gap={8}>
                     {BENEFITS.map((b, i) => (
-                        <Panel key={i} mode="base" style={{
+                        <div key={i} style={{
                             borderRadius: 12,
                             padding: '14px 16px',
+                            backgroundColor: 'var(--max--color-background-content)',
                         }}>
                             <Flex align="center" gap={14}>
                                 <span style={{ fontSize: 28, flexShrink: 0 }}>{b.emoji}</span>
                                 <Flex direction="column" gap={2}>
-                                    <Typography.Text style={{
+                                    <span style={{
                                         fontWeight: 600,
                                         fontSize: 14,
                                         color: 'var(--max--color-text-primary)',
                                     }}>
                                         {b.title}
-                                    </Typography.Text>
-                                    <Typography.Text style={{
-                                        color: 'var(--max--color-text-secondary)',
+                                    </span>
+                                    <span style={{
                                         fontSize: 12,
+                                        color: 'var(--max--color-text-secondary)',
                                         lineHeight: 1.4,
                                     }}>
                                         {b.desc}
-                                    </Typography.Text>
+                                    </span>
                                 </Flex>
                             </Flex>
-                        </Panel>
+                        </div>
                     ))}
-                </Grid>
+                </Flex>
             </Container>
 
-            {/* Реферальная ссылка */}
+            {/* Ссылка */}
             <Container style={{ padding: '0 16px 16px' }}>
-                <Typography.Title style={{
+                <div style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    margin: '0 0 10px',
+                    color: 'var(--max--color-text-primary)',
+                    marginBottom: 10,
                 }}>
                     Ваша ссылка
-                </Typography.Title>
-
+                </div>
                 <div
                     onClick={handleCopy}
                     style={{
@@ -122,33 +115,22 @@ export const PartnersScreen = ({ userId }) => {
                     }}
                 >
                     <Flex justify="space-between" align="center" gap={8}>
-                        <Typography.Text style={{
+                        <span style={{
                             fontSize: 12,
                             color: 'var(--max--color-text-secondary)',
                             wordBreak: 'break-all',
                             flex: 1,
                         }}>
                             {referralLink}
-                        </Typography.Text>
-                        <span style={{
-                            fontSize: 18,
-                            flexShrink: 0,
-                            color: 'var(--max--color-text-secondary)',
-                        }}>
-                            📋
                         </span>
+                        <span style={{ fontSize: 18, flexShrink: 0 }}>📋</span>
                     </Flex>
                 </div>
             </Container>
 
             {/* Кнопка */}
             <Container style={{ padding: '0 16px 32px' }}>
-                <Button
-                    size="l"
-                    appearance="accent"
-                    stretched
-                    onClick={handleShare}
-                >
+                <Button size="l" appearance="accent" stretched onClick={handleShare}>
                     Поделиться ссылкой
                 </Button>
             </Container>

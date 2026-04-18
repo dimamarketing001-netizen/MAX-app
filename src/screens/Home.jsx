@@ -1,28 +1,17 @@
 import React from 'react';
-import {
-    Panel,
-    Container,
-    Flex,
-    Grid,
-    Typography,
-    Avatar,
-} from '@maxhub/max-ui';
+import { Panel, Container, Flex, Grid, Avatar } from '@maxhub/max-ui';
 
 const StatusBadge = ({ status }) => {
     const isPositive = status === 'Оплачен';
     return (
         <span style={{
             display: 'inline-block',
-            padding: '2px 8px',
+            padding: '3px 10px',
             borderRadius: 20,
             fontSize: 11,
             fontWeight: 600,
-            backgroundColor: isPositive
-                ? 'var(--max--color-positive-background, #e6f4ea)'
-                : 'var(--max--color-background-secondary)',
-            color: isPositive
-                ? 'var(--max--color-positive, #2e7d32)'
-                : 'var(--max--color-text-secondary)',
+            backgroundColor: isPositive ? '#e6f4ea' : '#f0f0f0',
+            color: isPositive ? '#2e7d32' : '#666',
         }}>
             {status}
         </span>
@@ -32,7 +21,7 @@ const StatusBadge = ({ status }) => {
 export const HomeScreen = ({ user, deals, payments }) => (
     <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
 
-        {/* Шапка с приветствием */}
+        {/* Шапка */}
         <Container style={{ padding: '20px 16px 16px' }}>
             <Flex align="center" gap={12}>
                 <Avatar.Container size={52} form="squircle">
@@ -42,127 +31,135 @@ export const HomeScreen = ({ user, deals, payments }) => (
                     }
                 </Avatar.Container>
                 <Flex direction="column" gap={2}>
-                    <Typography.Title style={{ margin: 0, fontSize: 18, lineHeight: 1.2 }}>
+                    <span style={{
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: 'var(--max--color-text-primary)',
+                        lineHeight: 1.2,
+                    }}>
                         Привет, {user.first_name}!
-                    </Typography.Title>
-                    <Typography.Text style={{
-                        color: 'var(--max--color-text-secondary)',
+                    </span>
+                    <span style={{
                         fontSize: 13,
-                        margin: 0,
+                        color: 'var(--max--color-text-secondary)',
                     }}>
                         Ваш личный кабинет
-                    </Typography.Text>
+                    </span>
                 </Flex>
             </Flex>
         </Container>
 
         {/* Сделки */}
         <Container style={{ padding: '0 16px 20px' }}>
-            <Typography.Title style={{
+            <div style={{
                 fontSize: 15,
                 fontWeight: 700,
-                margin: '0 0 10px',
                 color: 'var(--max--color-text-primary)',
+                marginBottom: 10,
             }}>
                 Мои дела
-            </Typography.Title>
+            </div>
 
             {deals.length === 0 ? (
-                <Panel mode="base" style={{ borderRadius: 12, padding: '16px' }}>
-                    <Typography.Text style={{
-                        color: 'var(--max--color-text-secondary)',
-                        fontSize: 14,
-                    }}>
-                        Нет активных дел
-                    </Typography.Text>
-                </Panel>
+                <div style={{
+                    borderRadius: 12,
+                    padding: 16,
+                    backgroundColor: 'var(--max--color-background-content)',
+                    fontSize: 14,
+                    color: 'var(--max--color-text-secondary)',
+                }}>
+                    Нет активных дел
+                </div>
             ) : (
-                <Grid gap={8} cols={1}>
+                <Flex direction="column" gap={8}>
                     {deals.map(deal => (
-                        <Panel key={deal.id} mode="base" style={{
+                        <div key={deal.id} style={{
                             borderRadius: 12,
                             padding: '14px 16px',
+                            backgroundColor: 'var(--max--color-background-content)',
                         }}>
                             <Flex justify="space-between" align="flex-start" gap={8}>
                                 <Flex direction="column" gap={4} style={{ flex: 1 }}>
-                                    <Typography.Text style={{
+                                    <span style={{
                                         fontWeight: 600,
                                         fontSize: 14,
                                         lineHeight: 1.3,
                                         color: 'var(--max--color-text-primary)',
                                     }}>
                                         {deal.name}
-                                    </Typography.Text>
-                                    <Typography.Text style={{
+                                    </span>
+                                    <span style={{
                                         color: 'var(--max--color-text-secondary)',
                                         fontSize: 12,
                                     }}>
                                         {deal.status} · до {deal.deadline}
-                                    </Typography.Text>
+                                    </span>
                                 </Flex>
-                                <Typography.Text style={{
+                                <span style={{
                                     fontWeight: 700,
                                     fontSize: 14,
                                     color: 'var(--max--color-text-primary)',
                                     whiteSpace: 'nowrap',
                                 }}>
                                     {deal.price}
-                                </Typography.Text>
+                                </span>
                             </Flex>
-                        </Panel>
+                        </div>
                     ))}
-                </Grid>
+                </Flex>
             )}
         </Container>
 
         {/* Платежи */}
         <Container style={{ padding: '0 16px 32px' }}>
-            <Typography.Title style={{
+            <div style={{
                 fontSize: 15,
                 fontWeight: 700,
-                margin: '0 0 10px',
                 color: 'var(--max--color-text-primary)',
+                marginBottom: 10,
             }}>
                 Платежи
-            </Typography.Title>
+            </div>
 
             {payments.length === 0 ? (
-                <Panel mode="base" style={{ borderRadius: 12, padding: '16px' }}>
-                    <Typography.Text style={{
-                        color: 'var(--max--color-text-secondary)',
-                        fontSize: 14,
-                    }}>
-                        Нет платежей
-                    </Typography.Text>
-                </Panel>
+                <div style={{
+                    borderRadius: 12,
+                    padding: 16,
+                    backgroundColor: 'var(--max--color-background-content)',
+                    fontSize: 14,
+                    color: 'var(--max--color-text-secondary)',
+                }}>
+                    Нет платежей
+                </div>
             ) : (
-                <Grid gap={8} cols={1}>
+                <Flex direction="column" gap={8}>
                     {payments.map(p => (
-                        <Panel key={p.id} mode="base" style={{
+                        <div key={p.id} style={{
                             borderRadius: 12,
                             padding: '14px 16px',
+                            backgroundColor: 'var(--max--color-background-content)',
                         }}>
                             <Flex justify="space-between" align="center">
-                                <Flex direction="column" gap={4}>
-                                    <Typography.Text style={{
+                                <Flex direction="column" gap={6}>
+                                    <span style={{
                                         fontSize: 13,
                                         color: 'var(--max--color-text-primary)',
                                     }}>
                                         {p.date}
-                                    </Typography.Text>
+                                    </span>
                                     <StatusBadge status={p.status} />
                                 </Flex>
-                                <Typography.Text style={{
+                                <span style={{
                                     fontWeight: 700,
                                     fontSize: 15,
                                     color: 'var(--max--color-text-primary)',
                                 }}>
                                     {p.amount}
-                                </Typography.Text>
+                                </span>
                             </Flex>
-                        </Panel>
+                        </div>
                     ))}
-                </Grid>
+                </Flex>
             )}
         </Container>
 
