@@ -21,13 +21,10 @@ const MOCK_STATS = {
 
 // Формируем реферальную ссылку
 const BOT_NAME = 'id6658577091_bot'; // Имя вашего бота
-const USER_ID = '12345'; // ID тестового пользователя
-const REFERRAL_LINK = `https://max.ru/${BOT_NAME}?startapp=ref_${USER_ID}`;
 const SHARE_TEXT = 'Привет! Рекомендую отличную юридическую компанию. Зарегистрируйся по моей ссылке и получи бонус!';
 
-export const PartnersScreen = () => {
-
-    const webApp = window.WebApp;
+export const PartnersScreen = ({ userId }) => {
+    const REFERRAL_LINK = `https://max.ru/${BOT_NAME}?startapp=ref_${userId}`;
 
     const handleShare = () => {
         if (webApp && webApp.shareMaxContent) {

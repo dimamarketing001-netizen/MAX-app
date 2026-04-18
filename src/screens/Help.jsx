@@ -38,10 +38,15 @@ export const HelpScreen = () => {
         setTicketStep(2);
     };
     const handleMessageChange = (e) => setTicketData(prev => ({ ...prev, message: e.target.value }));
-    const sendTicket = () => {
-        console.log('Отправка запроса в поддержку:', ticketData);
-        setTicketStep(3);
+    const sendTicket = async () => {
+        const success = await onSendTicket(ticketData.topic, ticketData.message);
+        if (success) {
+            setTicketStep(3);
+        } else {
+            alert('Ошибка отправки. Попробуйте снова.');
+        }
     };
+
     const resetTicketFlow = () => {
         setTicketData({ topic: '', message: '' });
         setTicketStep(0);
