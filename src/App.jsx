@@ -7,13 +7,39 @@ import { ProfileScreen } from './screens/Profile';
 import { HelpScreen } from './screens/Help';
 import { PartnersScreen } from './screens/Partners';
 
+// ─── Безопасное получение WebApp ─────────────────────────────────────────────
+function getWebApp() {
+    try {
+        return window.WebApp || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// ─── Безопасное получение initDataUnsafe ─────────────────────────────────────
+function getInitDataUnsafe(webApp) {
+    try {
+        return webApp?.initDataUnsafe || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// ─── Безопасное получение поля из объекта ────────────────────────────────────
+function safeGet(obj, path, fallback = null) {
+    try {
+        return path.split('.').reduce((acc, key) => acc?.[key], obj) ?? fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
+
 function App() {
     const [user, setUser] = useState(null);
     const [deals, setDeals] = useState([]);
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [debugInfo, setDebugInfo] = useState(''); // для отладки на экране
     const [activeTab, setActiveTab] = useState('home');
     const [platform, setPlatform] = useState('web');
 
@@ -21,76 +47,84 @@ function App() {
         const loadAppData = async () => {
             setLoading(true);
 
-            // ── Шаг 1: Смотрим что есть в window ──────────────────────────
-            const debugLines = [];
-            debugLines.push(`window.WebApp: ${typeof window.WebApp}`);
-            debugLines.push(`window.Telegram: ${typeof window.Telegram}`);
+            // ── Шаг 1: Получаем WebApp безопасно ──────────────────────────
+            const webApp = getWebApp();
+            const initDataUnsafe = getInitDataUnsafe(webApp);
 
-            const webApp = window.WebApp;
+            // Логируем на сервер
+            const logData = {
+                ts: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                href: window.location.href,
+                webAppType: typeof window.WebApp,
+                hasWebApp: !!webApp,
+                platform: safeGet(webApp, 'platform'),
+                version: safeGet(webApp, 'version'),
+                initDataRaw: (() => {
+                    try { return webApp?.initData || null; } catch { return 'ERROR_READING'; }
+                })(),
+                initDataUnsafe: initDataUnsafe,
+                userId: safeGet(initDataUnsafe, 'user.id'),
+            };
 
-            if (webApp) {
-                debugLines.push(`webApp keys: ${Object.keys(webApp).join(', ')}`);
-                debugLines.push(`webApp.platform: ${webApp.platform}`);
-                debugLines.push(`webApp.version: ${webApp.version}`);
-                debugLines.push(`webApp.initData (raw): ${webApp.initData}`);
-                debugLines.push(`webApp.initDataUnsafe: ${JSON.stringify(webApp.initDataUnsafe)}`);
+            // Отправляем лог на сервер (не ждём)
+            fetch('/api/debug', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(logData),
+            }).catch(() => {});
 
-                if (webApp.platform) setPlatform(webApp.platform);
-                if (webApp.ready) webApp.ready();
-            } else {
-                debugLines.push('WebApp НЕ найден в window!');
-                debugLines.push(`Все ключи window: ${Object.keys(window).filter(k => k.toLowerCase().includes('web') || k.toLowerCase().includes('tg') || k.toLowerCase().includes('max') || k.toLowerCase().includes('telegram')).join(', ')}`);
-            }
-
-            // ── Шаг 2: Отправляем debug на сервер ─────────────────────────
-            const debugText = debugLines.join('\n');
-            setDebugInfo(debugText);
-
+            // ── Шаг 2: Вызываем ready() только если метод существует ──────
             try {
-                await fetch('/api/debug', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        debugLines,
-                        userAgent: navigator.userAgent,
-                        href: window.location.href,
-                        webAppExists: !!webApp,
-                        initDataRaw: webApp?.initData || null,
-                        initDataUnsafe: webApp?.initDataUnsafe || null,
-                    }),
-                });
+                if (webApp && typeof webApp.ready === 'function') {
+                    webApp.ready();
+                }
             } catch (e) {
-                console.error('Debug отправка не удалась:', e);
+                console.warn('webApp.ready() failed:', e);
             }
 
-            // ── Шаг 3: Пробуем получить userId ────────────────────────────
-            let maxUserId = null;
-
+            // ── Шаг 3: Получаем платформу ─────────────────────────────────
             try {
-                maxUserId = webApp?.initDataUnsafe?.user?.id || null;
+                const p = webApp?.platform;
+                if (p && typeof p === 'string') {
+                    setPlatform(p);
+                }
             } catch (e) {
-                debugLines.push(`Ошибка чтения initDataUnsafe: ${e.message}`);
+                console.warn('platform read failed:', e);
             }
+
+            // ── Шаг 4: Получаем userId ─────────────────────────────────────
+            const maxUserId = safeGet(initDataUnsafe, 'user.id');
 
             if (!maxUserId) {
-                setError(`Не удалось получить ID пользователя.\n\nDebug:\n${debugText}`);
+                setError(
+                    `ID пользователя не получен.\n\n` +
+                    `WebApp: ${logData.hasWebApp}\n` +
+                    `initDataUnsafe: ${JSON.stringify(initDataUnsafe)}\n` +
+                    `initData: ${logData.initDataRaw}\n` +
+                    `UserAgent: ${navigator.userAgent}`
+                );
                 setLoading(false);
                 return;
             }
 
-            // ── Шаг 4: Запросы к API ───────────────────────────────────────
+            // ── Шаг 5: Запросы к API ───────────────────────────────────────
             try {
                 const userRes = await fetch(`/api/user/${maxUserId}`);
 
                 if (!userRes.ok) {
-                    const err = await userRes.json();
+                    const err = await userRes.json().catch(() => ({}));
                     throw new Error(err.error || `HTTP ${userRes.status}`);
                 }
 
                 const userData = await userRes.json();
-                userData.photo_url = webApp?.initDataUnsafe?.user?.photo_url || '';
+
+                // Добавляем фото из MAX (в Б24 не хранится)
+                userData.photo_url = safeGet(initDataUnsafe, 'user.photo_url') || '';
+
                 setUser(userData);
 
+                // Сделки и платежи
                 const dealsRes = await fetch(`/api/deals/${maxUserId}`);
                 if (dealsRes.ok) {
                     const dealsData = await dealsRes.json();
@@ -99,7 +133,7 @@ function App() {
                 }
 
             } catch (e) {
-                setError(`Ошибка API: ${e.message}`);
+                setError(`Ошибка загрузки данных: ${e.message}`);
             } finally {
                 setLoading(false);
             }
@@ -119,7 +153,7 @@ function App() {
             if (!res.ok) throw new Error('Ошибка сохранения');
             setUser(prev => ({ ...prev, ...updatedFields }));
         } catch (e) {
-            console.error(e);
+            console.error('handleProfileSave:', e);
         }
     };
 
@@ -153,6 +187,7 @@ function App() {
         }
     };
 
+    // ── Экран загрузки ─────────────────────────────────────────────────────────
     if (loading) {
         return (
             <Flex style={{ height: '100vh' }} justify="center" align="center">
@@ -161,24 +196,25 @@ function App() {
         );
     }
 
+    // ── Экран ошибки с debug-инфо ──────────────────────────────────────────────
     if (error || !user) {
         return (
             <Panel mode="secondary">
                 <Container>
                     <Flex direction="column" gap={16} style={{ padding: 16 }}>
                         <Typography.Title>Ошибка запуска</Typography.Title>
-                        {/* Показываем debug прямо на экране */}
                         <div style={{
-                            background: '#1a1a1a',
-                            color: '#00ff00',
+                            background: '#0d0d0d',
+                            color: '#00ff41',
                             padding: 12,
                             borderRadius: 8,
-                            fontSize: 11,
+                            fontSize: 10,
                             fontFamily: 'monospace',
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-all',
-                            maxHeight: '70vh',
+                            maxHeight: '75vh',
                             overflowY: 'auto',
+                            border: '1px solid #00ff41',
                         }}>
                             {error || 'Нет данных пользователя'}
                         </div>
@@ -188,6 +224,7 @@ function App() {
         );
     }
 
+    // ── Основной экран ─────────────────────────────────────────────────────────
     return (
         <MaxUI platform={platform}>
             <Flex direction="column" style={{ height: '100vh' }}>
