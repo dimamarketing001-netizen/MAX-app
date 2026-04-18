@@ -23,11 +23,36 @@ const PORT = process.env.PORT || 5004;
 
 app.use(cors());
 app.use(express.json());
-
+// ─── Логирование всех запросов ───────────────────────────────────────────────
+app.use((req, res, next) => {
+    const time = new Date().toISOString();
+    console.log(`\n[${time}] ${req.method} ${req.url}`);
+    if (Object.keys(req.query).length > 0) {
+        console.log('  Query:', JSON.stringify(req.query));
+    }
+    if (req.body && Object.keys(req.body).length > 0) {
+        console.log('  Body:', JSON.stringify(req.body));
+    }
+    next();
+});
 // ─── Статика ────────────────────────────────────────────────────────────────
 const staticPath = path.join(__dirname, 'dist');
 app.use(express.static(staticPath));
-
+// ─── API: Debug endpoint ─────────────────────────────────────────────────────
+app.post('/api/debug', (req, res) => {
+    console.log('\n' + '='.repeat(60));
+    console.log('DEBUG от клиента:');
+    console.log('='.repeat(60));
+    console.log('User-Agent:', req.body.userAgent);
+    console.log('URL:', req.body.href);
+    console.log('WebApp найден:', req.body.webAppExists);
+    console.log('initData (raw):', req.body.initDataRaw);
+    console.log('initDataUnsafe:', JSON.stringify(req.body.initDataUnsafe, null, 2));
+    console.log('\nDebug строки:');
+    (req.body.debugLines || []).forEach(line => console.log('  ' + line));
+    console.log('='.repeat(60) + '\n');
+    res.json({ ok: true });
+});
 // ─── API: Получить данные пользователя по max_user_id ───────────────────────
 app.get('/api/user/:maxUserId', async (req, res) => {
     const { maxUserId } = req.params;
