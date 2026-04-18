@@ -21,9 +21,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5004;
 
+// ─── staticPath объявляем СРАЗУ ───────────────────────────────────────────────
+const staticPath = path.join(__dirname, 'dist');
+
 app.use(cors());
 app.use(express.json());
-// ─── Логирование всех входящих запросов ──────────────────────────────────────
+
+// ─── Логирование всех запросов ────────────────────────────────────────────────
 app.use((req, res, next) => {
     const time = new Date().toISOString();
     console.log(`[${time}] ${req.method} ${req.url}`);
@@ -36,25 +40,25 @@ app.post('/api/debug', (req, res) => {
     console.log('\n' + '═'.repeat(60));
     console.log('📱 DEBUG ОТ КЛИЕНТА');
     console.log('═'.repeat(60));
-    console.log(`🕐 Время:        ${d.ts}`);
-    console.log(`🌐 URL:          ${d.href}`);
-    console.log(`📟 UserAgent:    ${d.userAgent}`);
-    console.log(`✅ WebApp есть:  ${d.hasWebApp}`);
-    console.log(`🖥️  Platform:     ${d.platform}`);
-    console.log(`📦 Version:      ${d.version}`);
-    console.log(`👤 userId:       ${d.userId}`);
-    console.log(`📄 initData:     ${d.initDataRaw}`);
+    console.log(`🕐 Время:         ${d.ts}`);
+    console.log(`🌐 URL:           ${d.href}`);
+    console.log(`📟 UserAgent:     ${d.userAgent}`);
+    console.log(`✅ WebApp есть:   ${d.hasWebApp}`);
+    console.log(`🖥️  Platform:      ${d.platform}`);
+    console.log(`📦 Version:       ${d.version}`);
+    console.log(`👤 userId:        ${d.userId}`);
+    console.log(`📄 initData raw:  ${d.initDataRaw}`);
     console.log(`📋 initDataUnsafe:`);
     console.log(JSON.stringify(d.initDataUnsafe, null, 2));
     console.log('═'.repeat(60) + '\n');
     res.json({ ok: true });
 });
-// ─── API: Получить данные пользователя по max_user_id ───────────────────────
+
+// ─── API: Получить данные пользователя ───────────────────────────────────────
 app.get('/api/user/:maxUserId', async (req, res) => {
     const { maxUserId } = req.params;
 
     try {
-        // 1. Ищем пользователя в MySQL
         const [rows] = await pool.query(
             'SELECT * FROM users WHERE max_user_id = ?',
             [maxUserId]
@@ -67,10 +71,8 @@ app.get('/api/user/:maxUserId', async (req, res) => {
         const dbUser = rows[0];
         const contactId = dbUser.bitrix_contact_id;
 
-        // 2. Получаем данные из Б24
         const contact = await getContact(contactId);
 
-        // 3. Формируем ответ
         const userData = {
             id: dbUser.max_user_id,
             bitrix_contact_id: contactId,
@@ -78,24 +80,23 @@ app.get('/api/user/:maxUserId', async (req, res) => {
             last_name: contact.LAST_NAME || '',
             phone: extractPhone(contact) || dbUser.phone || '',
             email: extractEmail(contact) || '',
-            passport_series: contact.UF_CRM_PASSPORT_SERIES || '', // поле в Б24, если есть
-            passport_number: contact.UF_CRM_PASSPORT_NUMBER || '', // поле в Б24, если есть
+            passport_series: contact.UF_CRM_PASSPORT_SERIES || '',
+            passport_number: contact.UF_CRM_PASSPORT_NUMBER || '',
         };
 
         res.json(userData);
 
     } catch (error) {
-        console.error('Ошибка /api/user:', error.message);
+        console.error('❌ Ошибка /api/user:', error.message);
         res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
 
-// ─── API: Получить сделки и платежи пользователя ────────────────────────────
+// ─── API: Получить сделки и платежи ──────────────────────────────────────────
 app.get('/api/deals/:maxUserId', async (req, res) => {
     const { maxUserId } = req.params;
 
     try {
-        // 1. Ищем в MySQL
         const [rows] = await pool.query(
             'SELECT bitrix_contact_id FROM users WHERE max_user_id = ?',
             [maxUserId]
@@ -106,11 +107,8 @@ app.get('/api/deals/:maxUserId', async (req, res) => {
         }
 
         const contactId = rows[0].bitrix_contact_id;
-
-        // 2. Получаем сделки из Б24
         const b24Deals = await getDealsByContact(contactId);
 
-        // 3. Для каждой сделки получаем счета
         const deals = [];
         const payments = [];
 
@@ -127,7 +125,6 @@ app.get('/api/deals/:maxUserId', async (req, res) => {
                     : 'Не указан',
             });
 
-            // Получаем счета по сделке
             const invoices = await getInvoicesByDeal(deal.ID);
             for (const inv of invoices) {
                 payments.push({
@@ -147,12 +144,12 @@ app.get('/api/deals/:maxUserId', async (req, res) => {
         res.json({ deals, payments });
 
     } catch (error) {
-        console.error('Ошибка /api/deals:', error.message);
+        console.error('❌ Ошибка /api/deals:', error.message);
         res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
 
-// ─── API: Обновить контактные данные в Б24 ──────────────────────────────────
+// ─── API: Обновить контактные данные ─────────────────────────────────────────
 app.post('/api/user/:maxUserId/update', async (req, res) => {
     const { maxUserId } = req.params;
     const { phone, email } = req.body;
@@ -168,8 +165,6 @@ app.post('/api/user/:maxUserId/update', async (req, res) => {
         }
 
         const contactId = rows[0].bitrix_contact_id;
-
-        // Обновляем в Б24
         const fields = {};
         if (phone) fields.PHONE = [{ VALUE: phone, VALUE_TYPE: 'WORK' }];
         if (email) fields.EMAIL = [{ VALUE: email, VALUE_TYPE: 'WORK' }];
@@ -180,7 +175,6 @@ app.post('/api/user/:maxUserId/update', async (req, res) => {
             fields
         });
 
-        // Обновляем телефон в MySQL тоже
         if (phone) {
             await pool.query(
                 'UPDATE users SET phone = ? WHERE max_user_id = ?',
@@ -191,12 +185,12 @@ app.post('/api/user/:maxUserId/update', async (req, res) => {
         res.json({ success: true });
 
     } catch (error) {
-        console.error('Ошибка /api/user/update:', error.message);
+        console.error('❌ Ошибка /api/user/update:', error.message);
         res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
 
-// ─── API: Создать тикет поддержки (задача в Б24) ────────────────────────────
+// ─── API: Создать тикет поддержки ────────────────────────────────────────────
 app.post('/api/support', async (req, res) => {
     const { maxUserId, topic, message } = req.body;
 
@@ -209,14 +203,12 @@ app.post('/api/support', async (req, res) => {
         const contactId = rows.length > 0 ? rows[0].bitrix_contact_id : null;
 
         const axios = (await import('axios')).default;
-
-        // Создаём задачу в Б24
         await axios.post(`${process.env.B24_WEBHOOK_URL}/tasks.task.add`, {
             fields: {
                 TITLE: `[Поддержка] ${topic}`,
                 DESCRIPTION: message,
-                RESPONSIBLE_ID: 1, // ID ответственного в Б24
-                UF_CRM_TASK: contactId ? [`C_${contactId}`] : [], // привязка к контакту
+                RESPONSIBLE_ID: 1,
+                UF_CRM_TASK: contactId ? [`C_${contactId}`] : [],
                 PRIORITY: 1,
             }
         });
@@ -224,16 +216,20 @@ app.post('/api/support', async (req, res) => {
         res.json({ success: true });
 
     } catch (error) {
-        console.error('Ошибка /api/support:', error.message);
+        console.error('❌ Ошибка /api/support:', error.message);
         res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
 
-// ─── Все остальные запросы → index.html ─────────────────────────────────────
+// ─── Статика (ПОСЛЕ всех API роутов) ─────────────────────────────────────────
+app.use(express.static(staticPath));
+
+// ─── Fallback → index.html ────────────────────────────────────────────────────
 app.get('*', (req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
+    console.log(`\n🚀 Сервер запущен на порту ${PORT}`);
+    console.log(`📁 Статика из: ${staticPath}\n`);
 });
