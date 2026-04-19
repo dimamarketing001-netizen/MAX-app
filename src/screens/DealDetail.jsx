@@ -484,7 +484,7 @@ export const DealDetail = ({ deal, onBack }) => {
                 {/* Связанные сделки (SALE и UC_UABTV4) */}
                 {/* Публикация (16) */}
                 {deal.publications?.length > 0 && (
-                    <div style={{ padding: '14px 0' }}>
+                    <div style={{ padding: '0 16px 14px', width: '100%', boxSizing: 'border-box' }}>
                         <Flex direction="column" gap={10}>
                             {deal.publications.map(d => (
                                 <ChildDealCard key={d.ID} deal={d} />
@@ -495,7 +495,7 @@ export const DealDetail = ({ deal, onBack }) => {
 
                 {/* Депозит (18) */}
                 {deal.deposits?.length > 0 && (
-                    <div style={{ padding: '14px 0' }}>
+                    <div style={{ padding: '0 16px 14px', width: '100%', boxSizing: 'border-box' }}>
                         <Flex direction="column" gap={10}>
                             {deal.deposits.map(d => (
                                 <ChildDealCard key={d.ID} deal={d} />

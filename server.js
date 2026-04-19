@@ -483,35 +483,35 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             let contractFile = null;
 
             try {
-                const docRes = await axios.get(
+                const docRes = await axios.post(
                     `${process.env.B24_WEBHOOK_URL}/crm.documentgenerator.document.list`,
                     {
-                        params: {
-                            filter: {
-                                ENTITY_TYPE_ID: 2, // Сделка
-                                ENTITY_ID: deal.ID
-                            }
-                        }
+                        select: ['*'],
+                        order: { id: 'DESC' },
+                        filter: {
+                            entityTypeId: 2,      // 2 = сделка
+                            entityId: deal.ID
+                        },
+                        start: 0
                     }
                 );
 
-                const docs = docRes.data.result || [];
+                const documents = docRes.data?.result?.documents || [];
 
-                if (docs.length > 0) {
-                    const documentId = docs[0].id;
+                if (documents.length > 0) {
+                    const doc = documents[0];
 
-                    const downloadRes = await axios.get(
-                        `${process.env.B24_WEBHOOK_URL}/crm.documentgenerator.document.get`,
-                        {
-                            params: { id: documentId }
-                        }
-                    );
-
-                    contractFile = downloadRes.data.result?.downloadUrl || null;
+                    // Берём PDF ссылку для машинного доступа
+                    contractFile =
+                        doc.pdfUrlMachine ||
+                        doc.downloadUrlMachine ||
+                        doc.pdfUrl ||
+                        doc.downloadUrl ||
+                        null;
                 }
 
             } catch (e) {
-                console.log('Ошибка получения договора:', e.message);
+                console.log('Ошибка получения договора:', e.response?.data || e.message);
             }
 
             // ── Счета (crm.item.list, entityTypeId=31) ─────────────────────
