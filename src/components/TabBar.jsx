@@ -1,5 +1,4 @@
 import React from 'react';
-import { Flex, ToolButton } from '@maxhub/max-ui';
 
 const tabs = [
     { id: 'home',     label: 'Главная',   emoji: '🏠' },
@@ -9,31 +8,49 @@ const tabs = [
 ];
 
 export const TabBar = ({ activeTab, onTabChange }) => (
-    <Flex
+    <div
         style={{
             width: '100%',
             paddingBottom: 'env(safe-area-inset-bottom, 8px)',
             backgroundColor: '#FFFFFF',
             borderTop: '1px solid rgba(0,0,0,0.08)',
             flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
         }}
-        justify="space-around"
-        align="center"
     >
         {tabs.map(tab => (
-            <ToolButton
+            <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                appearance="default"
-                icon={<span style={{ fontSize: 22 }}>{tab.emoji}</span>}
                 style={{
                     flex: 1,
                     minWidth: 0,
-                    color: activeTab === tab.id ? '#42A5F5' : '#1a1a1a'
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '8px 4px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 3,
+                    fontFamily: 'inherit',
                 }}
             >
-                {tab.label}
-            </ToolButton>
+                <span style={{ fontSize: 22 }}>
+                    {tab.emoji}
+                </span>
+                <span
+                    style={{
+                        fontSize: 10,
+                        fontWeight: activeTab === tab.id ? 700 : 400,
+                        color: activeTab === tab.id ? '#42A5F5' : '#888888',
+                    }}
+                >
+                    {tab.label}
+                </span>
+            </button>
         ))}
-    </Flex>
+    </div>
 );
