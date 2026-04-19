@@ -55,26 +55,47 @@ const ProgressBar = ({ paid, total }) => {
 // ─── Заголовок таблицы платежей ───────────────────────────────────────────────
 const PaymentsTableHeader = () => (
     <div style={{
-        display: 'grid',
-        // Дата чуть правее, сумма по центру, статус прижат к левому краю бейджа
-        gridTemplateColumns: '1fr 1fr 130px',
+        display: 'flex',
+        alignItems: 'center',
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
-        gap: 8,
     }}>
-        {['Дата', 'Сумма', 'Статус'].map((h, i) => (
-            <span key={h} style={{
+        {/* ДАТА */}
+        <div style={{ width: 90, flexShrink: 0 }}>
+            <span style={{
                 fontSize: 10,
                 fontWeight: 700,
                 color: '#999',
                 textTransform: 'uppercase',
-                // Статус прижат влево внутри своей колонки
-                textAlign: i === 2 ? 'left' : 'left',
             }}>
-                {h}
+                Дата
             </span>
-        ))}
+        </div>
+
+        {/* СУММА */}
+        <div style={{ flex: 1 }}>
+            <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#999',
+                textTransform: 'uppercase',
+            }}>
+                Сумма
+            </span>
+        </div>
+
+        {/* СТАТУС — фиксированная ширина = ширина бейджа */}
+        <div style={{ width: 120, flexShrink: 0 }}>
+            <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#999',
+                textTransform: 'uppercase',
+            }}>
+                Статус
+            </span>
+        </div>
     </div>
 );
 
@@ -82,19 +103,48 @@ const PaymentsTableHeader = () => (
 const PaymentRow = ({ date, amount, badge, isLast }) => (
     <div>
         <div style={{
-            display: 'grid',
-            gridTemplateColumns: '0.9fr 0.9fr 1.6fr',
-            padding: '11px 16px',
+            display: 'flex',
             alignItems: 'center',
+            padding: '12px 16px',
         }}>
-            <span style={{ fontSize: 13 }}>{date}</span>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>{amount}</span>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Дата — фиксированная ширина как заголовок */}
+            <div style={{ width: 90, flexShrink: 0 }}>
+                <span style={{
+                    fontSize: 13,
+                    color: '#1a1a1a',
+                }}>
+                    {date}
+                </span>
+            </div>
+
+            {/* Сумма — занимает оставшееся место */}
+            <div style={{ flex: 1 }}>
+                <span style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#1a1a1a',
+                }}>
+                    {amount}
+                </span>
+            </div>
+
+            {/* Статус — фиксированная ширина = ширина бейджа */}
+            <div style={{
+                width: 120,
+                flexShrink: 0,
+                display: 'flex',
+                justifyContent: 'flex-start',
+            }}>
                 {badge}
             </div>
         </div>
+
         {!isLast && (
-            <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
+            <div style={{
+                height: 1,
+                backgroundColor: BORDER,
+                margin: '0 16px',
+            }} />
         )}
     </div>
 );
@@ -112,11 +162,11 @@ const PayBadge = ({ status }) => {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'flex-start',
-            gap: 4,
-            // Фиксированная ширина — все бейджи одинаковые
-            width: 110,
+            gap: 5,
+            // Ширина бейджа = ширина колонки статус (120px) минус отступы
+            width: 112,
             padding: '5px 10px',
-            borderRadius: 10,
+            borderRadius: 20,
             fontSize: 12,
             fontWeight: 600,
             backgroundColor: c.bg,
@@ -124,7 +174,11 @@ const PayBadge = ({ status }) => {
             whiteSpace: 'nowrap',
             boxSizing: 'border-box',
         }}>
-            <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>
+            <span style={{
+                fontSize: 14,
+                lineHeight: 1,
+                flexShrink: 0,
+            }}>
                 {c.icon}
             </span>
             <span>{c.label}</span>
