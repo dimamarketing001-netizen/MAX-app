@@ -3,6 +3,7 @@ import { Flex, Button } from '@maxhub/max-ui';
 import {
     getDealName,
     formatMoney,
+    getShortName,
     formatDate,
     getStageDisplay,
     getPaymentStatus,
