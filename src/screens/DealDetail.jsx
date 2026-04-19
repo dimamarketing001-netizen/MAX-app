@@ -89,11 +89,33 @@ const TableHeader = () => (
         </span>
     </div>
 );
+const InvoicesTableHeader = () => (
+    <div style={{
+        display: 'grid',
+        gridTemplateColumns: '0.8fr 0.7fr 0.8fr 1fr',
+        padding: '8px 16px',
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderBottom: `1px solid ${BORDER}`,
+        width: '100%',
+        boxSizing: 'border-box'
+    }}>
+        {['Дата','Тип','Сумма','Статус'].map(h => (
+            <span key={h} style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#999',
+                textTransform: 'uppercase'
+            }}>
+                {h}
+            </span>
+        ))}
+    </div>
+);
 
 const PaymentsTableHeader = () => (
     <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
+        gridTemplateColumns: '0.9fr 0.9fr 1.6fr'
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
@@ -109,6 +131,53 @@ const PaymentsTableHeader = () => (
                 {h}
             </span>
         ))}
+    </div>
+);
+
+const PaymentRow = ({ date, amount, badge, isLast }) => (
+    <div>
+        <div style={{
+            display: 'grid',
+            gridTemplateColumns: '0.9fr 0.9fr 1.6fr',
+            padding: '11px 16px',
+            alignItems: 'center'
+        }}>
+            <span style={{ fontSize: 13 }}>{date}</span>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>{amount}</span>
+            <div style={{ display:'flex', justifyContent:'flex-end' }}>
+                {badge}
+            </div>
+        </div>
+
+        {!isLast && (
+            <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
+        )}
+    </div>
+);
+
+const InvoiceRow = ({ date, type, amount, badge, isLast }) => (
+    <div>
+        <div style={{
+            display: 'grid',
+            gridTemplateColumns: '0.8fr 0.7fr 0.8fr 1fr',
+            padding: '11px 16px',
+            alignItems: 'center',
+            width: '100%',
+            boxSizing: 'border-box'
+        }}>
+            <span style={{ fontSize: 13 }}>{date}</span>
+            <span style={{ fontSize: 12 }}>{type}</span>
+            <span style={{ fontSize: 13, fontWeight: 700 }}>
+                {amount}
+            </span>
+            <div style={{ display:'flex', justifyContent:'flex-end' }}>
+                {badge}
+            </div>
+        </div>
+
+        {!isLast && (
+            <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
+        )}
     </div>
 );
 
@@ -302,27 +371,6 @@ const ChildDealCard = ({ deal }) => {
                     </Flex>
                 )}
 
-                {/* Таблица счетов оставляем */}
-                {deal.invoices?.length > 0 && (
-                    <div
-                        style={{
-                            borderRadius: 10,
-                            border: '1px solid rgba(0,0,0,0.08)',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <TableHeader />
-                        {deal.invoices.map((inv, i) => (
-                            <TableRow
-                                key={inv.id}
-                                date={formatDate(inv.createdTime)}
-                                amount={formatMoney(inv.opportunity)}
-                                badge={<InvBadge stageId={inv.stageId} />}
-                                isLast={i === deal.invoices.length - 1}
-                            />
-                        ))}
-                    </div>
-                )}
             </Flex>
         </div>
     );
@@ -492,7 +540,7 @@ export const DealDetail = ({ deal, onBack }) => {
                     <Section title="График платежей">
                         <PaymentsTableHeader  />
                         {products.map((p, i) => (
-                            <TableRow
+                            <PaymentRow
                                 key={p.ID || i}
                                 date={extractDateFromProduct(p)}
                                 amount={formatMoney(getProductAmount(p))}
@@ -516,11 +564,12 @@ export const DealDetail = ({ deal, onBack }) => {
                         </div>
                     ) : (
                         <>
-                            <TableHeader />
+                            <InvoicesTableHeader  />
                             {invoices.map((inv, i) => (
-                                <TableRow
+                                <InvoiceRow
                                     key={inv.id}
                                     date={formatDate(inv.createdTime)}
+                                    type={getShortName(dealName)}
                                     amount={formatMoney(inv.opportunity)}
                                     badge={<InvBadge stageId={inv.stageId} />}
                                     isLast={i === invoices.length - 1}
@@ -531,25 +580,56 @@ export const DealDetail = ({ deal, onBack }) => {
                 </Section>
 
                 {/* Связанные сделки (SALE и UC_UABTV4) */}
-                {/* Публикация (16) */}
-                {deal.publications?.length > 0 && (
-                    <div style={{ padding: '0 16px 14px', width: '100%', boxSizing: 'border-box' }}>
-                        <Flex direction="column" gap={10}>
-                            {deal.publications.map(d => (
-                                <ChildDealCard key={d.ID} deal={d} />
-                            ))}
-                        </Flex>
-                    </div>
-                )}
+                {(deal.publications?.length > 0 || deal.deposits?.length > 0) && (
+                    <div style={{ padding: '0 16px 14px' }}>
+                        <div style={{
+                            borderRadius: 14,
+                            backgroundColor: CARD_BG,
+                            border: `1px solid ${BORDER}`,
+                            padding: '14px 16px'
+                        }}>
+                            <Flex direction="column" gap={16}>
 
-                {/* Депозит (18) */}
-                {deal.deposits?.length > 0 && (
-                    <div style={{ padding: '0 16px 14px', width: '100%', boxSizing: 'border-box' }}>
-                        <Flex direction="column" gap={10}>
-                            {deal.deposits.map(d => (
-                                <ChildDealCard key={d.ID} deal={d} />
-                            ))}
-                        </Flex>
+                                {[...deal.publications, ...deal.deposits].map(d => (
+                                    <div key={d.ID}>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
+                                        }}>
+                                            <span style={{
+                                                fontWeight: 700,
+                                                fontSize: 15
+                                            }}>
+                                                {getDealName(d)}
+                                            </span>
+
+                                            <span style={{
+                                                padding: '3px 10px',
+                                                borderRadius: 20,
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                backgroundColor: getStageDisplay(d).bg,
+                                                color: getStageDisplay(d).text
+                                            }}>
+                                                {getStageDisplay(d).label}
+                                            </span>
+                                        </div>
+
+                                        {parseFloat(d.OPPORTUNITY || 0) > 0 && (
+                                            <div style={{
+                                                marginTop: 6,
+                                                fontSize: 14,
+                                                fontWeight: 700
+                                            }}>
+                                                {formatMoney(d.OPPORTUNITY)}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+
+                            </Flex>
+                        </div>
                     </div>
                 )}
 
