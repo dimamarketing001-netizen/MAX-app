@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Flex, Avatar, Button } from '@maxhub/max-ui';
 import { DealDetail } from './DealDetail';
 import {
     getDealName,
@@ -12,7 +11,6 @@ import {
     getProductDate,
 } from '../utils/deals';
 
-// ─── Общие стили ──────────────────────────────────────────────────────────────
 const BG = '#F2F3F5';
 const CARD_BG = '#FFFFFF';
 const BORDER = 'rgba(0,0,0,0.08)';
@@ -38,14 +36,18 @@ const ProgressBar = ({ paid, total }) => {
                     transition: 'width 0.4s ease',
                 }} />
             </div>
-            <Flex justify="space-between" style={{ marginTop: 4 }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 4,
+            }}>
                 <span style={{ fontSize: 11, color: '#888' }}>
                     Оплачено {pct.toFixed(0)}%
                 </span>
                 <span style={{ fontSize: 11, color: '#888' }}>
                     {formatMoney(paid)} / {formatMoney(total)}
                 </span>
-            </Flex>
+            </div>
         </div>
     );
 };
@@ -90,12 +92,30 @@ const DealCard = ({ deal, onClick }) => {
                 width: '100%',
                 boxSizing: 'border-box',
                 userSelect: 'none',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                transition: 'opacity 0.15s',
             }}
+            onTouchStart={e => e.currentTarget.style.opacity = '0.7'}
+            onTouchEnd={e => e.currentTarget.style.opacity = '1'}
+            onMouseDown={e => e.currentTarget.style.opacity = '0.7'}
+            onMouseUp={e => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
-            <Flex direction="column" gap={10} style={{ width: '100%' }}>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                width: '100%',
+            }}>
 
                 {/* Название + бейдж */}
-                <Flex justify="space-between" align="flex-start" gap={8}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                }}>
                     <span style={{
                         fontWeight: 700,
                         fontSize: 15,
@@ -107,33 +127,41 @@ const DealCard = ({ deal, onClick }) => {
                         {dealName}
                     </span>
                     <StageBadge deal={deal} />
-                </Flex>
+                </div>
 
                 {/* Сумма договора */}
-                <Flex justify="space-between" align="center">
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}>
                     <span style={{ fontSize: 13, color: '#888' }}>Сумма договора</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginLeft: 12 }}>
                         {formatMoney(totalAmount)}
                     </span>
-                </Flex>
+                </div>
 
                 {/* Оплачено */}
-                <Flex justify="space-between" align="center">
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}>
                     <span style={{ fontSize: 13, color: '#888' }}>Оплачено</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#43A047', marginLeft: 12 }}>
                         {formatMoney(paidAmount)}
                     </span>
-                </Flex>
+                </div>
 
                 <ProgressBar paid={paidAmount} total={totalAmount} />
 
-                <Flex justify="flex-end">
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <span style={{ fontSize: 13, color: '#42A5F5', fontWeight: 600 }}>
                         Открыть →
                     </span>
-                </Flex>
+                </div>
 
-            </Flex>
+            </div>
         </div>
     );
 };
@@ -157,7 +185,7 @@ const PaymentsTable = ({ items }) => {
             width: '100%',
             boxSizing: 'border-box',
         }}>
-            {/* Заголовок */}
+            {/* Заголовок таблицы */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: '0.6fr 0.8fr 0.8fr 1.2fr',
@@ -225,6 +253,46 @@ const PaymentsTable = ({ items }) => {
     );
 };
 
+// ─── Аватар пользователя ──────────────────────────────────────────────────────
+const UserAvatar = ({ user, size = 60 }) => {
+    const initials = (user.first_name?.[0] || '?').toUpperCase();
+
+    if (user.photo_url) {
+        return (
+            <img
+                src={user.photo_url}
+                alt="avatar"
+                style={{
+                    width: size,
+                    height: size,
+                    borderRadius: '22%',
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                    display: 'block',
+                }}
+            />
+        );
+    }
+
+    return (
+        <div style={{
+            width: size,
+            height: size,
+            borderRadius: '22%',
+            backgroundColor: '#42A5F5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: '#fff',
+            fontSize: size * 0.38,
+            fontWeight: 700,
+        }}>
+            {initials}
+        </div>
+    );
+};
+
 // ─── Главный экран ────────────────────────────────────────────────────────────
 export const HomeScreen = ({ user, deals, onContactLawyer }) => {
     const [selectedDeal, setSelectedDeal] = useState(null);
@@ -270,22 +338,25 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
             boxSizing: 'border-box',
         }}>
 
-            {/* ── Герой-блок (без карточки) ──────────────────────────────── */}
+            {/* ── Герой-блок ──────────────────────────────────────────────── */}
             <div style={{ padding: '24px 16px 20px' }}>
-                <Flex align="center" gap={16}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                }}>
 
-                    {/* Фото */}
-                    <div style={{ flexShrink: 0 }}>
-                        <Avatar.Container size={60} form="squircle">
-                            {user.photo_url
-                                ? <Avatar.Image src={user.photo_url} />
-                                : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
-                            }
-                        </Avatar.Container>
-                    </div>
+                    {/* Аватар */}
+                    <UserAvatar user={user} size={60} />
 
                     {/* Текст + кнопка */}
-                    <Flex direction="column" gap={10} style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        flex: 1,
+                        minWidth: 0,
+                    }}>
                         <div>
                             <div style={{
                                 fontSize: 20,
@@ -293,6 +364,10 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                                 color: '#1a1a1a',
                                 lineHeight: 1.2,
                                 marginBottom: 2,
+                                // Обрезаем длинное имя
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
                             }}>
                                 Привет, {user.first_name}!
                             </div>
@@ -321,6 +396,9 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                                 fontFamily: 'inherit',
                                 transition: 'background-color 0.15s',
                                 boxSizing: 'border-box',
+                                touchAction: 'manipulation',
+                                WebkitTapHighlightColor: 'transparent',
+                                outline: 'none',
                             }}
                             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1E88E5'}
                             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#42A5F5'}
@@ -330,9 +408,9 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                             <span style={{ fontSize: 16 }}>💬</span>
                             <span>Связаться с юристом</span>
                         </button>
-                    </Flex>
+                    </div>
 
-                </Flex>
+                </div>
             </div>
 
             {/* ── Мои сделки ──────────────────────────────────────────────── */}
@@ -366,7 +444,12 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                         Нет активных сделок
                     </div>
                 ) : (
-                    <Flex direction="column" gap={10} style={{ width: '100%' }}>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                        width: '100%',
+                    }}>
                         {mainDeals.map(deal => (
                             <DealCard
                                 key={deal.ID}
@@ -374,7 +457,7 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                                 onClick={setSelectedDeal}
                             />
                         ))}
-                    </Flex>
+                    </div>
                 )}
             </div>
 

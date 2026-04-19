@@ -1,5 +1,4 @@
 import React from 'react';
-import { Flex, Button } from '@maxhub/max-ui';
 import {
     getDealName,
     formatMoney,
@@ -37,19 +36,23 @@ const ProgressBar = ({ paid, total }) => {
                     transition: 'width 0.4s ease',
                 }} />
             </div>
-            <Flex justify="space-between" style={{ marginTop: 4 }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 4,
+            }}>
                 <span style={{ fontSize: 11, color: '#888' }}>
                     {pct.toFixed(0)}% оплачено
                 </span>
                 <span style={{ fontSize: 11, color: '#888' }}>
                     {formatMoney(paid)} / {formatMoney(total)}
                 </span>
-            </Flex>
+            </div>
         </div>
     );
 };
 
-// ─── Заголовок таблицы ────────────────────────────────────────────────────────
+// ─── Заголовок таблицы платежей ───────────────────────────────────────────────
 const PaymentsTableHeader = () => (
     <div style={{
         display: 'grid',
@@ -72,28 +75,28 @@ const PaymentsTableHeader = () => (
     </div>
 );
 
+// ─── Строка платежа ───────────────────────────────────────────────────────────
 const PaymentRow = ({ date, amount, badge, isLast }) => (
     <div>
         <div style={{
             display: 'grid',
             gridTemplateColumns: '0.9fr 0.9fr 1.6fr',
             padding: '11px 16px',
-            alignItems: 'center'
+            alignItems: 'center',
         }}>
             <span style={{ fontSize: 13 }}>{date}</span>
             <span style={{ fontSize: 13, fontWeight: 700 }}>{amount}</span>
-            <div style={{ display:'flex', justifyContent:'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 {badge}
             </div>
         </div>
-
         {!isLast && (
             <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
         )}
     </div>
 );
 
-// ─── Бейджи ───────────────────────────────────────────────────────────────────
+// ─── Бейдж платежа ────────────────────────────────────────────────────────────
 const PayBadge = ({ status }) => {
     const c = {
         paid:    { label: '✅ Оплачен',   color: '#43A047', bg: '#E8F5E9' },
@@ -117,27 +120,13 @@ const PayBadge = ({ status }) => {
     );
 };
 
-const InvBadge = ({ stageId }) => {
-    const isPaid = stageId === 'DT31_2:P';
-    return (
-        <span style={{
-            display: 'inline-block',
-            padding: '3px 8px',
-            borderRadius: 10,
-            fontSize: 11,
-            fontWeight: 600,
-            backgroundColor: isPaid ? '#E8F5E9' : '#F5F5F5',
-            color: isPaid ? '#43A047' : '#757575',
-            whiteSpace: 'nowrap',
-        }}>
-            {isPaid ? '✅ Подтверждён' : '⏳ Не подтверждён'}
-        </span>
-    );
-};
-
 // ─── Секция-карточка ──────────────────────────────────────────────────────────
 const Section = ({ title, children }) => (
-    <div style={{ padding: '0 16px 14px', width: '100%', boxSizing: 'border-box' }}>
+    <div style={{
+        padding: '0 16px 14px',
+        width: '100%',
+        boxSizing: 'border-box',
+    }}>
         {title && (
             <span style={{
                 display: 'block',
@@ -166,73 +155,70 @@ const Section = ({ title, children }) => (
 const ChildDealCard = ({ deal }) => {
     const dealName = getDealName(deal);
     const totalAmount = parseFloat(deal.OPPORTUNITY || 0);
-    const paidAmount = deal.paidAmount || 0;
     const { label, bg, text } = getStageDisplay(deal);
-
     const isCollection = parseInt(deal.CATEGORY_ID) === 6;
 
     return (
-        <div
-            style={{
-                borderRadius: 14,
-                padding: '14px 16px',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid rgba(0,0,0,0.08)',
-                width: '100%',
-                boxSizing: 'border-box',
-            }}
-        >
-            <Flex direction="column" gap={10}>
-
-                {/* Название слева, статус ПРИЖАТ к правому краю */}
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        width: '100%'
-                    }}
-                >
-                    <span
-                        style={{
-                            fontWeight: 700,
-                            fontSize: 15,
-                            color: '#1a1a1a',
-                            flex: 1,
-                            minWidth: 0,
-                        }}
-                    >
+        <div style={{
+            borderRadius: 14,
+            padding: '14px 16px',
+            backgroundColor: CARD_BG,
+            border: `1px solid ${BORDER}`,
+            width: '100%',
+            boxSizing: 'border-box',
+        }}>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+            }}>
+                {/* Название + статус */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                }}>
+                    <span style={{
+                        fontWeight: 700,
+                        fontSize: 15,
+                        color: '#1a1a1a',
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        marginRight: 12,
+                    }}>
                         {dealName}
                     </span>
-
-                    <span
-                        style={{
-                            marginLeft: 12,
-                            padding: '3px 10px',
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            backgroundColor: bg,
-                            color: text,
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0,
-                        }}
-                    >
+                    <span style={{
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        backgroundColor: bg,
+                        color: text,
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                    }}>
                         {label}
                     </span>
                 </div>
 
                 {/* Сумма — только не для category 6 */}
                 {!isCollection && totalAmount > 0 && (
-                    <Flex justify="space-between">
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                    }}>
                         <span style={{ fontSize: 13, color: '#888' }}>Сумма</span>
                         <span style={{ fontSize: 14, fontWeight: 700 }}>
                             {formatMoney(totalAmount)}
                         </span>
-                    </Flex>
+                    </div>
                 )}
-
-            </Flex>
+            </div>
         </div>
     );
 };
@@ -251,8 +237,6 @@ export const DealDetail = ({ deal, onBack }) => {
     const deposits = deal.deposits || [];
     const relatedServices = deal.relatedServices || [];
 
-    const showRelated = ['SALE', 'UC_UABTV4'].includes(deal.TYPE_ID);
-
     return (
         <div style={{
             minHeight: '100%',
@@ -260,11 +244,21 @@ export const DealDetail = ({ deal, onBack }) => {
             backgroundColor: BG,
             boxSizing: 'border-box',
         }}>
-            <Flex direction="column" style={{ minHeight: '100%', width: '100%' }}>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '100%',
+                width: '100%',
+            }}>
 
-                {/* Шапка */}
+                {/* ── Шапка ───────────────────────────────────────────────── */}
                 <div style={{ padding: '16px 16px 0' }}>
-                    <Flex align="center" gap={8} style={{ marginBottom: 16 }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        marginBottom: 16,
+                    }}>
                         <button
                             onClick={onBack}
                             style={{
@@ -277,6 +271,9 @@ export const DealDetail = ({ deal, onBack }) => {
                                 lineHeight: 1,
                                 flexShrink: 0,
                                 fontFamily: 'inherit',
+                                touchAction: 'manipulation',
+                                WebkitTapHighlightColor: 'transparent',
+                                outline: 'none',
                             }}
                         >
                             ‹
@@ -287,33 +284,52 @@ export const DealDetail = ({ deal, onBack }) => {
                             color: '#1a1a1a',
                             flex: 1,
                             lineHeight: 1.3,
+                            // Длинное название не ломает шапку
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                         }}>
                             {dealName}
                         </span>
-                    </Flex>
+                    </div>
 
-                    {/* Инфо о сделке */}
+                    {/* ── Инфо о сделке ───────────────────────────────────── */}
                     {!isSimple && (
                         <div style={{ padding: '0 16px 20px' }}>
-                            <Flex direction="column" gap={12}>
-
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 12,
+                            }}>
                                 {deal.UF_CRM_CONTRACT_NUM && (
-                                    <Flex justify="space-between">
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                    }}>
                                         <span style={{ color: '#888' }}>Договор №</span>
                                         <span style={{ fontWeight: 600 }}>
                                             {deal.UF_CRM_CONTRACT_NUM}
                                         </span>
-                                    </Flex>
+                                    </div>
                                 )}
 
-                                <Flex justify="space-between">
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                }}>
                                     <span style={{ color: '#888' }}>Дата начала</span>
                                     <span style={{ fontWeight: 600 }}>
                                         {formatDate(deal.DATE_CREATE)}
                                     </span>
-                                </Flex>
+                                </div>
 
-                                <Flex justify="space-between">
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                }}>
                                     <span style={{ color: '#888' }}>Статус</span>
                                     <span style={{
                                         padding: '4px 12px',
@@ -321,33 +337,49 @@ export const DealDetail = ({ deal, onBack }) => {
                                         backgroundColor: stageDisplay.bg,
                                         color: stageDisplay.text,
                                         fontWeight: 700,
+                                        fontSize: 13,
                                     }}>
                                         {stageDisplay.label}
                                     </span>
-                                </Flex>
-
-                            </Flex>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Финансы */}
+                {/* ── Финансы ─────────────────────────────────────────────── */}
                 <Section title="Финансовая информация">
                     <div style={{ padding: '14px 16px' }}>
-                        <Flex direction="column" gap={10}>
-                            <Flex justify="space-between" align="center">
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}>
                                 <span style={{ fontSize: 14, color: '#888' }}>Общая сумма</span>
                                 <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginLeft: 12 }}>
                                     {formatMoney(totalAmount)}
                                 </span>
-                            </Flex>
-                            <Flex justify="space-between" align="center">
+                            </div>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}>
                                 <span style={{ fontSize: 14, color: '#888' }}>Оплачено</span>
                                 <span style={{ fontSize: 15, fontWeight: 700, color: '#43A047', marginLeft: 12 }}>
                                     {formatMoney(paidAmount)}
                                 </span>
-                            </Flex>
-                            <Flex justify="space-between" align="center">
+                            </div>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}>
                                 <span style={{ fontSize: 14, color: '#888' }}>Остаток</span>
                                 <span style={{
                                     fontSize: 15,
@@ -357,11 +389,13 @@ export const DealDetail = ({ deal, onBack }) => {
                                 }}>
                                     {formatMoney(remaining)}
                                 </span>
-                            </Flex>
+                            </div>
                             <ProgressBar paid={paidAmount} total={totalAmount} />
-                        </Flex>
+                        </div>
                     </div>
+
                     <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
+
                     <div style={{ padding: '12px 16px' }}>
                         <button
                             style={{
@@ -376,17 +410,25 @@ export const DealDetail = ({ deal, onBack }) => {
                                 cursor: 'pointer',
                                 fontFamily: 'inherit',
                                 boxSizing: 'border-box',
+                                touchAction: 'manipulation',
+                                WebkitTapHighlightColor: 'transparent',
+                                outline: 'none',
+                                transition: 'background-color 0.15s',
                             }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1E88E5'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#42A5F5'}
+                            onTouchStart={e => e.currentTarget.style.backgroundColor = '#1E88E5'}
+                            onTouchEnd={e => e.currentTarget.style.backgroundColor = '#42A5F5'}
                         >
                             Оплатить
                         </button>
                     </div>
                 </Section>
 
-                {/* График платежей */}
+                {/* ── График платежей ──────────────────────────────────────── */}
                 {!isSimple && products.length > 0 && (
                     <Section title="График платежей">
-                        <PaymentsTableHeader  />
+                        <PaymentsTableHeader />
                         {products.map((p, i) => (
                             <PaymentRow
                                 key={p.ID || i}
@@ -399,7 +441,7 @@ export const DealDetail = ({ deal, onBack }) => {
                     </Section>
                 )}
 
-                {/* Счета */}
+                {/* ── Оплаченные счета ─────────────────────────────────────── */}
                 <Section title="Оплаченные счета">
                     {invoices.length === 0 ? (
                         <div style={{
@@ -411,15 +453,7 @@ export const DealDetail = ({ deal, onBack }) => {
                             Нет оплат
                         </div>
                     ) : (
-                        <div style={{
-                            borderRadius: 14,
-                            backgroundColor: CARD_BG,
-                            border: `1px solid ${BORDER}`,
-                            overflow: 'hidden',
-                            width: '100%',
-                            boxSizing: 'border-box',
-                        }}>
-
+                        <>
                             {/* Заголовок */}
                             <div style={{
                                 display: 'grid',
@@ -442,11 +476,10 @@ export const DealDetail = ({ deal, onBack }) => {
                                 ))}
                             </div>
 
-                            {/* Строки */}
+                            {/* Строки счетов */}
                             {invoices.map((inv, i) => {
                                 const isPaid = inv.stageId === 'DT31_2:P';
                                 const statusLabel = isPaid ? '✅' : '⏳';
-
                                 return (
                                     <div key={inv.id}>
                                         {i > 0 && (
@@ -456,7 +489,6 @@ export const DealDetail = ({ deal, onBack }) => {
                                                 margin: '0 14px',
                                             }} />
                                         )}
-
                                         <div style={{
                                             display: 'grid',
                                             gridTemplateColumns: '0.6fr 0.8fr 0.8fr 1.2fr',
@@ -473,153 +505,166 @@ export const DealDetail = ({ deal, onBack }) => {
                                             }}>
                                                 {getShortName(dealName)}
                                             </span>
-
                                             <span style={{ fontSize: 12 }}>
                                                 {formatDate(inv.createdTime)}
                                             </span>
-
-                                            <span style={{
-                                                fontSize: 12,
-                                                fontWeight: 700
-                                            }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700 }}>
                                                 {formatMoney(inv.opportunity)}
                                             </span>
-
-                                            <span style={{
-                                                fontSize: 11
-                                            }}>
+                                            <span style={{ fontSize: 11 }}>
                                                 {statusLabel}
                                             </span>
                                         </div>
                                     </div>
                                 );
                             })}
+
+                            {/* Легенда */}
                             <div style={{
                                 padding: '10px 14px 14px',
                                 fontSize: 11,
                                 color: '#888',
                                 borderTop: `1px solid ${BORDER}`,
-                                lineHeight: 1.4
+                                lineHeight: 1.4,
                             }}>
-                                ✅ — Подтверждённая оплата<br/>
+                                ✅ — Подтверждённая оплата<br />
                                 ⏳ — Не подтверждённая оплата
                             </div>
-                        </div>
+                        </>
                     )}
                 </Section>
 
-                {/* Связанные сделки (SALE и UC_UABTV4) */}
-                {(deal.relatedServices?.length > 0 ||
-                  deal.publications?.length > 0 ||
-                  deal.deposits?.length > 0) && (
+                {/* ── Связанные сделки ─────────────────────────────────────── */}
+                {(relatedServices.length > 0 ||
+                    publications.length > 0 ||
+                    deposits.length > 0) && (
 
                     <div style={{ padding: '0 16px 14px' }}>
+                        <span style={{
+                            display: 'block',
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: '#1a1a1a',
+                            marginBottom: 10,
+                        }}>
+                            Связанные услуги
+                        </span>
                         <div style={{
                             borderRadius: 14,
                             backgroundColor: CARD_BG,
                             border: `1px solid ${BORDER}`,
                             padding: '16px',
+                            boxSizing: 'border-box',
                         }}>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 18,
+                            }}>
+                                {[...relatedServices, ...publications, ...deposits].map(d => {
+                                    const { label, bg, text } = getStageDisplay(d);
+                                    const sum = parseFloat(d.OPPORTUNITY || 0);
 
-                            <Flex direction="column" gap={18}>
-
-                                {[...deal.relatedServices, ...deal.publications, ...deal.deposits]
-                                    .map(d => {
-
-                                        const { label, bg, text } = getStageDisplay(d);
-                                        const sum = parseFloat(d.OPPORTUNITY || 0);
-
-                                        return (
-                                            <div key={d.ID}>
-
-                                                {/* Название + статус */}
-                                                <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center'
+                                    return (
+                                        <div key={d.ID}>
+                                            {/* Название + статус */}
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                            }}>
+                                                <span style={{
+                                                    fontWeight: 700,
+                                                    fontSize: 15,
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
                                                 }}>
-                                                    <span style={{
-                                                        fontWeight: 700,
-                                                        fontSize: 15
-                                                    }}>
-                                                        {getDealName(d)}
-                                                    </span>
+                                                    {getDealName(d)}
+                                                </span>
+                                                <span style={{
+                                                    padding: '3px 10px',
+                                                    borderRadius: 20,
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                    backgroundColor: bg,
+                                                    color: text,
+                                                    whiteSpace: 'nowrap',
+                                                    flexShrink: 0,
+                                                }}>
+                                                    {label}
+                                                </span>
+                                            </div>
 
-                                                    <span style={{
-                                                        padding: '3px 10px',
-                                                        borderRadius: 20,
-                                                        fontSize: 11,
-                                                        fontWeight: 600,
-                                                        backgroundColor: bg,
-                                                        color: text
-                                                    }}>
-                                                        {label}
+                                            {/* Сумма */}
+                                            {sum > 0 && (
+                                                <div style={{ marginTop: 6, fontSize: 14 }}>
+                                                    <span style={{ color: '#888', marginRight: 6 }}>
+                                                        Сумма
+                                                    </span>
+                                                    <span style={{ fontWeight: 700 }}>
+                                                        {formatMoney(sum)}
                                                     </span>
                                                 </div>
-
-                                                {/* Сумма (кроме категории 6) */}
-                                                {sum > 0 && (
-                                                    <div style={{
-                                                        marginTop: 6,
-                                                        fontSize: 14
-                                                    }}>
-                                                        <span style={{ color: '#888', marginRight: 6 }}>
-                                                            Сумма
-                                                        </span>
-                                                        <span style={{ fontWeight: 700 }}>
-                                                            {formatMoney(sum)}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                            </div>
-                                        );
-                                    })}
-                            </Flex>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* Документы */}
+                {/* ── Документы ────────────────────────────────────────────── */}
                 {!isSimple && (
                     <Section title="Документы по делу">
                         {[
-                            { name: 'Договор', emoji: '📄', type: 'contract' },
-                            { name: 'Акты', emoji: '📋' },
+                            { name: 'Договор',            emoji: '📄', type: 'contract' },
+                            { name: 'Акты',               emoji: '📋' },
                             { name: 'Судебные документы', emoji: '⚖️' },
-                            { name: 'Доверенности', emoji: '📝' },
+                            { name: 'Доверенности',       emoji: '📝' },
                         ].map((doc, i, arr) => (
                             <div key={doc.name}>
-                                <Flex
-                                    justify="space-between"
-                                    align="center"
-                                    style={{ padding: '14px 16px', cursor: 'pointer' }}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '14px 16px',
+                                        cursor: 'pointer',
+                                        touchAction: 'manipulation',
+                                        WebkitTapHighlightColor: 'transparent',
+                                    }}
                                     onClick={() => {
                                         if (doc.type === 'contract' && deal.contractFile) {
                                             window.open(deal.contractFile, '_blank');
                                         }
                                     }}
                                 >
-                                    <Flex align="center" gap={12}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 12,
+                                    }}>
                                         <span style={{ fontSize: 20 }}>{doc.emoji}</span>
                                         <span style={{ fontSize: 15, color: '#1a1a1a' }}>
                                             {doc.name}
                                         </span>
-                                    </Flex>
-
+                                    </div>
                                     <span style={{ fontSize: 13, color: '#888' }}>
                                         Скачать ›
                                     </span>
-                                </Flex>
+                                </div>
 
                                 {i < arr.length - 1 && (
-                                    <div
-                                        style={{
-                                            height: 1,
-                                            backgroundColor: BORDER,
-                                            margin: '0 16px',
-                                        }}
-                                    />
+                                    <div style={{
+                                        height: 1,
+                                        backgroundColor: BORDER,
+                                        margin: '0 16px',
+                                    }} />
                                 )}
                             </div>
                         ))}
@@ -627,7 +672,7 @@ export const DealDetail = ({ deal, onBack }) => {
                 )}
 
                 <div style={{ height: 32 }} />
-            </Flex>
+            </div>
         </div>
     );
 };

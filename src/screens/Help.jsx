@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Panel, Container, Flex, Button } from '@maxhub/max-ui';
 
 const TOPICS = [
     'Финансовый вопрос',
@@ -19,17 +18,23 @@ const FAQ = [
     },
 ];
 
-const fieldStyle = {
+const BG = '#F2F3F5';
+const CARD_BG = '#FFFFFF';
+const BORDER = 'rgba(0,0,0,0.08)';
+
+const inputStyle = {
     width: '100%',
     padding: '12px 14px',
     borderRadius: 10,
-    border: '1px solid var(--max--color-separator)',
-    background: 'var(--max--color-background-content)',
-    color: 'var(--max--color-text-primary)',
+    border: `1px solid ${BORDER}`,
+    backgroundColor: CARD_BG,
+    color: '#1a1a1a',
     fontSize: 15,
     boxSizing: 'border-box',
     outline: 'none',
     fontFamily: 'inherit',
+    appearance: 'none',
+    WebkitAppearance: 'none',
 };
 
 export const HelpScreen = ({ onSendTicket }) => {
@@ -47,50 +52,93 @@ export const HelpScreen = ({ onSendTicket }) => {
         if (ok) setSent(true);
     };
 
+    // ── Экран успеха ───────────────────────────────────────────────────────────
     if (sent) {
         return (
-            <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
-                <Flex
-                    direction="column"
-                    align="center"
-                    justify="center"
-                    gap={16}
-                    style={{ minHeight: '60vh', padding: '0 32px' }}
-                >
-                    <span style={{ fontSize: 64 }}>✅</span>
+            <div style={{
+                minHeight: '100%',
+                width: '100%',
+                backgroundColor: BG,
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 32px',
+            }}>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 16,
+                    minHeight: '60vh',
+                    justifyContent: 'center',
+                }}>
+                    <span style={{ fontSize: 64, lineHeight: 1 }}>✅</span>
+
                     <span style={{
                         fontSize: 20,
                         fontWeight: 700,
                         textAlign: 'center',
-                        color: 'var(--max--color-text-primary)',
+                        color: '#1a1a1a',
                     }}>
                         Запрос отправлен!
                     </span>
+
                     <span style={{
                         fontSize: 14,
-                        color: 'var(--max--color-text-secondary)',
+                        color: '#888',
                         textAlign: 'center',
                         lineHeight: 1.5,
                     }}>
                         Менеджер свяжется с вами в ближайшее время
                     </span>
-                    <Button size="l" appearance="accent" stretched onClick={() => { setSent(false); setMessage(''); }}>
+
+                    <button
+                        onClick={() => { setSent(false); setMessage(''); }}
+                        style={{
+                            width: '100%',
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            border: 'none',
+                            backgroundColor: '#42A5F5',
+                            color: '#fff',
+                            fontSize: 16,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            outline: 'none',
+                            transition: 'background-color 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1E88E5'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#42A5F5'}
+                        onTouchStart={e => e.currentTarget.style.backgroundColor = '#1E88E5'}
+                        onTouchEnd={e => e.currentTarget.style.backgroundColor = '#42A5F5'}
+                    >
                         Вернуться
-                    </Button>
-                </Flex>
-            </Panel>
+                    </button>
+                </div>
+            </div>
         );
     }
 
     return (
-        <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
+        <div style={{
+            minHeight: '100%',
+            width: '100%',
+            backgroundColor: BG,
+            boxSizing: 'border-box',
+        }}>
 
-            {/* FAQ */}
-            <Container style={{ padding: '20px 16px 16px' }}>
+            {/* ── FAQ ─────────────────────────────────────────────────────── */}
+            <div style={{ padding: '20px 16px 16px' }}>
                 <div style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    color: 'var(--max--color-text-primary)',
+                    color: '#1a1a1a',
                     marginBottom: 10,
                 }}>
                     Частые вопросы
@@ -98,7 +146,8 @@ export const HelpScreen = ({ onSendTicket }) => {
 
                 <div style={{
                     borderRadius: 12,
-                    backgroundColor: 'var(--max--color-background-content)',
+                    backgroundColor: CARD_BG,
+                    border: `1px solid ${BORDER}`,
                     overflow: 'hidden',
                 }}>
                     {FAQ.map((item, i) => (
@@ -106,36 +155,51 @@ export const HelpScreen = ({ onSendTicket }) => {
                             {i > 0 && (
                                 <div style={{
                                     height: 1,
-                                    backgroundColor: 'var(--max--color-separator)',
+                                    backgroundColor: BORDER,
                                     margin: '0 16px',
                                 }} />
                             )}
                             <div
                                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                style={{ padding: '14px 16px', cursor: 'pointer' }}
+                                style={{
+                                    padding: '14px 16px',
+                                    cursor: 'pointer',
+                                    touchAction: 'manipulation',
+                                    WebkitTapHighlightColor: 'transparent',
+                                    userSelect: 'none',
+                                }}
                             >
-                                <Flex justify="space-between" align="center" gap={8}>
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                }}>
                                     <span style={{
                                         fontWeight: 600,
                                         fontSize: 14,
                                         flex: 1,
-                                        color: 'var(--max--color-text-primary)',
+                                        color: '#1a1a1a',
+                                        lineHeight: 1.4,
                                     }}>
                                         {item.q}
                                     </span>
                                     <span style={{
                                         fontSize: 18,
-                                        color: 'var(--max--color-text-secondary)',
+                                        color: '#888',
                                         transform: openFaq === i ? 'rotate(90deg)' : 'none',
-                                        transition: 'transform 0.2s',
+                                        transition: 'transform 0.2s ease',
+                                        flexShrink: 0,
+                                        lineHeight: 1,
                                     }}>
                                         ›
                                     </span>
-                                </Flex>
+                                </div>
+
                                 {openFaq === i && (
                                     <div style={{
                                         fontSize: 13,
-                                        color: 'var(--max--color-text-secondary)',
+                                        color: '#888',
                                         marginTop: 8,
                                         lineHeight: 1.5,
                                     }}>
@@ -146,67 +210,138 @@ export const HelpScreen = ({ onSendTicket }) => {
                         </div>
                     ))}
                 </div>
-            </Container>
+            </div>
 
-            {/* Форма */}
-            <Container style={{ padding: '0 16px 32px' }}>
+            {/* ── Форма обращения ──────────────────────────────────────────── */}
+            <div style={{ padding: '0 16px 32px' }}>
                 <div style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    color: 'var(--max--color-text-primary)',
+                    color: '#1a1a1a',
                     marginBottom: 10,
                 }}>
                     Написать в поддержку
                 </div>
 
-                <Flex direction="column" gap={10}>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                }}>
+
+                    {/* Тема */}
                     <div>
                         <div style={{
                             fontSize: 12,
-                            color: 'var(--max--color-text-secondary)',
+                            color: '#888',
                             marginBottom: 6,
                         }}>
                             Тема обращения
                         </div>
-                        <select
-                            style={{ ...fieldStyle, appearance: 'none' }}
-                            value={topic}
-                            onChange={e => setTopic(e.target.value)}
-                        >
-                            {TOPICS.map(t => (
-                                <option key={t} value={t}>{t}</option>
-                            ))}
-                        </select>
+                        <div style={{ position: 'relative' }}>
+                            <select
+                                style={{
+                                    ...inputStyle,
+                                    paddingRight: 36,
+                                    cursor: 'pointer',
+                                }}
+                                value={topic}
+                                onChange={e => setTopic(e.target.value)}
+                            >
+                                {TOPICS.map(t => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
+                            {/* Кастомная стрелка */}
+                            <span style={{
+                                position: 'absolute',
+                                right: 12,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                fontSize: 12,
+                                color: '#888',
+                                pointerEvents: 'none',
+                            }}>
+                                ▼
+                            </span>
+                        </div>
                     </div>
 
+                    {/* Сообщение */}
                     <div>
                         <div style={{
                             fontSize: 12,
-                            color: 'var(--max--color-text-secondary)',
+                            color: '#888',
                             marginBottom: 6,
                         }}>
                             Сообщение
                         </div>
                         <textarea
-                            style={{ ...fieldStyle, resize: 'none', minHeight: 120, lineHeight: 1.5 }}
+                            style={{
+                                ...inputStyle,
+                                resize: 'none',
+                                minHeight: 120,
+                                lineHeight: 1.5,
+                            }}
                             placeholder="Опишите вашу ситуацию..."
                             value={message}
                             onChange={e => setMessage(e.target.value)}
                         />
                     </div>
 
-                    <Button
-                        size="l"
-                        appearance="accent"
-                        stretched
+                    {/* Кнопка отправки */}
+                    <button
                         onClick={handleSend}
                         disabled={!message.trim() || sending}
+                        style={{
+                            width: '100%',
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            border: 'none',
+                            backgroundColor: !message.trim() || sending
+                                ? '#B0BEC5'
+                                : '#42A5F5',
+                            color: '#fff',
+                            fontSize: 16,
+                            fontWeight: 600,
+                            cursor: !message.trim() || sending
+                                ? 'not-allowed'
+                                : 'pointer',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            outline: 'none',
+                            transition: 'background-color 0.15s',
+                            opacity: !message.trim() || sending ? 0.7 : 1,
+                        }}
+                        onMouseEnter={e => {
+                            if (!(!message.trim() || sending)) {
+                                e.currentTarget.style.backgroundColor = '#1E88E5';
+                            }
+                        }}
+                        onMouseLeave={e => {
+                            if (!(!message.trim() || sending)) {
+                                e.currentTarget.style.backgroundColor = '#42A5F5';
+                            }
+                        }}
+                        onTouchStart={e => {
+                            if (!(!message.trim() || sending)) {
+                                e.currentTarget.style.backgroundColor = '#1E88E5';
+                            }
+                        }}
+                        onTouchEnd={e => {
+                            if (!(!message.trim() || sending)) {
+                                e.currentTarget.style.backgroundColor = '#42A5F5';
+                            }
+                        }}
                     >
                         {sending ? 'Отправка...' : 'Отправить'}
-                    </Button>
-                </Flex>
-            </Container>
+                    </button>
 
-        </Panel>
+                </div>
+            </div>
+
+        </div>
     );
 };
