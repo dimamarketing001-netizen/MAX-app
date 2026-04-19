@@ -56,18 +56,21 @@ const ProgressBar = ({ paid, total }) => {
 const PaymentsTableHeader = () => (
     <div style={{
         display: 'grid',
-        gridTemplateColumns: '0.9fr 0.9fr 1.6fr',
+        // Дата чуть правее, сумма по центру, статус прижат к левому краю бейджа
+        gridTemplateColumns: '1fr 1fr 130px',
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
         gap: 8,
     }}>
-        {['Дата', 'Сумма', 'Статус'].map(h => (
+        {['Дата', 'Сумма', 'Статус'].map((h, i) => (
             <span key={h} style={{
                 fontSize: 10,
                 fontWeight: 700,
                 color: '#999',
                 textTransform: 'uppercase',
+                // Статус прижат влево внутри своей колонки
+                textAlign: i === 2 ? 'left' : 'left',
             }}>
                 {h}
             </span>
@@ -99,23 +102,32 @@ const PaymentRow = ({ date, amount, badge, isLast }) => (
 // ─── Бейдж платежа ────────────────────────────────────────────────────────────
 const PayBadge = ({ status }) => {
     const c = {
-        paid:    { label: '✅ Оплачен',   color: '#43A047', bg: '#E8F5E9' },
-        pending: { label: '⏳ Ожидает',   color: '#FB8C00', bg: '#FFF3E0' },
-        overdue: { label: '⚠ Просрочен', color: '#E53935', bg: '#FFEBEE' },
-    }[status] || { label: '⏳ Ожидает', color: '#FB8C00', bg: '#FFF3E0' };
+        paid:    { label: 'Оплачен',   color: '#43A047', bg: '#E8F5E9', icon: '✅' },
+        pending: { label: 'Ожидает',   color: '#FB8C00', bg: '#FFF3E0', icon: '⏳' },
+        overdue: { label: 'Просрочен', color: '#E53935', bg: '#FFEBEE', icon: '❌' },
+    }[status] || { label: 'Ожидает', color: '#FB8C00', bg: '#FFF3E0', icon: '⏳' };
 
     return (
         <span style={{
-            display: 'inline-block',
-            padding: '3px 8px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 4,
+            // Фиксированная ширина — все бейджи одинаковые
+            width: 110,
+            padding: '5px 10px',
             borderRadius: 10,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 600,
             backgroundColor: c.bg,
             color: c.color,
             whiteSpace: 'nowrap',
+            boxSizing: 'border-box',
         }}>
-            {c.label}
+            <span style={{ fontSize: 13, lineHeight: 1, flexShrink: 0 }}>
+                {c.icon}
+            </span>
+            <span>{c.label}</span>
         </span>
     );
 };
