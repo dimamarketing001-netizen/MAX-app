@@ -323,6 +323,19 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
         const deals = dealsRes.data.result || [];
         console.log(`📋 Основных сделок (cat=0): ${deals.length}`);
 
+        console.log('\n===== ОСНОВНЫЕ СДЕЛКИ (category 0) =====');
+        deals.forEach(d => {
+            console.log({
+                ID: d.ID,
+                TITLE: d.TITLE,
+                CATEGORY_ID: d.CATEGORY_ID,
+                STAGE_ID: d.STAGE_ID,
+                TYPE_ID: d.TYPE_ID,
+                OPPORTUNITY: d.OPPORTUNITY
+            });
+        });
+        console.log('=========================================\n');
+
         // Все связанные сделки контакта (cat 2,4,6,8,10,12,16,18)
         const relatedRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
             params: {
@@ -339,6 +352,18 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
         });
         const relatedDeals = relatedRes.data.result || [];
         console.log(`📋 Связанных сделок: ${relatedDeals.length}`);
+        console.log('\n===== СВЯЗАННЫЕ СДЕЛКИ =====');
+        relatedDeals.forEach(rd => {
+            console.log({
+                ID: rd.ID,
+                TITLE: rd.TITLE,
+                CATEGORY_ID: rd.CATEGORY_ID,
+                STAGE_ID: rd.STAGE_ID,
+                PARENT_ID: rd.PARENT_ID,
+                TYPE_ID: rd.TYPE_ID
+            });
+        });
+        console.log('=========================================\n');
 
         // Кэш стадий воронок
         const stagesCache = {};
@@ -361,6 +386,13 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
         // Обогащаем каждую основную сделку
         const enrichedDeals = await Promise.all(deals.map(async (deal) => {
+            console.log('\n--- ОБРАБОТКА СДЕЛКИ ---');
+            console.log({
+                MAIN_ID: deal.ID,
+                MAIN_STAGE: deal.STAGE_ID,
+                MAIN_TYPE: deal.TYPE_ID
+            });
+
             const isWon = deal.STAGE_ID?.endsWith(':WON');
             const typeId = deal.TYPE_ID;
 
@@ -401,6 +433,17 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                         relatedDeal = relatedDeals.find(rd =>
                             parseInt(rd.CATEGORY_ID) === relatedCategoryId
                         );
+                    }
+
+                    if (relatedDeal) {
+                        console.log('✅ Найдена связанная сделка для статуса:', {
+                            RELATED_ID: relatedDeal.ID,
+                            CATEGORY_ID: relatedDeal.CATEGORY_ID,
+                            STAGE_ID: relatedDeal.STAGE_ID,
+                            PARENT_ID: relatedDeal.PARENT_ID
+                        });
+                    } else {
+                        console.log('❌ Связанная сделка НЕ найдена');
                     }
                 }
 
