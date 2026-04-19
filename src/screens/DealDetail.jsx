@@ -162,78 +162,73 @@ const Section = ({ title, children }) => (
 // ─── Мини-карточка дочерней сделки ────────────────────────────────────────────
 const ChildDealCard = ({ deal }) => {
     const dealName = getDealName(deal);
-    const totalAmount = parseFloat(deal.OPPORTUNITY || 0);
-    const paidAmount = deal.paidAmount || 0;
     const { label, bg, text } = getStageDisplay(deal);
 
+    const isCollection = parseInt(deal.CATEGORY_ID) === 6;
+
     return (
-        <div style={{
-            borderRadius: 14,
-            padding: '14px 16px',
-            backgroundColor: CARD_BG,
-            border: `1px solid ${BORDER}`,
-            width: '100%',
-            boxSizing: 'border-box',
-        }}>
-            <Flex direction="column" gap={10}>
+        <div
+            style={{
+                borderRadius: 14,
+                padding: '14px 16px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid rgba(0,0,0,0.08)',
+                width: '100%',
+                boxSizing: 'border-box',
+                cursor: 'pointer'
+            }}
+        >
+            <Flex direction="column" gap={10} style={{ width: '100%' }}>
+
+                {/* Название + статус */}
                 <Flex justify="space-between" align="flex-start" gap={8}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a', flex: 1 }}>
+                    <span
+                        style={{
+                            fontWeight: 700,
+                            fontSize: 15,
+                            lineHeight: 1.3,
+                            color: '#1a1a1a',
+                            flex: 1,
+                            minWidth: 0,
+                        }}
+                    >
                         {dealName}
                     </span>
-                    <span style={{
-                        display: 'inline-block',
-                        padding: '3px 10px',
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        backgroundColor: bg,
-                        color: text,
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0,
-                    }}>
+
+                    <span
+                        style={{
+                            display: 'inline-block',
+                            padding: '3px 10px',
+                            borderRadius: 20,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            backgroundColor: bg,
+                            color: text,
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                        }}
+                    >
                         {label}
                     </span>
                 </Flex>
 
-                <Flex justify="space-between" align="center">
-                    <span style={{ fontSize: 13, color: '#888' }}>Сумма</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginLeft: 12 }}>
-                        {formatMoney(totalAmount)}
-                    </span>
-                </Flex>
-
-                {paidAmount > 0 && (
+                {/* Сумму НЕ показываем для category 6 */}
+                {!isCollection && deal.OPPORTUNITY && (
                     <Flex justify="space-between" align="center">
-                        <span style={{ fontSize: 13, color: '#888' }}>Оплачено</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: '#43A047', marginLeft: 12 }}>
-                            {formatMoney(paidAmount)}
+                        <span style={{ fontSize: 13, color: '#888' }}>
+                            Сумма
+                        </span>
+                        <span
+                            style={{
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#1a1a1a',
+                                marginLeft: 12,
+                            }}
+                        >
+                            {formatMoney(deal.OPPORTUNITY)}
                         </span>
                     </Flex>
-                )}
-
-                {totalAmount > 0 && (
-                    <ProgressBar paid={paidAmount} total={totalAmount} />
-                )}
-
-                {/* Счета дочерней сделки */}
-                {deal.invoices && deal.invoices.length > 0 && (
-                    <div style={{
-                        borderRadius: 10,
-                        border: `1px solid ${BORDER}`,
-                        overflow: 'hidden',
-                        marginTop: 4,
-                    }}>
-                        <TableHeader />
-                        {deal.invoices.map((inv, i) => (
-                            <TableRow
-                                key={inv.id}
-                                date={formatDate(inv.createdTime)}
-                                amount={formatMoney(inv.opportunity)}
-                                badge={<InvBadge stageId={inv.stageId} />}
-                                isLast={i === deal.invoices.length - 1}
-                            />
-                        ))}
-                    </div>
                 )}
             </Flex>
         </div>
@@ -436,6 +431,41 @@ export const DealDetail = ({ deal, onBack }) => {
                     )}
                 </Section>
 
+                {/* Связанные сделки (SALE и UC_UABTV4) */}
+                {showRelated && (
+                    <>
+                        {relatedServices.length > 0 && (
+                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
+                                <Flex direction="column" gap={10}>
+                                    {relatedServices.map(d => (
+                                        <ChildDealCard key={d.ID} deal={d} />
+                                    ))}
+                                </Flex>
+                            </div>
+                        )}
+
+                        {publications.length > 0 && (
+                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
+                                <Flex direction="column" gap={10}>
+                                    {publications.map(d => (
+                                        <ChildDealCard key={d.ID} deal={d} />
+                                    ))}
+                                </Flex>
+                            </div>
+                        )}
+
+                        {deposits.length > 0 && (
+                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
+                                <Flex direction="column" gap={10}>
+                                    {deposits.map(d => (
+                                        <ChildDealCard key={d.ID} deal={d} />
+                                    ))}
+                                </Flex>
+                            </div>
+                        )}
+                    </>
+                )}
+
                 {/* Документы */}
                 {!isSimple && (
                     <Section title="Документы по делу">
@@ -463,68 +493,6 @@ export const DealDetail = ({ deal, onBack }) => {
                             </div>
                         ))}
                     </Section>
-                )}
-
-                {/* Связанные сделки (SALE и UC_UABTV4) */}
-                {showRelated && (
-                    <>
-                        {relatedServices.length > 0 && (
-                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
-                                <span style={{
-                                    display: 'block',
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    color: '#1a1a1a',
-                                    marginBottom: 10,
-                                }}>
-                                    Сбор документов
-                                </span>
-                                <Flex direction="column" gap={10}>
-                                    {relatedServices.map(d => (
-                                        <ChildDealCard key={d.ID} deal={d} />
-                                    ))}
-                                </Flex>
-                            </div>
-                        )}
-
-                        {publications.length > 0 && (
-                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
-                                <span style={{
-                                    display: 'block',
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    color: '#1a1a1a',
-                                    marginBottom: 10,
-                                }}>
-                                    Публикации
-                                </span>
-                                <Flex direction="column" gap={10}>
-                                    {publications.map(d => (
-                                        <ChildDealCard key={d.ID} deal={d} />
-                                    ))}
-                                </Flex>
-                            </div>
-                        )}
-
-                        {deposits.length > 0 && (
-                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
-                                <span style={{
-                                    display: 'block',
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    color: '#1a1a1a',
-                                    marginBottom: 10,
-                                }}>
-                                    Депозиты
-                                </span>
-                                <Flex direction="column" gap={10}>
-                                    {deposits.map(d => (
-                                        <ChildDealCard key={d.ID} deal={d} />
-                                    ))}
-                                </Flex>
-                            </div>
-                        )}
-                    </>
                 )}
 
                 <div style={{ height: 32 }} />
