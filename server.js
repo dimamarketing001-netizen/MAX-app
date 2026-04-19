@@ -393,7 +393,9 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 MAIN_TYPE: deal.TYPE_ID
             });
 
-            const isWon = deal.STAGE_ID?.endsWith(':WON');
+            const isWon =
+                deal.STAGE_ID === 'WON' ||
+                deal.STAGE_ID?.endsWith(':WON');
             const typeId = deal.TYPE_ID;
 
             let displayStage = null;
