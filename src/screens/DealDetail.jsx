@@ -50,69 +50,6 @@ const ProgressBar = ({ paid, total }) => {
 };
 
 // ─── Заголовок таблицы ────────────────────────────────────────────────────────
-const TableHeader = () => (
-    <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto auto',
-        padding: '8px 16px',
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderBottom: `1px solid ${BORDER}`,
-        alignItems: 'center',
-        width: '100%',
-        boxSizing: 'border-box'
-    }}>
-        <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: '#999',
-            textTransform: 'uppercase'
-        }}>
-            Дата
-        </span>
-
-        <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: '#999',
-            textTransform: 'uppercase'
-        }}>
-            Сумма
-        </span>
-
-        <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: '#999',
-            textTransform: 'uppercase',
-            textAlign: 'right'
-        }}>
-            Статус
-        </span>
-    </div>
-);
-const InvoicesTableHeader = () => (
-    <div style={{
-        display: 'grid',
-        gridTemplateColumns: '0.8fr 0.7fr 0.8fr 1fr',
-        padding: '8px 16px',
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        borderBottom: `1px solid ${BORDER}`,
-        width: '100%',
-        boxSizing: 'border-box'
-    }}>
-        {['Дата','Тип','Сумма','Статус'].map(h => (
-            <span key={h} style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#999',
-                textTransform: 'uppercase'
-            }}>
-                {h}
-            </span>
-        ))}
-    </div>
-);
-
 const PaymentsTableHeader = () => (
     <div style={{
         display: 'grid',
@@ -152,83 +89,6 @@ const PaymentRow = ({ date, amount, badge, isLast }) => (
 
         {!isLast && (
             <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
-        )}
-    </div>
-);
-
-const InvoiceRow = ({ date, type, amount, badge, isLast }) => (
-    <div>
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: '0.8fr 0.7fr 0.8fr 1fr',
-            padding: '11px 16px',
-            alignItems: 'center',
-            width: '100%',
-            boxSizing: 'border-box'
-        }}>
-            <span style={{ fontSize: 13 }}>{date}</span>
-            <span style={{ fontSize: 12 }}>{type}</span>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>
-                {amount}
-            </span>
-            <div style={{ display:'flex', justifyContent:'flex-end' }}>
-                {badge}
-            </div>
-        </div>
-
-        {!isLast && (
-            <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
-        )}
-    </div>
-);
-
-// ─── Строка таблицы ───────────────────────────────────────────────────────────
-const TableRow = ({ date, amount, badge, isLast }) => (
-    <div>
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto auto',
-            padding: '11px 16px',
-            alignItems: 'center',
-            width: '100%',
-            boxSizing: 'border-box'
-        }}>
-            <span style={{
-                fontSize: 13,
-                color: '#1a1a1a',
-                minWidth: 0,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-            }}>
-                {date}
-            </span>
-
-            <span style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#1a1a1a',
-                marginLeft: 16,
-                whiteSpace: 'nowrap'
-            }}>
-                {amount}
-            </span>
-
-            <div style={{
-                marginLeft: 16,
-                display: 'flex',
-                justifyContent: 'flex-end'
-            }}>
-                {badge}
-            </div>
-        </div>
-
-        {!isLast && (
-            <div style={{
-                height: 1,
-                backgroundColor: BORDER,
-                margin: '0 16px'
-            }} />
         )}
     </div>
 );
@@ -564,19 +424,93 @@ export const DealDetail = ({ deal, onBack }) => {
                             Нет оплат
                         </div>
                     ) : (
-                        <>
-                            <InvoicesTableHeader  />
-                            {invoices.map((inv, i) => (
-                                <InvoiceRow
-                                    key={inv.id}
-                                    date={formatDate(inv.createdTime)}
-                                    type={getShortName(dealName)}
-                                    amount={formatMoney(inv.opportunity)}
-                                    badge={<InvBadge stageId={inv.stageId} />}
-                                    isLast={i === invoices.length - 1}
-                                />
-                            ))}
-                        </>
+                        <div style={{
+                            borderRadius: 14,
+                            backgroundColor: CARD_BG,
+                            border: `1px solid ${BORDER}`,
+                            overflow: 'hidden',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                        }}>
+
+                            {/* Заголовок */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '0.6fr 0.8fr 0.8fr 1.2fr',
+                                padding: '8px 14px',
+                                backgroundColor: 'rgba(0,0,0,0.03)',
+                                borderBottom: `1px solid ${BORDER}`,
+                                gap: 4,
+                            }}>
+                                {['Тип', 'Дата', 'Сумма', 'Статус'].map(h => (
+                                    <span key={h} style={{
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        color: '#999',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: 0.3,
+                                    }}>
+                                        {h}
+                                    </span>
+                                ))}
+                            </div>
+
+                            {/* Строки */}
+                            {invoices.map((inv, i) => {
+                                const isPaid = inv.stageId === 'DT31_2:P';
+                                const statusLabel = isPaid ? '✅ Подтверждён' : '⏳ Не подтверждён';
+                                const statusColor = isPaid ? '#43A047' : '#757575';
+
+                                return (
+                                    <div key={inv.id}>
+                                        {i > 0 && (
+                                            <div style={{
+                                                height: 1,
+                                                backgroundColor: BORDER,
+                                                margin: '0 14px',
+                                            }} />
+                                        )}
+
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '0.6fr 0.8fr 0.8fr 1.2fr',
+                                            padding: '10px 14px',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                        }}>
+                                            <span style={{
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}>
+                                                {getShortName(dealName)}
+                                            </span>
+
+                                            <span style={{ fontSize: 12 }}>
+                                                {formatDate(inv.createdTime)}
+                                            </span>
+
+                                            <span style={{
+                                                fontSize: 12,
+                                                fontWeight: 700
+                                            }}>
+                                                {formatMoney(inv.opportunity)}
+                                            </span>
+
+                                            <span style={{
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                color: statusColor
+                                            }}>
+                                                {statusLabel}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
                 </Section>
 
