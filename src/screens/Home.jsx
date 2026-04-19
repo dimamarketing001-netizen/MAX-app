@@ -11,16 +11,33 @@ import {
     getProductDate,
 } from '../utils/deals';
 
+// ─── Сокращения названий сделок ───────────────────────────────────────────────
+const DEAL_SHORT_NAMES = {
+    'Банкротство физических лиц':     'БФЛ',
+    'Юридическая услуга':             'Юр.услуга',
+    'Расторжение кредитного договора':'РКД',
+    'Сбор документов':                'Сб.докум.',
+    'Кредитный брокер':               'КБ',
+    'Исправление кредитной истории':  'ИКИ',
+    'Внесудебное банкротство':        'ВБ',
+    'Реструктуризация долга':         'РД',
+    'Публикация':                     'Публ.',
+    'Депозит':                        'Деп.',
+};
+
+function getShortName(fullName) {
+    return DEAL_SHORT_NAMES[fullName] || fullName;
+}
+
 // ─── Прогресс-бар ─────────────────────────────────────────────────────────────
 const ProgressBar = ({ paid, total }) => {
     const pct = total > 0 ? Math.min(100, (paid / total) * 100) : 0;
     return (
-        <div style={{ marginTop: 6 }}>
-            {/* Визуальная линия */}
+        <div style={{ marginTop: 6, width: '100%' }}>
             <div style={{
                 height: 6,
                 borderRadius: 3,
-                backgroundColor: 'rgba(0,0,0,0.1)',
+                backgroundColor: 'rgba(0,0,0,0.08)',
                 overflow: 'hidden',
                 width: '100%',
             }}>
@@ -34,7 +51,6 @@ const ProgressBar = ({ paid, total }) => {
                     transition: 'width 0.4s ease',
                 }} />
             </div>
-            {/* Подпись */}
             <Flex justify="space-between" style={{ marginTop: 4 }}>
                 <span style={{ fontSize: 11, color: 'var(--max--color-text-secondary)' }}>
                     Оплачено {pct.toFixed(0)}%
@@ -69,7 +85,6 @@ const StageBadge = ({ deal }) => {
 
 // ─── Карточка сделки ──────────────────────────────────────────────────────────
 const DealCard = ({ deal, onClick }) => {
-    // Скрываем Публикации и Депозиты из общего списка
     if (parseInt(deal.CATEGORY_ID) === 16 || parseInt(deal.CATEGORY_ID) === 18) return null;
 
     const dealName = getDealName(deal);
@@ -84,22 +99,29 @@ const DealCard = ({ deal, onClick }) => {
                 padding: '14px 16px',
                 backgroundColor: 'var(--max--color-background-content)',
                 cursor: 'pointer',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
                 border: '1px solid var(--max--color-separator)',
-                transition: 'opacity 0.15s',
+                width: '100%',
+                boxSizing: 'border-box',
                 userSelect: 'none',
             }}
         >
-            <Flex direction="column" gap={10}>
+            <Flex direction="column" gap={10} style={{ width: '100%' }}>
 
                 {/* Название + бейдж */}
-                <Flex justify="space-between" align="flex-start" gap={8}>
+                <Flex
+                    justify="space-between"
+                    align="flex-start"
+                    gap={8}
+                    style={{ width: '100%' }}
+                >
                     <span style={{
                         fontWeight: 700,
                         fontSize: 15,
                         lineHeight: 1.3,
                         color: 'var(--max--color-text-primary)',
                         flex: 1,
+                        minWidth: 0,
                     }}>
                         {dealName}
                     </span>
@@ -107,36 +129,30 @@ const DealCard = ({ deal, onClick }) => {
                 </Flex>
 
                 {/* Сумма договора */}
-                <Flex justify="space-between" align="center">
-                    <span style={{
-                        fontSize: 13,
-                        color: 'var(--max--color-text-secondary)',
-                    }}>
+                <Flex justify="space-between" align="center" style={{ width: '100%' }}>
+                    <span style={{ fontSize: 13, color: 'var(--max--color-text-secondary)' }}>
                         Сумма договора
                     </span>
                     <span style={{
                         fontSize: 14,
                         fontWeight: 700,
                         color: 'var(--max--color-text-primary)',
-                        marginLeft: 8,
+                        marginLeft: 12,
                     }}>
                         {formatMoney(totalAmount)}
                     </span>
                 </Flex>
 
                 {/* Оплачено */}
-                <Flex justify="space-between" align="center">
-                    <span style={{
-                        fontSize: 13,
-                        color: 'var(--max--color-text-secondary)',
-                    }}>
+                <Flex justify="space-between" align="center" style={{ width: '100%' }}>
+                    <span style={{ fontSize: 13, color: 'var(--max--color-text-secondary)' }}>
                         Оплачено
                     </span>
                     <span style={{
                         fontSize: 14,
                         fontWeight: 700,
                         color: '#2e7d32',
-                        marginLeft: 8,
+                        marginLeft: 12,
                     }}>
                         {formatMoney(paidAmount)}
                     </span>
@@ -145,11 +161,11 @@ const DealCard = ({ deal, onClick }) => {
                 {/* Прогресс-бар */}
                 <ProgressBar paid={paidAmount} total={totalAmount} />
 
-                {/* Открыть */}
-                <Flex justify="flex-end" align="center">
+                {/* Открыть → */}
+                <Flex justify="flex-end">
                     <span style={{
                         fontSize: 13,
-                        color: 'var(--max--color-accent, #1976d2)',
+                        color: '#1976d2',
                         fontWeight: 600,
                     }}>
                         Открыть →
@@ -177,20 +193,23 @@ const PaymentsTable = ({ items }) => {
             backgroundColor: 'var(--max--color-background-content)',
             border: '1px solid var(--max--color-separator)',
             overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+            width: '100%',
+            boxSizing: 'border-box',
         }}>
-            {/* Заголовок таблицы */}
+            {/* Заголовок */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr',
+                gridTemplateColumns: '0.7fr 0.9fr 0.9fr 1fr',
                 padding: '8px 14px',
                 backgroundColor: 'rgba(0,0,0,0.04)',
                 borderBottom: '1px solid var(--max--color-separator)',
+                gap: 6,
             }}>
                 {['Сделка', 'Дата', 'Сумма', 'Статус'].map(h => (
                     <span key={h} style={{
-                        fontSize: 11,
-                        fontWeight: 600,
+                        fontSize: 10,
+                        fontWeight: 700,
                         color: 'var(--max--color-text-secondary)',
                         textTransform: 'uppercase',
                         letterSpacing: 0.3,
@@ -214,18 +233,21 @@ const PaymentsTable = ({ items }) => {
                         )}
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: '1fr 1.2fr 1fr 0.8fr',
+                            gridTemplateColumns: '0.7fr 0.9fr 0.9fr 1fr',
                             padding: '10px 14px',
                             alignItems: 'center',
+                            gap: 6,
                         }}>
                             <span style={{
-                                fontSize: 12,
+                                fontSize: 11,
+                                fontWeight: 600,
                                 color: 'var(--max--color-text-primary)',
-                                fontWeight: 500,
-                                paddingRight: 6,
                                 lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
                             }}>
-                                {item.dealName}
+                                {getShortName(item.dealName)}
                             </span>
                             <span style={{
                                 fontSize: 12,
@@ -268,12 +290,11 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
         );
     }
 
-    // Основные сделки (без Публикаций и Депозитов)
     const mainDeals = deals.filter(
         d => parseInt(d.CATEGORY_ID) !== 16 && parseInt(d.CATEGORY_ID) !== 18
     );
 
-    // Собираем все платежи из всех сделок, сортируем по дате, берём 5
+    // Все платежи из всех сделок, сортируем по дате, берём 5
     const allPayments = deals
         .filter(d => parseInt(d.CATEGORY_ID) !== 16 && parseInt(d.CATEGORY_ID) !== 18)
         .flatMap(deal =>
@@ -293,67 +314,88 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
         .slice(0, 5);
 
     return (
-        <Panel
-            mode="secondary"
-            style={{
-                minHeight: '100%',
-                width: '100%',
-                // Фон на весь скролл
-                background: 'var(--max--color-background-secondary)',
-            }}
-        >
+        <div style={{
+            minHeight: '100%',
+            width: '100%',
+            backgroundColor: '#f2f3f5',
+        }}>
             <Flex
                 direction="column"
                 style={{
                     minHeight: '100%',
-                    background: 'var(--max--color-background-secondary)',
+                    width: '100%',
                 }}
             >
 
-                {/* Приветствие */}
-                <Container style={{ padding: '20px 16px 0' }}>
-                    <Flex align="center" gap={14} style={{ marginBottom: 16 }}>
-                        <Avatar.Container size={52} form="squircle">
-                            {user.photo_url
-                                ? <Avatar.Image src={user.photo_url} />
-                                : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
-                            }
-                        </Avatar.Container>
-                        <Flex direction="column" gap={3}>
-                            <span style={{
-                                fontSize: 20,
-                                fontWeight: 700,
-                                color: 'var(--max--color-text-primary)',
-                                lineHeight: 1.2,
-                            }}>
-                                Привет, {user.first_name}!
-                            </span>
-                            <span style={{
-                                fontSize: 13,
-                                color: 'var(--max--color-text-secondary)',
-                            }}>
-                                Личный кабинет клиента
-                            </span>
-                        </Flex>
-                    </Flex>
+                {/* ── Приветствие ─────────────────────────────────────────── */}
+                <div style={{ padding: '20px 16px 16px' }}>
+                    <div style={{
+                        borderRadius: 16,
+                        backgroundColor: 'var(--max--color-background-content)',
+                        padding: '16px',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                        border: '1px solid var(--max--color-separator)',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                    }}>
+                        <Flex align="stretch" gap={14}>
 
-                    {/* Кнопка юриста */}
-                    <Button
-                        size="l"
-                        appearance="accent"
-                        stretched
-                        onClick={() => onContactLawyer?.()}
-                        style={{ marginBottom: 24 }}
-                    >
-                        <Flex align="center" justify="center" gap={8}>
-                            <span style={{ fontSize: 18 }}>💬</span>
-                            <span>Связаться с юристом</span>
-                        </Flex>
-                    </Button>
-                </Container>
+                            {/* Фото */}
+                            <div style={{ flexShrink: 0 }}>
+                                <Avatar.Container size={64} form="squircle">
+                                    {user.photo_url
+                                        ? <Avatar.Image src={user.photo_url} />
+                                        : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
+                                    }
+                                </Avatar.Container>
+                            </div>
 
-                {/* Мои сделки */}
-                <Container style={{ padding: '0 16px 20px' }}>
+                            {/* Текст + кнопка */}
+                            <Flex
+                                direction="column"
+                                justify="space-between"
+                                gap={8}
+                                style={{ flex: 1, minWidth: 0 }}
+                            >
+                                <div>
+                                    <div style={{
+                                        fontSize: 18,
+                                        fontWeight: 700,
+                                        color: 'var(--max--color-text-primary)',
+                                        lineHeight: 1.2,
+                                        marginBottom: 2,
+                                    }}>
+                                        Привет, {user.first_name}!
+                                    </div>
+                                    <div style={{
+                                        fontSize: 13,
+                                        color: 'var(--max--color-text-secondary)',
+                                    }}>
+                                        Личный кабинет клиента
+                                    </div>
+                                </div>
+
+                                <Button
+                                    size="m"
+                                    appearance="accent"
+                                    stretched
+                                    onClick={() => onContactLawyer?.()}
+                                >
+                                    <Flex align="center" justify="center" gap={6}>
+                                        <span style={{ fontSize: 16 }}>💬</span>
+                                        <span style={{ fontSize: 13, fontWeight: 600 }}>
+                                            Связаться с юристом
+                                        </span>
+                                    </Flex>
+                                </Button>
+                            </Flex>
+
+                        </Flex>
+                    </div>
+                </div>
+
+                {/* ── Мои сделки ──────────────────────────────────────────── */}
+                <div style={{ padding: '0 16px 20px', width: '100%', boxSizing: 'border-box' }}>
                     <span style={{
                         display: 'block',
                         fontSize: 17,
@@ -373,11 +415,17 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                             textAlign: 'center',
                             fontSize: 14,
                             color: 'var(--max--color-text-secondary)',
+                            width: '100%',
+                            boxSizing: 'border-box',
                         }}>
                             Нет активных сделок
                         </div>
                     ) : (
-                        <Flex direction="column" gap={10}>
+                        <Flex
+                            direction="column"
+                            gap={10}
+                            style={{ width: '100%' }}
+                        >
                             {mainDeals.map(deal => (
                                 <DealCard
                                     key={deal.ID}
@@ -387,11 +435,11 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                             ))}
                         </Flex>
                     )}
-                </Container>
+                </div>
 
-                {/* Ближайшие платежи */}
+                {/* ── Ближайшие платежи ────────────────────────────────────── */}
                 {allPayments.length > 0 && (
-                    <Container style={{ padding: '0 16px 32px' }}>
+                    <div style={{ padding: '0 16px 32px', width: '100%', boxSizing: 'border-box' }}>
                         <span style={{
                             display: 'block',
                             fontSize: 17,
@@ -402,13 +450,12 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                             Ближайшие платежи
                         </span>
                         <PaymentsTable items={allPayments} />
-                    </Container>
+                    </div>
                 )}
 
-                {/* Нижний отступ */}
-                <div style={{ height: 16, flexShrink: 0 }} />
+                <div style={{ height: 16 }} />
 
             </Flex>
-        </Panel>
+        </div>
     );
 };
