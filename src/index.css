@@ -46,6 +46,8 @@ body {
 }
 
 :root {
+  color-scheme: light !important;
+
   --max--color-background: #F2F3F5 !important;
   --max--color-background-content: #FFFFFF !important;
   --max--color-background-secondary: #F2F3F5 !important;
@@ -54,4 +56,9 @@ body {
   --max--color-text-secondary: #888888 !important;
 
   --max--color-separator: rgba(0,0,0,0.08) !important;
+}
+
+html, body, #root {
+  background-color: #F2F3F5 !important;
+  color: #1a1a1a !important;
 }

@@ -13,8 +13,8 @@ export const TabBar = ({ activeTab, onTabChange }) => (
         style={{
             width: '100%',
             paddingBottom: 'env(safe-area-inset-bottom, 8px)',
-            backgroundColor: 'var(--max--color-background-content)',
-            borderTop: '1px solid var(--max--color-separator)',
+            backgroundColor: '#FFFFFF',
+            borderTop: '1px solid rgba(0,0,0,0.08)',
             flexShrink: 0,
         }}
         justify="space-around"
@@ -24,9 +24,13 @@ export const TabBar = ({ activeTab, onTabChange }) => (
             <ToolButton
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                appearance={activeTab === tab.id ? 'themed' : 'default'}
+                appearance="default"
                 icon={<span style={{ fontSize: 22 }}>{tab.emoji}</span>}
-                style={{ flex: 1, minWidth: 0 }}
+                style={{
+                    flex: 1,
+                    minWidth: 0,
+                    color: activeTab === tab.id ? '#42A5F5' : '#1a1a1a'
+                }}
             >
                 {tab.label}
             </ToolButton>
