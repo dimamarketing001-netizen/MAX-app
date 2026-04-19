@@ -52,11 +52,13 @@ const ProgressBar = ({ paid, total }) => {
 const TableHeader = () => (
     <div style={{
         display: 'grid',
-        gridTemplateColumns: '90px 110px 1fr',
+        gridTemplateColumns: '1fr auto auto',
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
-        alignItems: 'center'
+        alignItems: 'center',
+        width: '100%',
+        boxSizing: 'border-box'
     }}>
         <span style={{
             fontSize: 10,
@@ -115,13 +117,16 @@ const TableRow = ({ date, amount, badge, isLast }) => (
     <div>
         <div style={{
             display: 'grid',
-            gridTemplateColumns: '90px 110px 1fr',
+            gridTemplateColumns: '1fr auto auto',
             padding: '11px 16px',
-            alignItems: 'center'
+            alignItems: 'center',
+            width: '100%',
+            boxSizing: 'border-box'
         }}>
             <span style={{
                 fontSize: 13,
                 color: '#1a1a1a',
+                minWidth: 0,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
@@ -133,14 +138,14 @@ const TableRow = ({ date, amount, badge, isLast }) => (
                 fontSize: 13,
                 fontWeight: 700,
                 color: '#1a1a1a',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                marginLeft: 16,
                 whiteSpace: 'nowrap'
             }}>
                 {amount}
             </span>
 
             <div style={{
+                marginLeft: 16,
                 display: 'flex',
                 justifyContent: 'flex-end'
             }}>
