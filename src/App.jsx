@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flex, Spinner, Panel, Container, Button, MaxUI } from '@maxhub/max-ui';
+import { Flex, MaxUI } from '@maxhub/max-ui';
 
 import { TabBar } from './components/TabBar';
 import { HomeScreen } from './screens/Home';
@@ -7,362 +7,104 @@ import { ProfileScreen } from './screens/Profile';
 import { HelpScreen } from './screens/Help';
 import { PartnersScreen } from './screens/Partners';
 
-// ─── Error Boundary ───────────────────────────────────────────────────────────
-class ErrorBoundary extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { error: null };
-    }
-
-    componentDidCatch(error, info) {
-        console.error('React Error:', error, info);
-        fetch('/api/debug', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ts: new Date().toISOString(),
-                type: 'react_error',
-                error: error.message,
-                stack: error.stack,
-                componentStack: info.componentStack,
-            }),
-        }).catch(() => {});
-    }
-
-    static getDerivedStateFromError(error) {
-        return { error: error.message + '\n' + error.stack };
-    }
-
-    render() {
-        if (this.state.error) {
-            return (
-                <div style={{
-                    padding: 16,
-                    background: '#0d0d0d',
-                    color: '#00ff41',
-                    fontFamily: 'monospace',
-                    fontSize: 11,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-all',
-                    minHeight: '100vh',
-                    overflowY: 'auto',
-                }}>
-                    {'REACT ERROR:\n' + this.state.error}
-                </div>
-            );
-        }
-        return this.props.children;
-    }
-}
-
-// ─── Ждём пока MAX Bridge инициализирует WebApp ───────────────────────────────
-async function waitForWebApp(timeout = 5000) {
-    return new Promise((resolve) => {
-        if (window.WebApp?.initDataUnsafe?.user?.id) {
-            return resolve(window.WebApp);
-        }
-        const start = Date.now();
-        const interval = setInterval(() => {
-            if (window.WebApp?.initDataUnsafe?.user?.id) {
-                clearInterval(interval);
-                resolve(window.WebApp);
-            } else if (Date.now() - start > timeout) {
-                clearInterval(interval);
-                resolve(null);
-            }
-        }, 50);
-    });
-}
-
-function safeGet(obj, path, fallback = null) {
-    try {
-        return path.split('.').reduce((acc, key) => acc?.[key], obj) ?? fallback;
-    } catch {
-        return fallback;
-    }
-}
-
 function App() {
     const [user, setUser] = useState(null);
     const [deals, setDeals] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('home');
-    const [platform, setPlatform] = useState('web');
-    const [theme, setTheme] = useState('light');
 
     useEffect(() => {
-        const loadAppData = async () => {
-            setLoading(true);
-
-            // ── Шаг 1: Ждём WebApp от MAX Bridge ──────────────────────────
-            const webApp = await waitForWebApp(5000);
-            const initDataUnsafe = webApp?.initDataUnsafe || null;
-
-            // ── Шаг 2: Определяем тему ─────────────────────────────────────
-            const colorScheme = webApp?.colorScheme ||
-                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            setTheme(colorScheme);
-
-            // ── Шаг 3: Логируем на сервер ──────────────────────────────────
-            const logData = {
-                ts: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                href: window.location.href,
-                hasWebApp: !!webApp,
-                platform: safeGet(webApp, 'platform'),
-                version: safeGet(webApp, 'version'),
-                colorScheme,
-                initDataRaw: (() => {
-                    try { return webApp?.initData || null; } catch { return 'ERROR'; }
-                })(),
-                initDataUnsafe,
-                userId: safeGet(initDataUnsafe, 'user.id'),
-            };
-
-            fetch('/api/debug', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(logData),
-            }).catch(() => {});
-
-            // ── Шаг 4: ready() и platform ─────────────────────────────────
+        const load = async () => {
             try {
-                if (webApp && typeof webApp.ready === 'function') webApp.ready();
-            } catch (e) {
-                console.warn('webApp.ready() error:', e);
-            }
+                const webApp = window.WebApp;
+                const maxUserId = webApp?.initDataUnsafe?.user?.id;
 
-            try {
-                const p = webApp?.platform;
-                if (p && typeof p === 'string') setPlatform(p);
-            } catch (e) {
-                console.warn('platform error:', e);
-            }
-
-            // ── Шаг 5: Получаем userId ─────────────────────────────────────
-            const maxUserId = safeGet(initDataUnsafe, 'user.id');
-
-            if (!maxUserId) {
-                setError(
-                    `ID пользователя не получен за 5 секунд.\n\n` +
-                    `WebApp: ${logData.hasWebApp}\n` +
-                    `initData: ${logData.initDataRaw}\n` +
-                    `initDataUnsafe: ${JSON.stringify(initDataUnsafe)}\n` +
-                    `URL: ${window.location.href}\n` +
-                    `UA: ${navigator.userAgent}`
-                );
-                setLoading(false);
-                return;
-            }
-
-            // ── Шаг 6: Запрос данных пользователя ─────────────────────────
-            try {
                 const userRes = await fetch(`/api/user/${maxUserId}`);
-                const contentType = userRes.headers.get('content-type') || '';
-                const responseText = await userRes.text();
-
-                fetch('/api/debug', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ts: new Date().toISOString(),
-                        type: 'api_response',
-                        url: `/api/user/${maxUserId}`,
-                        status: userRes.status,
-                        contentType,
-                        responsePreview: responseText.substring(0, 500),
-                    }),
-                }).catch(() => {});
-
-                if (!userRes.ok) {
-                    throw new Error(
-                        `HTTP ${userRes.status}\n` +
-                        `Content-Type: ${contentType}\n` +
-                        `Ответ: ${responseText.substring(0, 300)}`
-                    );
-                }
-
-                let userData;
-                try {
-                    userData = JSON.parse(responseText);
-                } catch {
-                    throw new Error(`Ответ не JSON:\n${responseText.substring(0, 200)}`);
-                }
-
-                userData.photo_url = safeGet(initDataUnsafe, 'user.photo_url') || '';
+                const userData = await userRes.json();
+                userData.photo_url =
+                    webApp?.initDataUnsafe?.user?.photo_url || '';
                 setUser(userData);
 
-                // ── Шаг 7: Запрос сделок ──────────────────────────────────
-                try {
-                    const dealsRes = await fetch(`/api/deals-full/${maxUserId}`);
-                    if (dealsRes.ok) {
-                        const dealsData = await dealsRes.json();
-                        setDeals(dealsData.deals || []);
-                    } else {
-                        console.warn('Сделки не загружены:', dealsRes.status);
-                    }
-                } catch (dealsErr) {
-                    console.warn('Ошибка загрузки сделок:', dealsErr.message);
-                }
-
+                const dealsRes = await fetch(
+                    `/api/deals-full/${maxUserId}`
+                );
+                const dealsData = await dealsRes.json();
+                setDeals(dealsData.deals || []);
             } catch (e) {
-                setError(`Ошибка загрузки данных:\n${e.message}`);
+                console.error(e);
             } finally {
                 setLoading(false);
             }
         };
 
-        loadAppData();
+        load();
     }, []);
 
-    // ── Обработчики ────────────────────────────────────────────────────────────
+    /* ───────────────────────────────────────── Skeleton ───────────────────────────────────────── */
 
-    const handleProfileSave = async (updatedFields) => {
-        if (!user) return;
-        try {
-            const res = await fetch(`/api/user/${user.id}/update`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedFields),
-            });
-            if (!res.ok) throw new Error('Ошибка сохранения');
-            setUser(prev => ({ ...prev, ...updatedFields }));
-        } catch (e) {
-            console.error('handleProfileSave:', e);
-        }
-    };
+    if (loading) {
+        return (
+            <div style={{ padding: 16 }}>
+                {[1, 2, 3].map((i) => (
+                    <div
+                        key={i}
+                        style={{
+                            height: 90,
+                            borderRadius: 14,
+                            background:
+                                'linear-gradient(90deg,#eee,#f5f5f5,#eee)',
+                            backgroundSize: '200% 100%',
+                            animation: 'skeleton 1.5s infinite',
+                            marginBottom: 12,
+                        }}
+                    />
+                ))}
+            </div>
+        );
+    }
 
-    const handleSupportTicket = async (topic, message) => {
-        if (!user) return false;
-        try {
-            const res = await fetch('/api/support', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    maxUserId: user.id,
-                    topic,
-                    message,
-                }),
-            });
-            return res.ok;
-        } catch {
-            return false;
-        }
-    };
-
-    const handleContactLawyer = () => {
-        try {
-            const webApp = window.WebApp;
-            if (webApp?.openMaxLink) {
-                webApp.openMaxLink('https://max.ru/id6658577091_bot');
-            }
-        } catch (e) {
-            console.warn('openMaxLink error:', e);
-        }
-    };
-
-    // ── Рендер экранов ─────────────────────────────────────────────────────────
+    if (!user) return null;
 
     const renderScreen = () => {
-        if (!user) return null;
         switch (activeTab) {
             case 'home':
                 return (
                     <HomeScreen
                         user={user}
                         deals={deals}
-                        onContactLawyer={handleContactLawyer}
                     />
                 );
             case 'profile':
                 return (
-                    <ProfileScreen
-                        user={user}
-                        onSave={handleProfileSave}
-                    />
+                    <ProfileScreen user={user} />
                 );
             case 'help':
-                return (
-                    <HelpScreen
-                        onSendTicket={handleSupportTicket}
-                    />
-                );
+                return <HelpScreen />;
             case 'partners':
                 return (
-                    <PartnersScreen
-                        userId={user.id}
-                    />
+                    <PartnersScreen userId={user.id} />
                 );
             default:
-                return (
-                    <HomeScreen
-                        user={user}
-                        deals={deals}
-                        onContactLawyer={handleContactLawyer}
-                    />
-                );
+                return null;
         }
     };
 
-    // ── Экран загрузки ─────────────────────────────────────────────────────────
-    if (loading) {
-        return (
-            <ErrorBoundary>
-                <Flex
-                    style={{ height: '100dvh' }}
-                    justify="center"
-                    align="center"
-                >
-                    <Spinner size={44} />
-                </Flex>
-            </ErrorBoundary>
-        );
-    }
-
-    // ── Экран ошибки ───────────────────────────────────────────────────────────
-    if (error || !user) {
-        return (
-            <ErrorBoundary>
-                <div style={{ padding: 16 }}>
-                    <div style={{
-                        background: '#0d0d0d',
-                        color: '#00ff41',
-                        padding: 12,
-                        borderRadius: 8,
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-all',
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                    }}>
-                        {error || 'Нет данных пользователя'}
-                    </div>
-                </div>
-            </ErrorBoundary>
-        );
-    }
-
-    // ── Основной экран ─────────────────────────────────────────────────────────
     return (
-        <ErrorBoundary>
-            <MaxUI platform={platform} appearance={theme}>
-                <Flex
-                    direction="column"
-                    style={{
-                        height: '100dvh',
-                        width: '100%',
-                        overflow: 'hidden',
-                    }}
-                >
-                    <div style={{ flex: 1, overflowY: 'auto', width: '100%' }}>
-                        {renderScreen()}
-                    </div>
-                    <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-                </Flex>
-            </MaxUI>
-        </ErrorBoundary>
+        <MaxUI>
+            <Flex
+                direction="column"
+                style={{ height: '100dvh' }}
+            >
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {renderScreen()}
+                </div>
+
+                <TabBar
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                />
+            </Flex>
+        </MaxUI>
     );
 }
 

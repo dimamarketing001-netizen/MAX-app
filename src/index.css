@@ -17,6 +17,22 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+@keyframes slideIn {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 #root {
     height: 100dvh;
     width: 100%;
