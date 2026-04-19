@@ -1,24 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { Panel, Container, Flex, Avatar, Button } from '@maxhub/max-ui';
+
+const BG = '#F2F3F5';
+const CARD_BG = '#FFFFFF';
+const BORDER = 'rgba(0,0,0,0.08)';
 
 const inputStyle = {
     width: '100%',
     padding: '12px 14px',
     borderRadius: 10,
-    border: '1px solid var(--max--color-separator)',
-    background: 'var(--max--color-background-content)',
-    color: 'var(--max--color-text-primary)',
+    border: `1px solid ${BORDER}`,
+    backgroundColor: CARD_BG,
+    color: '#1a1a1a',
     fontSize: 15,
     boxSizing: 'border-box',
     outline: 'none',
     fontFamily: 'inherit',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    transition: 'border-color 0.15s',
 };
 
 const labelStyle = {
     fontSize: 12,
-    color: 'var(--max--color-text-secondary)',
+    color: '#888',
     marginBottom: 6,
     display: 'block',
+};
+
+// ─── Аватар пользователя ──────────────────────────────────────────────────────
+const UserAvatar = ({ user, size = 80 }) => {
+    const initials = (user.first_name?.[0] || '?').toUpperCase();
+
+    if (user.photo_url) {
+        return (
+            <img
+                src={user.photo_url}
+                alt="avatar"
+                style={{
+                    width: size,
+                    height: size,
+                    borderRadius: '22%',
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                    display: 'block',
+                }}
+            />
+        );
+    }
+
+    return (
+        <div style={{
+            width: size,
+            height: size,
+            borderRadius: '22%',
+            backgroundColor: '#42A5F5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: '#fff',
+            fontSize: size * 0.38,
+            fontWeight: 700,
+            letterSpacing: 1,
+        }}>
+            {initials}
+        </div>
+    );
 };
 
 export const ProfileScreen = ({ user, onSave }) => {
@@ -30,7 +77,10 @@ export const ProfileScreen = ({ user, onSave }) => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        setFields({ phone: user.phone || '', email: user.email || '' });
+        setFields({
+            phone: user.phone || '',
+            email: user.email || '',
+        });
     }, [user]);
 
     const handleChange = (e) => {
@@ -45,46 +95,64 @@ export const ProfileScreen = ({ user, onSave }) => {
     };
 
     const handleCancel = () => {
-        setFields({ phone: user.phone || '', email: user.email || '' });
+        setFields({
+            phone: user.phone || '',
+            email: user.email || '',
+        });
         setIsEditing(false);
     };
 
     return (
-        <Panel mode="secondary" style={{ minHeight: '100%', width: '100%' }}>
+        <div style={{
+            minHeight: '100%',
+            width: '100%',
+            backgroundColor: BG,
+            boxSizing: 'border-box',
+        }}>
 
-            {/* Аватар */}
-            <Container style={{ padding: '32px 16px 20px' }}>
-                <Flex direction="column" align="center" gap={12}>
-                    <Avatar.Container size={80} form="squircle">
-                        {user.photo_url
-                            ? <Avatar.Image src={user.photo_url} />
-                            : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
-                        }
-                    </Avatar.Container>
-                    <Flex direction="column" align="center" gap={4}>
+            {/* ── Аватар и имя ─────────────────────────────────────────────── */}
+            <div style={{ padding: '32px 16px 20px' }}>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 12,
+                }}>
+                    <UserAvatar user={user} size={80} />
+
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 4,
+                    }}>
                         <span style={{
                             fontSize: 20,
                             fontWeight: 700,
-                            color: 'var(--max--color-text-primary)',
+                            color: '#1a1a1a',
+                            textAlign: 'center',
+                            // Длинное имя не ломает верстку
+                            wordBreak: 'break-word',
+                            lineHeight: 1.3,
                         }}>
                             {user.first_name} {user.last_name || ''}
                         </span>
                         <span style={{
                             fontSize: 13,
-                            color: 'var(--max--color-text-secondary)',
+                            color: '#888',
                         }}>
                             ID: {user.id}
                         </span>
-                    </Flex>
-                </Flex>
-            </Container>
+                    </div>
+                </div>
+            </div>
 
-            {/* Контакты */}
-            <Container style={{ padding: '0 16px 16px' }}>
+            {/* ── Контактная информация ─────────────────────────────────────── */}
+            <div style={{ padding: '0 16px 16px' }}>
                 <div style={{
                     fontSize: 15,
                     fontWeight: 700,
-                    color: 'var(--max--color-text-primary)',
+                    color: '#1a1a1a',
                     marginBottom: 10,
                 }}>
                     Контактная информация
@@ -93,10 +161,18 @@ export const ProfileScreen = ({ user, onSave }) => {
                 <div style={{
                     borderRadius: 12,
                     padding: '16px',
-                    backgroundColor: 'var(--max--color-background-content)',
+                    backgroundColor: CARD_BG,
+                    border: `1px solid ${BORDER}`,
                     marginBottom: 12,
+                    boxSizing: 'border-box',
                 }}>
-                    <Flex direction="column" gap={16}>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 16,
+                    }}>
+
+                        {/* Телефон */}
                         <div>
                             <span style={labelStyle}>Телефон</span>
                             {isEditing ? (
@@ -107,13 +183,29 @@ export const ProfileScreen = ({ user, onSave }) => {
                                     onChange={handleChange}
                                     placeholder="+7 (999) 000-00-00"
                                     type="tel"
+                                    // На мобильных показывает цифровую клавиатуру
+                                    inputMode="tel"
                                 />
                             ) : (
-                                <span style={{ fontSize: 15, color: 'var(--max--color-text-primary)' }}>
+                                <span style={{
+                                    fontSize: 15,
+                                    color: '#1a1a1a',
+                                    display: 'block',
+                                    lineHeight: 1.4,
+                                }}>
                                     {user.phone || '—'}
                                 </span>
                             )}
                         </div>
+
+                        {/* Разделитель */}
+                        <div style={{
+                            height: 1,
+                            backgroundColor: BORDER,
+                            margin: '0 -16px',
+                        }} />
+
+                        {/* Email */}
                         <div>
                             <span style={labelStyle}>Email</span>
                             {isEditing ? (
@@ -124,69 +216,209 @@ export const ProfileScreen = ({ user, onSave }) => {
                                     onChange={handleChange}
                                     placeholder="example@mail.ru"
                                     type="email"
+                                    // На мобильных показывает клавиатуру с @
+                                    inputMode="email"
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
                                 />
                             ) : (
-                                <span style={{ fontSize: 15, color: 'var(--max--color-text-primary)' }}>
+                                <span style={{
+                                    fontSize: 15,
+                                    color: '#1a1a1a',
+                                    display: 'block',
+                                    lineHeight: 1.4,
+                                    // Длинный email не ломает верстку
+                                    wordBreak: 'break-all',
+                                }}>
                                     {user.email || '—'}
                                 </span>
                             )}
                         </div>
-                    </Flex>
-                </div>
-            </Container>
 
-            {/* Документы */}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Документы ────────────────────────────────────────────────── */}
             {(user.passport_series || user.passport_number) && (
-                <Container style={{ padding: '0 16px 16px' }}>
+                <div style={{ padding: '0 16px 16px' }}>
                     <div style={{
                         fontSize: 15,
                         fontWeight: 700,
-                        color: 'var(--max--color-text-primary)',
+                        color: '#1a1a1a',
                         marginBottom: 10,
                     }}>
                         Документы
                     </div>
+
                     <div style={{
                         borderRadius: 12,
                         padding: '16px',
-                        backgroundColor: 'var(--max--color-background-content)',
+                        backgroundColor: CARD_BG,
+                        border: `1px solid ${BORDER}`,
+                        boxSizing: 'border-box',
                     }}>
-                        <Flex direction="column" gap={12}>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12,
+                        }}>
                             {user.passport_series && (
                                 <div>
                                     <span style={labelStyle}>Серия паспорта</span>
-                                    <span style={{ fontSize: 15 }}>{user.passport_series}</span>
+                                    <span style={{
+                                        fontSize: 15,
+                                        color: '#1a1a1a',
+                                        display: 'block',
+                                    }}>
+                                        {user.passport_series}
+                                    </span>
                                 </div>
                             )}
+
+                            {/* Разделитель между полями */}
+                            {user.passport_series && user.passport_number && (
+                                <div style={{
+                                    height: 1,
+                                    backgroundColor: BORDER,
+                                    margin: '0 -16px',
+                                }} />
+                            )}
+
                             {user.passport_number && (
                                 <div>
                                     <span style={labelStyle}>Номер паспорта</span>
-                                    <span style={{ fontSize: 15 }}>{user.passport_number}</span>
+                                    <span style={{
+                                        fontSize: 15,
+                                        color: '#1a1a1a',
+                                        display: 'block',
+                                    }}>
+                                        {user.passport_number}
+                                    </span>
                                 </div>
                             )}
-                        </Flex>
+                        </div>
                     </div>
-                </Container>
+                </div>
             )}
 
-            {/* Кнопки */}
-            <Container style={{ padding: '0 16px 32px' }}>
+            {/* ── Кнопки ───────────────────────────────────────────────────── */}
+            <div style={{ padding: '0 16px 32px' }}>
                 {isEditing ? (
-                    <Flex direction="column" gap={8}>
-                        <Button size="l" appearance="accent" stretched onClick={handleSave} disabled={saving}>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                    }}>
+                        {/* Сохранить */}
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            style={{
+                                width: '100%',
+                                padding: '14px 16px',
+                                borderRadius: 12,
+                                border: 'none',
+                                backgroundColor: saving ? '#B0BEC5' : '#42A5F5',
+                                color: '#fff',
+                                fontSize: 16,
+                                fontWeight: 600,
+                                cursor: saving ? 'not-allowed' : 'pointer',
+                                fontFamily: 'inherit',
+                                boxSizing: 'border-box',
+                                touchAction: 'manipulation',
+                                WebkitTapHighlightColor: 'transparent',
+                                outline: 'none',
+                                transition: 'background-color 0.15s',
+                                opacity: saving ? 0.7 : 1,
+                            }}
+                            onMouseEnter={e => {
+                                if (!saving) e.currentTarget.style.backgroundColor = '#1E88E5';
+                            }}
+                            onMouseLeave={e => {
+                                if (!saving) e.currentTarget.style.backgroundColor = '#42A5F5';
+                            }}
+                            onTouchStart={e => {
+                                if (!saving) e.currentTarget.style.backgroundColor = '#1E88E5';
+                            }}
+                            onTouchEnd={e => {
+                                if (!saving) e.currentTarget.style.backgroundColor = '#42A5F5';
+                            }}
+                        >
                             {saving ? 'Сохранение...' : 'Сохранить'}
-                        </Button>
-                        <Button size="l" appearance="neutral" mode="secondary" stretched onClick={handleCancel}>
-                            Отмена
-                        </Button>
-                    </Flex>
-                ) : (
-                    <Button size="l" appearance="accent" mode="secondary" stretched onClick={() => setIsEditing(true)}>
-                        Редактировать
-                    </Button>
-                )}
-            </Container>
+                        </button>
 
-        </Panel>
+                        {/* Отмена */}
+                        <button
+                            onClick={handleCancel}
+                            style={{
+                                width: '100%',
+                                padding: '14px 16px',
+                                borderRadius: 12,
+                                border: `1px solid ${BORDER}`,
+                                backgroundColor: CARD_BG,
+                                color: '#1a1a1a',
+                                fontSize: 16,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                boxSizing: 'border-box',
+                                touchAction: 'manipulation',
+                                WebkitTapHighlightColor: 'transparent',
+                                outline: 'none',
+                                transition: 'background-color 0.15s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F2F3F5'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = CARD_BG}
+                            onTouchStart={e => e.currentTarget.style.backgroundColor = '#F2F3F5'}
+                            onTouchEnd={e => e.currentTarget.style.backgroundColor = CARD_BG}
+                        >
+                            Отмена
+                        </button>
+                    </div>
+                ) : (
+                    /* Редактировать */
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        style={{
+                            width: '100%',
+                            padding: '14px 16px',
+                            borderRadius: 12,
+                            border: `1px solid #42A5F5`,
+                            backgroundColor: 'transparent',
+                            color: '#42A5F5',
+                            fontSize: 16,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            boxSizing: 'border-box',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            outline: 'none',
+                            transition: 'background-color 0.15s, color 0.15s',
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.backgroundColor = '#42A5F5';
+                            e.currentTarget.style.color = '#fff';
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#42A5F5';
+                        }}
+                        onTouchStart={e => {
+                            e.currentTarget.style.backgroundColor = '#42A5F5';
+                            e.currentTarget.style.color = '#fff';
+                        }}
+                        onTouchEnd={e => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = '#42A5F5';
+                        }}
+                    >
+                        Редактировать
+                    </button>
+                )}
+            </div>
+
+        </div>
     );
 };
