@@ -72,6 +72,28 @@ const TableHeader = () => (
     </div>
 );
 
+const PaymentsTableHeader = () => (
+    <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1.4fr',
+        padding: '8px 16px',
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderBottom: `1px solid ${BORDER}`,
+        gap: 8,
+    }}>
+        {['Дата', 'Сумма', 'Статус'].map(h => (
+            <span key={h} style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#999',
+                textTransform: 'uppercase',
+            }}>
+                {h}
+            </span>
+        ))}
+    </div>
+);
+
 // ─── Строка таблицы ───────────────────────────────────────────────────────────
 const TableRow = ({ date, amount, badge, isLast }) => (
     <div>
@@ -283,13 +305,7 @@ export const DealDetail = ({ deal, onBack }) => {
             <Flex direction="column" style={{ minHeight: '100%', width: '100%' }}>
 
                 {/* Шапка */}
-                <div style={{
-                        position: 'sticky',
-                        top: 0,
-                        backgroundColor: BG,
-                        zIndex: 10,
-                        padding: '16px 16px 0'
-                    }}>
+                <div style={{ padding: '16px 16px 0' }}>
                     <Flex align="center" gap={8} style={{ marginBottom: 16 }}>
                         <button
                             onClick={onBack}
@@ -320,8 +336,8 @@ export const DealDetail = ({ deal, onBack }) => {
 
                     {/* Инфо о сделке */}
                     {!isSimple && (
-                        <div style={{ padding: '0 16px 16px' }}>
-                            <Flex direction="column" gap={8}>
+                        <div style={{ padding: '0 16px 20px' }}>
+                            <Flex direction="column" gap={12}>
 
                                 {deal.UF_CRM_CONTRACT_NUM && (
                                     <Flex justify="space-between">
@@ -425,7 +441,7 @@ export const DealDetail = ({ deal, onBack }) => {
                 {/* График платежей */}
                 {!isSimple && products.length > 0 && (
                     <Section title="График платежей">
-                        <TableHeader />
+                        <PaymentsTableHeader  />
                         {products.map((p, i) => (
                             <TableRow
                                 key={p.ID || i}
@@ -468,28 +484,24 @@ export const DealDetail = ({ deal, onBack }) => {
                 {/* Связанные сделки (SALE и UC_UABTV4) */}
                 {/* Публикация (16) */}
                 {deal.publications?.length > 0 && (
-                    <Section>
-                        <div style={{ padding: '14px 0' }}>
-                            <Flex direction="column" gap={10}>
-                                {deal.publications.map(d => (
-                                    <ChildDealCard key={d.ID} deal={d} />
-                                ))}
-                            </Flex>
-                        </div>
-                    </Section>
+                    <div style={{ padding: '14px 0' }}>
+                        <Flex direction="column" gap={10}>
+                            {deal.publications.map(d => (
+                                <ChildDealCard key={d.ID} deal={d} />
+                            ))}
+                        </Flex>
+                    </div>
                 )}
 
                 {/* Депозит (18) */}
                 {deal.deposits?.length > 0 && (
-                    <Section>
-                        <div style={{ padding: '14px 0' }}>
-                            <Flex direction="column" gap={10}>
-                                {deal.deposits.map(d => (
-                                    <ChildDealCard key={d.ID} deal={d} />
-                                ))}
-                            </Flex>
-                        </div>
-                    </Section>
+                    <div style={{ padding: '14px 0' }}>
+                        <Flex direction="column" gap={10}>
+                            {deal.deposits.map(d => (
+                                <ChildDealCard key={d.ID} deal={d} />
+                            ))}
+                        </Flex>
+                    </div>
                 )}
 
                 {/* Документы */}

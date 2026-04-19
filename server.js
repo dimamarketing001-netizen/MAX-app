@@ -479,20 +479,37 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 products = pr.data.result || [];
             } catch {}
 
-            // ── Документы сделки (PDF договора) ─────────────────────
+            // ── Получение договора через Document Generator ─────────────────
             let contractFile = null;
 
             try {
-                const filesRes = await axios.get(
-                    `${process.env.B24_WEBHOOK_URL}/crm.deal.get`,
-                    { params: { id: deal.ID } }
+                const docRes = await axios.get(
+                    `${process.env.B24_WEBHOOK_URL}/crm.documentgenerator.document.list`,
+                    {
+                        params: {
+                            filter: {
+                                ENTITY_TYPE_ID: 2, // Сделка
+                                ENTITY_ID: deal.ID
+                            }
+                        }
+                    }
                 );
 
-                const fullDeal = filesRes.data.result;
+                const docs = docRes.data.result || [];
 
-                if (fullDeal.UF_CRM_CONTRACT_FILE) {
-                    contractFile = fullDeal.UF_CRM_CONTRACT_FILE;
+                if (docs.length > 0) {
+                    const documentId = docs[0].id;
+
+                    const downloadRes = await axios.get(
+                        `${process.env.B24_WEBHOOK_URL}/crm.documentgenerator.document.get`,
+                        {
+                            params: { id: documentId }
+                        }
+                    );
+
+                    contractFile = downloadRes.data.result?.downloadUrl || null;
                 }
+
             } catch (e) {
                 console.log('Ошибка получения договора:', e.message);
             }
