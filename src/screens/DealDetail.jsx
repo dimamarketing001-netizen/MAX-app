@@ -115,7 +115,7 @@ const InvoicesTableHeader = () => (
 const PaymentsTableHeader = () => (
     <div style={{
         display: 'grid',
-        gridTemplateColumns: '0.9fr 0.9fr 1.6fr'
+        gridTemplateColumns: '0.9fr 0.9fr 1.6fr',
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
