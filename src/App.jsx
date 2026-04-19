@@ -89,7 +89,6 @@ function App() {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('home');
     const [platform, setPlatform] = useState('web');
-    const [theme, setTheme] = useState('light');
 
     useEffect(() => {
         const loadAppData = async () => {
@@ -99,10 +98,6 @@ function App() {
             const webApp = await waitForWebApp(5000);
             const initDataUnsafe = webApp?.initDataUnsafe || null;
 
-            // ── Шаг 2: Определяем тему ─────────────────────────────────────
-            const colorScheme = webApp?.colorScheme ||
-                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            setTheme(colorScheme);
 
             // ── Шаг 3: Логируем на сервер ──────────────────────────────────
             const logData = {
@@ -112,7 +107,6 @@ function App() {
                 hasWebApp: !!webApp,
                 platform: safeGet(webApp, 'platform'),
                 version: safeGet(webApp, 'version'),
-                colorScheme,
                 initDataRaw: (() => {
                     try { return webApp?.initData || null; } catch { return 'ERROR'; }
                 })(),
@@ -355,7 +349,7 @@ function App() {
     // ── Основной экран ─────────────────────────────────────────────────────────
     return (
         <ErrorBoundary>
-            <MaxUI platform={platform} appearance={theme}>
+            <MaxUI platform={platform} appearance="light">
                 <Flex
                     direction="column"
                     style={{

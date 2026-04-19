@@ -329,19 +329,6 @@ export const DealDetail = ({ deal, onBack }) => {
                             </Flex>
                         </div>
                     )}
-
-                    {/* Сбор документов (category 6) — сразу после Инфо о сделке */}
-                    {deal.relatedServices?.length > 0 && (
-                        <Section>
-                            <div style={{ padding: '14px 16px' }}>
-                                <Flex direction="column" gap={10}>
-                                    {deal.relatedServices.map(d => (
-                                        <ChildDealCard key={d.ID} deal={d} />
-                                    ))}
-                                </Flex>
-                            </div>
-                        </Section>
-                    )}
                 </div>
 
                 {/* Финансы */}
@@ -507,59 +494,87 @@ export const DealDetail = ({ deal, onBack }) => {
                                     </div>
                                 );
                             })}
+                            <div style={{
+                                padding: '10px 14px 14px',
+                                fontSize: 11,
+                                color: '#888',
+                                borderTop: `1px solid ${BORDER}`,
+                                lineHeight: 1.4
+                            }}>
+                                ✅ — Подтверждённая оплата<br/>
+                                ⏳ — Не подтверждённая оплата
+                            </div>
                         </div>
                     )}
                 </Section>
 
                 {/* Связанные сделки (SALE и UC_UABTV4) */}
-                {(deal.publications?.length > 0 || deal.deposits?.length > 0) && (
+                {(deal.relatedServices?.length > 0 ||
+                  deal.publications?.length > 0 ||
+                  deal.deposits?.length > 0) && (
+
                     <div style={{ padding: '0 16px 14px' }}>
                         <div style={{
                             borderRadius: 14,
                             backgroundColor: CARD_BG,
                             border: `1px solid ${BORDER}`,
-                            padding: '14px 16px'
+                            padding: '16px',
                         }}>
-                            <Flex direction="column" gap={16}>
 
-                                {[...deal.publications, ...deal.deposits].map(d => (
-                                    <div key={d.ID}>
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center'
-                                        }}>
-                                            <span style={{
-                                                fontWeight: 700,
-                                                fontSize: 15
-                                            }}>
-                                                {getDealName(d)}
-                                            </span>
+                            <Flex direction="column" gap={18}>
 
-                                            <span style={{
-                                                padding: '3px 10px',
-                                                borderRadius: 20,
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                backgroundColor: getStageDisplay(d).bg,
-                                                color: getStageDisplay(d).text
-                                            }}>
-                                                {getStageDisplay(d).label}
-                                            </span>
-                                        </div>
+                                {[...deal.relatedServices, ...deal.publications, ...deal.deposits]
+                                    .map(d => {
 
-                                        {parseFloat(d.OPPORTUNITY || 0) > 0 && (
-                                            <div style={{
-                                                marginTop: 6,
-                                                fontSize: 14,
-                                                fontWeight: 700
-                                            }}>
-                                                {formatMoney(d.OPPORTUNITY)}
+                                        const { label, bg, text } = getStageDisplay(d);
+                                        const sum = parseFloat(d.OPPORTUNITY || 0);
+
+                                        return (
+                                            <div key={d.ID}>
+
+                                                {/* Название + статус */}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <span style={{
+                                                        fontWeight: 700,
+                                                        fontSize: 15
+                                                    }}>
+                                                        {getDealName(d)}
+                                                    </span>
+
+                                                    <span style={{
+                                                        padding: '3px 10px',
+                                                        borderRadius: 20,
+                                                        fontSize: 11,
+                                                        fontWeight: 600,
+                                                        backgroundColor: bg,
+                                                        color: text
+                                                    }}>
+                                                        {label}
+                                                    </span>
+                                                </div>
+
+                                                {/* Сумма (кроме категории 6) */}
+                                                {sum > 0 && (
+                                                    <div style={{
+                                                        marginTop: 6,
+                                                        fontSize: 14
+                                                    }}>
+                                                        <span style={{ color: '#888', marginRight: 6 }}>
+                                                            Сумма
+                                                        </span>
+                                                        <span style={{ fontWeight: 700 }}>
+                                                            {formatMoney(sum)}
+                                                        </span>
+                                                    </div>
+                                                )}
+
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
-
+                                        );
+                                    })}
                             </Flex>
                         </div>
                     </div>
