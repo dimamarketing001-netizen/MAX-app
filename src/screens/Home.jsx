@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Panel, Container, Flex, Avatar, Button } from '@maxhub/max-ui';
+import { Flex, Avatar, Button } from '@maxhub/max-ui';
 import { DealDetail } from './DealDetail';
 import {
     getDealName,
+    getShortName,
     formatMoney,
     getStageDisplay,
     getPaymentStatus,
@@ -11,23 +12,10 @@ import {
     getProductDate,
 } from '../utils/deals';
 
-// ─── Сокращения названий сделок ───────────────────────────────────────────────
-const DEAL_SHORT_NAMES = {
-    'Банкротство физических лиц':     'БФЛ',
-    'Юридическая услуга':             'Юр.услуга',
-    'Расторжение кредитного договора':'РКД',
-    'Сбор документов':                'Сб.докум.',
-    'Кредитный брокер':               'КБ',
-    'Исправление кредитной истории':  'ИКИ',
-    'Внесудебное банкротство':        'ВБ',
-    'Реструктуризация долга':         'РД',
-    'Публикация':                     'Публ.',
-    'Депозит':                        'Деп.',
-};
-
-function getShortName(fullName) {
-    return DEAL_SHORT_NAMES[fullName] || fullName;
-}
+// ─── Общие стили ──────────────────────────────────────────────────────────────
+const BG = '#F2F3F5';
+const CARD_BG = '#FFFFFF';
+const BORDER = 'rgba(0,0,0,0.08)';
 
 // ─── Прогресс-бар ─────────────────────────────────────────────────────────────
 const ProgressBar = ({ paid, total }) => {
@@ -35,27 +23,24 @@ const ProgressBar = ({ paid, total }) => {
     return (
         <div style={{ marginTop: 6, width: '100%' }}>
             <div style={{
-                height: 6,
+                height: 5,
                 borderRadius: 3,
                 backgroundColor: 'rgba(0,0,0,0.08)',
                 overflow: 'hidden',
-                width: '100%',
             }}>
                 <div style={{
                     height: '100%',
                     width: `${pct}%`,
                     borderRadius: 3,
-                    background: pct >= 100
-                        ? 'linear-gradient(90deg, #2e7d32, #43a047)'
-                        : 'linear-gradient(90deg, #1976d2, #42a5f5)',
+                    backgroundColor: pct >= 100 ? '#43A047' : '#42A5F5',
                     transition: 'width 0.4s ease',
                 }} />
             </div>
             <Flex justify="space-between" style={{ marginTop: 4 }}>
-                <span style={{ fontSize: 11, color: 'var(--max--color-text-secondary)' }}>
+                <span style={{ fontSize: 11, color: '#888' }}>
                     Оплачено {pct.toFixed(0)}%
                 </span>
-                <span style={{ fontSize: 11, color: 'var(--max--color-text-secondary)' }}>
+                <span style={{ fontSize: 11, color: '#888' }}>
                     {formatMoney(paid)} / {formatMoney(total)}
                 </span>
             </Flex>
@@ -97,10 +82,9 @@ const DealCard = ({ deal, onClick }) => {
             style={{
                 borderRadius: 14,
                 padding: '14px 16px',
-                backgroundColor: 'var(--max--color-background-content)',
+                backgroundColor: CARD_BG,
                 cursor: 'pointer',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
-                border: '1px solid var(--max--color-separator)',
+                border: `1px solid ${BORDER}`,
                 width: '100%',
                 boxSizing: 'border-box',
                 userSelect: 'none',
@@ -109,17 +93,12 @@ const DealCard = ({ deal, onClick }) => {
             <Flex direction="column" gap={10} style={{ width: '100%' }}>
 
                 {/* Название + бейдж */}
-                <Flex
-                    justify="space-between"
-                    align="flex-start"
-                    gap={8}
-                    style={{ width: '100%' }}
-                >
+                <Flex justify="space-between" align="flex-start" gap={8}>
                     <span style={{
                         fontWeight: 700,
                         fontSize: 15,
                         lineHeight: 1.3,
-                        color: 'var(--max--color-text-primary)',
+                        color: '#1a1a1a',
                         flex: 1,
                         minWidth: 0,
                     }}>
@@ -129,45 +108,25 @@ const DealCard = ({ deal, onClick }) => {
                 </Flex>
 
                 {/* Сумма договора */}
-                <Flex justify="space-between" align="center" style={{ width: '100%' }}>
-                    <span style={{ fontSize: 13, color: 'var(--max--color-text-secondary)' }}>
-                        Сумма договора
-                    </span>
-                    <span style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: 'var(--max--color-text-primary)',
-                        marginLeft: 12,
-                    }}>
+                <Flex justify="space-between" align="center">
+                    <span style={{ fontSize: 13, color: '#888' }}>Сумма договора</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginLeft: 12 }}>
                         {formatMoney(totalAmount)}
                     </span>
                 </Flex>
 
                 {/* Оплачено */}
-                <Flex justify="space-between" align="center" style={{ width: '100%' }}>
-                    <span style={{ fontSize: 13, color: 'var(--max--color-text-secondary)' }}>
-                        Оплачено
-                    </span>
-                    <span style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: '#2e7d32',
-                        marginLeft: 12,
-                    }}>
+                <Flex justify="space-between" align="center">
+                    <span style={{ fontSize: 13, color: '#888' }}>Оплачено</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#43A047', marginLeft: 12 }}>
                         {formatMoney(paidAmount)}
                     </span>
                 </Flex>
 
-                {/* Прогресс-бар */}
                 <ProgressBar paid={paidAmount} total={totalAmount} />
 
-                {/* Открыть → */}
                 <Flex justify="flex-end">
-                    <span style={{
-                        fontSize: 13,
-                        color: '#1976d2',
-                        fontWeight: 600,
-                    }}>
+                    <span style={{ fontSize: 13, color: '#42A5F5', fontWeight: 600 }}>
                         Открыть →
                     </span>
                 </Flex>
@@ -182,35 +141,34 @@ const PaymentsTable = ({ items }) => {
     if (items.length === 0) return null;
 
     const statusConfig = {
-        paid:    { label: '✅ Оплачен',   color: '#2e7d32' },
-        pending: { label: '⏳ Ожидает',   color: '#e65100' },
-        overdue: { label: '⚠ Просрочен', color: '#c62828' },
+        paid:    { label: '✅ Оплачен',   color: '#43A047' },
+        pending: { label: '⏳ Ожидает',   color: '#FB8C00' },
+        overdue: { label: '⚠ Просрочен', color: '#E53935' },
     };
 
     return (
         <div style={{
             borderRadius: 14,
-            backgroundColor: 'var(--max--color-background-content)',
-            border: '1px solid var(--max--color-separator)',
+            backgroundColor: CARD_BG,
+            border: `1px solid ${BORDER}`,
             overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
             width: '100%',
             boxSizing: 'border-box',
         }}>
             {/* Заголовок */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '0.7fr 0.9fr 0.9fr 1fr',
+                gridTemplateColumns: '0.65fr 0.85fr 0.85fr 0.9fr',
                 padding: '8px 14px',
-                backgroundColor: 'rgba(0,0,0,0.04)',
-                borderBottom: '1px solid var(--max--color-separator)',
-                gap: 6,
+                backgroundColor: 'rgba(0,0,0,0.03)',
+                borderBottom: `1px solid ${BORDER}`,
+                gap: 4,
             }}>
                 {['Сделка', 'Дата', 'Сумма', 'Статус'].map(h => (
                     <span key={h} style={{
                         fontSize: 10,
                         fontWeight: 700,
-                        color: 'var(--max--color-text-secondary)',
+                        color: '#999',
                         textTransform: 'uppercase',
                         letterSpacing: 0.3,
                     }}>
@@ -227,46 +185,34 @@ const PaymentsTable = ({ items }) => {
                         {i > 0 && (
                             <div style={{
                                 height: 1,
-                                backgroundColor: 'var(--max--color-separator)',
+                                backgroundColor: BORDER,
                                 margin: '0 14px',
                             }} />
                         )}
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: '0.7fr 0.9fr 0.9fr 1fr',
+                            gridTemplateColumns: '0.65fr 0.85fr 0.85fr 0.9fr',
                             padding: '10px 14px',
                             alignItems: 'center',
-                            gap: 6,
+                            gap: 4,
                         }}>
                             <span style={{
                                 fontSize: 11,
                                 fontWeight: 600,
-                                color: 'var(--max--color-text-primary)',
-                                lineHeight: 1.3,
+                                color: '#1a1a1a',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
                             }}>
                                 {getShortName(item.dealName)}
                             </span>
-                            <span style={{
-                                fontSize: 12,
-                                color: 'var(--max--color-text-primary)',
-                            }}>
+                            <span style={{ fontSize: 12, color: '#1a1a1a' }}>
                                 {item.date}
                             </span>
-                            <span style={{
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: 'var(--max--color-text-primary)',
-                            }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a' }}>
                                 {formatMoney(item.amount)}
                             </span>
-                            <span style={{
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: sc.color,
-                            }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: sc.color }}>
                                 {sc.label}
                             </span>
                         </div>
@@ -294,7 +240,6 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
         d => parseInt(d.CATEGORY_ID) !== 16 && parseInt(d.CATEGORY_ID) !== 18
     );
 
-    // Все платежи из всех сделок, сортируем по дате, берём 5
     const allPayments = deals
         .filter(d => parseInt(d.CATEGORY_ID) !== 16 && parseInt(d.CATEGORY_ID) !== 18)
         .flatMap(deal =>
@@ -317,145 +262,139 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
         <div style={{
             minHeight: '100%',
             width: '100%',
-            backgroundColor: '#f2f3f5',
+            backgroundColor: BG,
+            boxSizing: 'border-box',
         }}>
-            <Flex
-                direction="column"
-                style={{
-                    minHeight: '100%',
-                    width: '100%',
-                }}
-            >
 
-                {/* ── Приветствие ─────────────────────────────────────────── */}
-                <div style={{ padding: '20px 16px 16px' }}>
+            {/* ── Герой-блок (без карточки) ──────────────────────────────── */}
+            <div style={{ padding: '24px 16px 20px' }}>
+                <Flex align="center" gap={16}>
+
+                    {/* Фото */}
+                    <div style={{ flexShrink: 0 }}>
+                        <Avatar.Container size={60} form="squircle">
+                            {user.photo_url
+                                ? <Avatar.Image src={user.photo_url} />
+                                : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
+                            }
+                        </Avatar.Container>
+                    </div>
+
+                    {/* Текст + кнопка */}
+                    <Flex direction="column" gap={10} style={{ flex: 1, minWidth: 0 }}>
+                        <div>
+                            <div style={{
+                                fontSize: 20,
+                                fontWeight: 700,
+                                color: '#1a1a1a',
+                                lineHeight: 1.2,
+                                marginBottom: 2,
+                            }}>
+                                Привет, {user.first_name}!
+                            </div>
+                            <div style={{ fontSize: 13, color: '#888' }}>
+                                Личный кабинет клиента
+                            </div>
+                        </div>
+
+                        {/* Кнопка юриста */}
+                        <button
+                            onClick={() => onContactLawyer?.()}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                width: '100%',
+                                padding: '10px 16px',
+                                borderRadius: 12,
+                                border: 'none',
+                                backgroundColor: '#42A5F5',
+                                color: '#fff',
+                                fontSize: 14,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                transition: 'background-color 0.15s',
+                                boxSizing: 'border-box',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1E88E5'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#42A5F5'}
+                            onTouchStart={e => e.currentTarget.style.backgroundColor = '#1E88E5'}
+                            onTouchEnd={e => e.currentTarget.style.backgroundColor = '#42A5F5'}
+                        >
+                            <span style={{ fontSize: 16 }}>💬</span>
+                            <span>Связаться с юристом</span>
+                        </button>
+                    </Flex>
+
+                </Flex>
+            </div>
+
+            {/* ── Мои сделки ──────────────────────────────────────────────── */}
+            <div style={{
+                padding: '0 16px 20px',
+                width: '100%',
+                boxSizing: 'border-box',
+            }}>
+                <span style={{
+                    display: 'block',
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: '#1a1a1a',
+                    marginBottom: 12,
+                }}>
+                    Мои сделки
+                </span>
+
+                {mainDeals.length === 0 ? (
                     <div style={{
-                        borderRadius: 16,
-                        backgroundColor: 'var(--max--color-background-content)',
-                        padding: '16px',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
-                        border: '1px solid var(--max--color-separator)',
+                        borderRadius: 14,
+                        padding: '20px 16px',
+                        backgroundColor: CARD_BG,
+                        border: `1px solid ${BORDER}`,
+                        textAlign: 'center',
+                        fontSize: 14,
+                        color: '#888',
                         width: '100%',
                         boxSizing: 'border-box',
                     }}>
-                        <Flex align="stretch" gap={14}>
-
-                            {/* Фото */}
-                            <div style={{ flexShrink: 0 }}>
-                                <Avatar.Container size={64} form="squircle">
-                                    {user.photo_url
-                                        ? <Avatar.Image src={user.photo_url} />
-                                        : <Avatar.Text>{user.first_name?.[0] || '?'}</Avatar.Text>
-                                    }
-                                </Avatar.Container>
-                            </div>
-
-                            {/* Текст + кнопка */}
-                            <Flex
-                                direction="column"
-                                justify="space-between"
-                                gap={8}
-                                style={{ flex: 1, minWidth: 0 }}
-                            >
-                                <div>
-                                    <div style={{
-                                        fontSize: 18,
-                                        fontWeight: 700,
-                                        color: 'var(--max--color-text-primary)',
-                                        lineHeight: 1.2,
-                                        marginBottom: 2,
-                                    }}>
-                                        Привет, {user.first_name}!
-                                    </div>
-                                    <div style={{
-                                        fontSize: 13,
-                                        color: 'var(--max--color-text-secondary)',
-                                    }}>
-                                        Личный кабинет клиента
-                                    </div>
-                                </div>
-
-                                <Button
-                                    size="m"
-                                    appearance="accent"
-                                    stretched
-                                    onClick={() => onContactLawyer?.()}
-                                >
-                                    <Flex align="center" justify="center" gap={6}>
-                                        <span style={{ fontSize: 16 }}>💬</span>
-                                        <span style={{ fontSize: 13, fontWeight: 600 }}>
-                                            Связаться с юристом
-                                        </span>
-                                    </Flex>
-                                </Button>
-                            </Flex>
-
-                        </Flex>
+                        Нет активных сделок
                     </div>
-                </div>
+                ) : (
+                    <Flex direction="column" gap={10} style={{ width: '100%' }}>
+                        {mainDeals.map(deal => (
+                            <DealCard
+                                key={deal.ID}
+                                deal={deal}
+                                onClick={setSelectedDeal}
+                            />
+                        ))}
+                    </Flex>
+                )}
+            </div>
 
-                {/* ── Мои сделки ──────────────────────────────────────────── */}
-                <div style={{ padding: '0 16px 20px', width: '100%', boxSizing: 'border-box' }}>
+            {/* ── Ближайшие платежи ────────────────────────────────────────── */}
+            {allPayments.length > 0 && (
+                <div style={{
+                    padding: '0 16px 32px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                }}>
                     <span style={{
                         display: 'block',
                         fontSize: 17,
                         fontWeight: 700,
-                        color: 'var(--max--color-text-primary)',
+                        color: '#1a1a1a',
                         marginBottom: 12,
                     }}>
-                        Мои сделки
+                        Ближайшие платежи
                     </span>
-
-                    {mainDeals.length === 0 ? (
-                        <div style={{
-                            borderRadius: 14,
-                            padding: '20px 16px',
-                            backgroundColor: 'var(--max--color-background-content)',
-                            border: '1px solid var(--max--color-separator)',
-                            textAlign: 'center',
-                            fontSize: 14,
-                            color: 'var(--max--color-text-secondary)',
-                            width: '100%',
-                            boxSizing: 'border-box',
-                        }}>
-                            Нет активных сделок
-                        </div>
-                    ) : (
-                        <Flex
-                            direction="column"
-                            gap={10}
-                            style={{ width: '100%' }}
-                        >
-                            {mainDeals.map(deal => (
-                                <DealCard
-                                    key={deal.ID}
-                                    deal={deal}
-                                    onClick={setSelectedDeal}
-                                />
-                            ))}
-                        </Flex>
-                    )}
+                    <PaymentsTable items={allPayments} />
                 </div>
+            )}
 
-                {/* ── Ближайшие платежи ────────────────────────────────────── */}
-                {allPayments.length > 0 && (
-                    <div style={{ padding: '0 16px 32px', width: '100%', boxSizing: 'border-box' }}>
-                        <span style={{
-                            display: 'block',
-                            fontSize: 17,
-                            fontWeight: 700,
-                            color: 'var(--max--color-text-primary)',
-                            marginBottom: 12,
-                        }}>
-                            Ближайшие платежи
-                        </span>
-                        <PaymentsTable items={allPayments} />
-                    </div>
-                )}
-
-                <div style={{ height: 16 }} />
-
-            </Flex>
+            <div style={{ height: 16 }} />
         </div>
     );
 };

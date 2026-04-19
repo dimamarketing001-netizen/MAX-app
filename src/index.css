@@ -11,8 +11,7 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    /* Светло-серый нейтральный фон */
-    background-color: #f2f3f5;
+    background-color: #F2F3F5;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -22,5 +21,5 @@ body {
     height: 100dvh;
     width: 100%;
     overflow: hidden;
-    background-color: #f2f3f5;
+    background-color: #F2F3F5;
 }

@@ -297,13 +297,22 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
         const contactId = rows[0].bitrix_contact_id;
 
-        // Все сделки контакта category_id=0 (основные)
+        // Маппинг type_id → category_id связанной сделки (для WON-статуса)
+        const TYPE_TO_CATEGORY = {
+            'SALE':      2,
+            'COMPLEX':   4,
+            'GOODS':     8,
+            'SERVICES':  6,
+            'SERVICE':   10,
+            '1':         12,
+            'UC_YHXSUE': 2,
+            'UC_UABTV4': 2,
+        };
+
+        // Основные сделки (category_id=0)
         const dealsRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
             params: {
-                filter: {
-                    CONTACT_ID: contactId,
-                    CATEGORY_ID: 0
-                },
+                filter: { CONTACT_ID: contactId, CATEGORY_ID: 0 },
                 select: [
                     'ID', 'TITLE', 'STAGE_ID', 'OPPORTUNITY',
                     'CURRENCY_ID', 'DATE_CREATE', 'CLOSEDATE',
@@ -312,118 +321,185 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             }
         });
         const deals = dealsRes.data.result || [];
+        console.log(`📋 Основных сделок (cat=0): ${deals.length}`);
 
-        // Получаем стадии для всех воронок
+        // Все связанные сделки контакта (cat 2,4,6,8,10,12,16,18)
+        const relatedRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
+            params: {
+                filter: {
+                    CONTACT_ID: contactId,
+                    'CATEGORY_ID': [2, 4, 6, 8, 10, 12, 16, 18]
+                },
+                select: [
+                    'ID', 'TITLE', 'STAGE_ID', 'OPPORTUNITY',
+                    'CURRENCY_ID', 'DATE_CREATE', 'CATEGORY_ID',
+                    'PARENT_ID', 'TYPE_ID'
+                ]
+            }
+        });
+        const relatedDeals = relatedRes.data.result || [];
+        console.log(`📋 Связанных сделок: ${relatedDeals.length}`);
+
+        // Кэш стадий воронок
         const stagesCache = {};
         const getStages = async (categoryId) => {
-            if (stagesCache[categoryId]) return stagesCache[categoryId];
+            if (stagesCache[categoryId] !== undefined) return stagesCache[categoryId];
             try {
-                const r = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.dealcategory.stage.list`, {
-                    params: { id: categoryId }
-                });
+                const r = await axios.get(
+                    `${process.env.B24_WEBHOOK_URL}/crm.dealcategory.stage.list`,
+                    { params: { id: categoryId } }
+                );
                 stagesCache[categoryId] = r.data.result || [];
-                return stagesCache[categoryId];
             } catch {
-                return [];
+                stagesCache[categoryId] = [];
             }
+            return stagesCache[categoryId];
         };
 
-        // Для каждой сделки получаем данные
-        const enrichedDeals = await Promise.all(deals.map(async (deal) => {
+        // Предзагружаем стадии всех нужных воронок
+        await Promise.all([0, 2, 4, 6, 8, 10, 12, 16, 18].map(getStages));
 
-            // Товары сделки (график платежей)
+        // Обогащаем каждую основную сделку
+        const enrichedDeals = await Promise.all(deals.map(async (deal) => {
+            const isWon = deal.STAGE_ID?.endsWith(':WON');
+            const typeId = deal.TYPE_ID;
+
+            // ── Определяем отображаемый статус ────────────────────────────
+            let displayStage = null;
+
+            if (!isWon) {
+                // Не WON → всегда "Ожидание первого платежа"
+                displayStage = {
+                    NAME: 'Ожидание первого платежа',
+                    COLOR: 'F5A623',
+                };
+            } else {
+                // WON → берём статус из связанной сделки нужной категории
+                const relatedCatId = TYPE_TO_CATEGORY[typeId];
+                if (relatedCatId) {
+                    // Ищем связанную сделку (по PARENT_ID или по контакту+категории)
+                    const relatedDeal = relatedDeals.find(
+                        rd => parseInt(rd.CATEGORY_ID) === relatedCatId
+                            && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
+                    ) || relatedDeals.find(
+                        rd => parseInt(rd.CATEGORY_ID) === relatedCatId
+                    );
+
+                    if (relatedDeal) {
+                        const relStages = stagesCache[relatedCatId] || [];
+                        const relStage = relStages.find(
+                            s => s.STATUS_ID === relatedDeal.STAGE_ID
+                        );
+                        displayStage = relStage || {
+                            NAME: relatedDeal.STAGE_ID,
+                            COLOR: '4CAF50',
+                        };
+                    } else {
+                        displayStage = { NAME: 'Завершено', COLOR: '4CAF50' };
+                    }
+                } else {
+                    displayStage = { NAME: 'Завершено', COLOR: '4CAF50' };
+                }
+            }
+
+            // ── Товары (график платежей) ───────────────────────────────────
             let products = [];
             try {
-                const productsRes = await axios.get(
+                const pr = await axios.get(
                     `${process.env.B24_WEBHOOK_URL}/crm.deal.productrows.get`,
                     { params: { id: deal.ID } }
                 );
-                products = productsRes.data.result || [];
+                products = pr.data.result || [];
             } catch {}
 
-            // Счета через crm.item.list (entityTypeId=31, parentId2=dealId)
+            // ── Счета (crm.item.list, entityTypeId=31) ─────────────────────
             let invoices = [];
             try {
-                const invoicesRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.item.list`, {
-                    params: {
-                        entityTypeId: 31,
-                        filter: { parentId2: deal.ID },
-                        select: ['id', 'title', 'opportunity', 'currencyId', 'stageId', 'createdTime']
+                const invRes = await axios.get(
+                    `${process.env.B24_WEBHOOK_URL}/crm.item.list`,
+                    {
+                        params: {
+                            entityTypeId: 31,
+                            filter: { parentId2: deal.ID },
+                            select: ['id', 'title', 'opportunity', 'currencyId', 'stageId', 'createdTime']
+                        }
                     }
-                });
-                const rawInvoices = invoicesRes.data.result?.items || [];
-
-                // Для каждого счёта получаем товары
-                invoices = await Promise.all(rawInvoices.map(async (inv) => {
-                    let invProducts = [];
-                    try {
-                        const invProdRes = await axios.get(
-                            `${process.env.B24_WEBHOOK_URL}/crm.item.productrow.list`,
-                            {
-                                params: {
-                                    filter: {
-                                        '=ownerType': 'SI',
-                                        '=ownerId': inv.id
-                                    }
-                                }
-                            }
-                        );
-                        invProducts = invProdRes.data.result?.productRows || [];
-                    } catch {}
-                    return { ...inv, products: invProducts };
-                }));
+                );
+                invoices = invRes.data.result?.items || [];
             } catch {}
 
-            // Дочерние сделки category_id=16 (Публикации) и 18 (Депозиты)
-            let publications = [];
-            let deposits = [];
-            try {
-                const childRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
-                    params: {
-                        filter: { PARENT_ID: deal.ID },
-                        select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE', 'CATEGORY_ID']
-                    }
-                });
-                const children = childRes.data.result || [];
-                publications = children.filter(c => parseInt(c.CATEGORY_ID) === 16);
-                deposits = children.filter(c => parseInt(c.CATEGORY_ID) === 18);
-            } catch {}
-
-            // Стадии основной воронки (category_id=0)
-            const stages0 = await getStages(0);
-
-            // Стадии воронки по type_id
-            const typeMap = {
-                'SALE':      2,  'UC_YHXSUE': 2, 'UC_UABTV4': 2,
-                'COMPLEX':   4,  'GOODS':     8, 'SERVICES':  6,
-                'SERVICE':  10,  '1':        12,
-            };
-            const relatedCategoryId = typeMap[deal.TYPE_ID];
-            let relatedStages = [];
-            if (relatedCategoryId) {
-                relatedStages = await getStages(relatedCategoryId);
-            }
-
-            // Текущая стадия
-            const isWon = deal.STAGE_ID?.endsWith(':WON');
-            const currentStages = isWon ? relatedStages : stages0;
-            const currentStage = currentStages.find(s => s.STATUS_ID === deal.STAGE_ID);
-
-            // Оплаченная сумма = счета со stageId содержащим 'P' (оплачен)
+            // ── Оплаченная сумма ───────────────────────────────────────────
             const paidAmount = invoices
                 .filter(inv => inv.stageId === 'DT31_2:P')
                 .reduce((sum, inv) => sum + parseFloat(inv.opportunity || 0), 0);
 
+            // ── Связанные дочерние сделки (16, 18) ─────────────────────────
+            const publications = relatedDeals.filter(
+                rd => parseInt(rd.CATEGORY_ID) === 16
+                    && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
+            );
+            const deposits = relatedDeals.filter(
+                rd => parseInt(rd.CATEGORY_ID) === 18
+                    && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
+            );
+
+            // ── Связанные сделки cat=6 для SALE и UC_UABTV4 ───────────────
+            const relatedServices = (typeId === 'SALE' || typeId === 'UC_UABTV4')
+                ? relatedDeals.filter(
+                    rd => parseInt(rd.CATEGORY_ID) === 6
+                        && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
+                )
+                : [];
+
+            // Добавляем стадии для дочерних сделок
+            const enrichChild = async (child) => {
+                const catId = parseInt(child.CATEGORY_ID);
+                const stages = stagesCache[catId] || [];
+                const stage = stages.find(s => s.STATUS_ID === child.STAGE_ID);
+                const childInvoices = await (async () => {
+                    try {
+                        const r = await axios.get(
+                            `${process.env.B24_WEBHOOK_URL}/crm.item.list`,
+                            {
+                                params: {
+                                    entityTypeId: 31,
+                                    filter: { parentId2: child.ID },
+                                    select: ['id', 'title', 'opportunity', 'stageId', 'createdTime']
+                                }
+                            }
+                        );
+                        return r.data.result?.items || [];
+                    } catch { return []; }
+                })();
+                const childPaid = childInvoices
+                    .filter(i => i.stageId === 'DT31_2:P')
+                    .reduce((s, i) => s + parseFloat(i.opportunity || 0), 0);
+                return {
+                    ...child,
+                    currentStage: stage || null,
+                    displayStage: stage || { NAME: child.STAGE_ID, COLOR: '9E9E9E' },
+                    invoices: childInvoices,
+                    paidAmount: childPaid,
+                    isWon: child.STAGE_ID?.endsWith(':WON'),
+                };
+            };
+
+            const [enrichedPubs, enrichedDeps, enrichedServices] = await Promise.all([
+                Promise.all(publications.map(enrichChild)),
+                Promise.all(deposits.map(enrichChild)),
+                Promise.all(relatedServices.map(enrichChild)),
+            ]);
+
             return {
                 ...deal,
+                isWon,
+                displayStage,
                 products,
                 invoices,
-                publications,
-                deposits,
                 paidAmount,
-                currentStage: currentStage || null,
-                isWon,
-                relatedCategoryId,
+                publications: enrichedPubs,
+                deposits: enrichedDeps,
+                relatedServices: enrichedServices,
             };
         }));
 
@@ -431,6 +507,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Ошибка /api/deals-full:', error.message);
+        console.error(error.stack);
         res.status(500).json({ error: 'Внутренняя ошибка сервера' });
     }
 });
