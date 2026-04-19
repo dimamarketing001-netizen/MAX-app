@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Flex, Spinner, Panel, Container, Button, MaxUI } from '@maxhub/max-ui';
 
 import { TabBar } from './components/TabBar';
 import { HomeScreen } from './screens/Home';
@@ -94,12 +93,9 @@ function App() {
         const loadAppData = async () => {
             setLoading(true);
 
-            // ── Шаг 1: Ждём WebApp от MAX Bridge ──────────────────────────
             const webApp = await waitForWebApp(5000);
             const initDataUnsafe = webApp?.initDataUnsafe || null;
 
-
-            // ── Шаг 3: Логируем на сервер ──────────────────────────────────
             const logData = {
                 ts: new Date().toISOString(),
                 userAgent: navigator.userAgent,
@@ -120,7 +116,6 @@ function App() {
                 body: JSON.stringify(logData),
             }).catch(() => {});
 
-            // ── Шаг 4: ready() и platform ─────────────────────────────────
             try {
                 if (webApp && typeof webApp.ready === 'function') webApp.ready();
             } catch (e) {
@@ -134,7 +129,6 @@ function App() {
                 console.warn('platform error:', e);
             }
 
-            // ── Шаг 5: Получаем userId ─────────────────────────────────────
             const maxUserId = safeGet(initDataUnsafe, 'user.id');
 
             if (!maxUserId) {
@@ -150,7 +144,6 @@ function App() {
                 return;
             }
 
-            // ── Шаг 6: Запрос данных пользователя ─────────────────────────
             try {
                 const userRes = await fetch(`/api/user/${maxUserId}`);
                 const contentType = userRes.headers.get('content-type') || '';
@@ -187,7 +180,6 @@ function App() {
                 userData.photo_url = safeGet(initDataUnsafe, 'user.photo_url') || '';
                 setUser(userData);
 
-                // ── Шаг 7: Запрос сделок ──────────────────────────────────
                 try {
                     const dealsRes = await fetch(`/api/deals-full/${maxUserId}`);
                     if (dealsRes.ok) {
@@ -303,14 +295,19 @@ function App() {
     if (loading) {
         return (
             <ErrorBoundary>
-                <div style={{ padding: 16 }}>
+                <div style={{
+                    minHeight: '100dvh',
+                    backgroundColor: '#F2F3F5',
+                    padding: 16,
+                    boxSizing: 'border-box',
+                }}>
                     {[1, 2, 3].map(i => (
                         <div
                             key={i}
                             style={{
                                 height: 90,
                                 borderRadius: 14,
-                                background: 'linear-gradient(90deg,#eee,#f5f5f5,#eee)',
+                                background: 'linear-gradient(90deg,#e0e0e0,#f5f5f5,#e0e0e0)',
                                 backgroundSize: '200% 100%',
                                 animation: 'skeleton 1.5s infinite',
                                 marginBottom: 12,
@@ -326,7 +323,7 @@ function App() {
     if (error || !user) {
         return (
             <ErrorBoundary>
-                <div style={{ padding: 16 }}>
+                <div style={{ padding: 16, backgroundColor: '#F2F3F5', minHeight: '100dvh' }}>
                     <div style={{
                         background: '#0d0d0d',
                         color: '#00ff41',
@@ -349,28 +346,32 @@ function App() {
     // ── Основной экран ─────────────────────────────────────────────────────────
     return (
         <ErrorBoundary>
-            <MaxUI platform={platform} appearance="light">
-                <Flex
-                    direction="column"
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100dvh',
+                    width: '100%',
+                    overflow: 'hidden',
+                    backgroundColor: '#F2F3F5',
+                }}
+            >
+                {/* Контент с прокруткой */}
+                <div
                     style={{
-                        height: '100dvh',
+                        flex: 1,
+                        overflowY: 'auto',
                         width: '100%',
-                        overflow: 'hidden',
+                        WebkitOverflowScrolling: 'touch',
+                        animation: 'fadeIn .2s ease',
                     }}
                 >
-                    <div
-                        style={{
-                            flex: 1,
-                            overflowY: 'auto',
-                            width: '100%',
-                            animation: 'fadeIn .2s ease'
-                        }}
-                    >
-                        {renderScreen()}
-                    </div>
-                    <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-                </Flex>
-            </MaxUI>
+                    {renderScreen()}
+                </div>
+
+                {/* Нижняя навигация */}
+                <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
         </ErrorBoundary>
     );
 }
