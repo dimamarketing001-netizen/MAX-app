@@ -509,7 +509,9 @@ export const DealDetail = ({ deal, onBack }) => {
 
                 {/* ── Оплаченные счета ─────────────────────────────────────── */}
                 <Section title="Оплаченные счета">
-                    {invoices.length === 0 ? (
+                    {invoices.length === 0 &&
+                     publications.length === 0 &&
+                     deposits.length === 0 ? (
                         <div style={{
                             padding: '20px 16px',
                             textAlign: 'center',
@@ -518,86 +520,169 @@ export const DealDetail = ({ deal, onBack }) => {
                         }}>
                             Нет оплат
                         </div>
-                    ) : (
-                        <>
-                            {/* Заголовок */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: '0.6fr 0.8fr 0.8fr 1.2fr',
-                                padding: '8px 14px',
-                                backgroundColor: 'rgba(0,0,0,0.03)',
-                                borderBottom: `1px solid ${BORDER}`,
-                                gap: 4,
-                            }}>
-                                {['Тип', 'Дата', 'Сумма', 'Статус'].map(h => (
-                                    <span key={h} style={{
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        color: '#999',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: 0.3,
-                                    }}>
-                                        {h}
-                                    </span>
-                                ))}
-                            </div>
+                    ) : (() => {
+                        // Собираем все счета с типом
+                        const allInvoices = [
+                            ...invoices.map(inv => ({ ...inv, _type: getShortName(dealName) })),
+                            ...publications.map(inv => ({ ...inv, _type: 'Публикация' })),
+                            ...deposits.map(inv => ({ ...inv, _type: 'Депозит' })),
+                        ];
 
-                            {/* Строки счетов */}
-                            {invoices.map((inv, i) => {
-                                const isPaid = inv.stageId === 'DT31_2:P';
-                                const statusLabel = isPaid ? '✅' : '⏳';
-                                return (
-                                    <div key={inv.id}>
-                                        {i > 0 && (
-                                            <div style={{
-                                                height: 1,
-                                                backgroundColor: BORDER,
-                                                margin: '0 14px',
-                                            }} />
-                                        )}
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '0.6fr 0.8fr 0.8fr 1.2fr',
-                                            padding: '10px 14px',
-                                            alignItems: 'center',
-                                            gap: 4,
+                        return (
+                            <>
+                                {/* Заголовок таблицы */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '8px 14px',
+                                    backgroundColor: 'rgba(0,0,0,0.03)',
+                                    borderBottom: `1px solid ${BORDER}`,
+                                }}>
+                                    {/* ТИП */}
+                                    <div style={{ width: 80, flexShrink: 0 }}>
+                                        <span style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            color: '#999',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: 0.3,
                                         }}>
-                                            <span style={{
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}>
-                                                {getShortName(dealName)}
-                                            </span>
-                                            <span style={{ fontSize: 12 }}>
-                                                {formatDate(inv.createdTime)}
-                                            </span>
-                                            <span style={{ fontSize: 12, fontWeight: 700 }}>
-                                                {formatMoney(inv.opportunity)}
-                                            </span>
-                                            <span style={{ fontSize: 11 }}>
-                                                {statusLabel}
-                                            </span>
-                                        </div>
+                                            Тип
+                                        </span>
                                     </div>
-                                );
-                            })}
 
-                            {/* Легенда */}
-                            <div style={{
-                                padding: '10px 14px 14px',
-                                fontSize: 11,
-                                color: '#888',
-                                borderTop: `1px solid ${BORDER}`,
-                                lineHeight: 1.4,
-                            }}>
-                                ✅ — Подтверждённая оплата<br />
-                                ⏳ — Не подтверждённая оплата
-                            </div>
-                        </>
-                    )}
+                                    {/* ДАТА */}
+                                    <div style={{ flex: 1 }}>
+                                        <span style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            color: '#999',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: 0.3,
+                                        }}>
+                                            Дата
+                                        </span>
+                                    </div>
+
+                                    {/* СУММА */}
+                                    <div style={{ flex: 1 }}>
+                                        <span style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            color: '#999',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: 0.3,
+                                        }}>
+                                            Сумма
+                                        </span>
+                                    </div>
+
+                                    {/* СТАТУС */}
+                                    <div style={{
+                                        width: 56,
+                                        flexShrink: 0,
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <span style={{
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                            color: '#999',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: 0.3,
+                                        }}>
+                                            Статус
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Строки счетов */}
+                                {allInvoices.map((inv, i) => {
+                                    const isPaid = inv.stageId === 'DT31_2:P';
+                                    return (
+                                        <div key={inv.id || i}>
+                                            {i > 0 && (
+                                                <div style={{
+                                                    height: 1,
+                                                    backgroundColor: BORDER,
+                                                    margin: '0 14px',
+                                                }} />
+                                            )}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                padding: '11px 14px',
+                                            }}>
+                                                {/* Тип */}
+                                                <div style={{ width: 80, flexShrink: 0 }}>
+                                                    <span style={{
+                                                        fontSize: 12,
+                                                        fontWeight: 700,
+                                                        color: '#1a1a1a',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        display: 'block',
+                                                    }}>
+                                                        {inv._type}
+                                                    </span>
+                                                </div>
+
+                                                {/* Дата */}
+                                                <div style={{ flex: 1 }}>
+                                                    <span style={{
+                                                        fontSize: 12,
+                                                        color: '#1a1a1a',
+                                                    }}>
+                                                        {formatDate(inv.createdTime)}
+                                                    </span>
+                                                </div>
+
+                                                {/* Сумма */}
+                                                <div style={{ flex: 1 }}>
+                                                    <span style={{
+                                                        fontSize: 12,
+                                                        fontWeight: 700,
+                                                        color: '#1a1a1a',
+                                                    }}>
+                                                        {formatMoney(inv.opportunity)}
+                                                    </span>
+                                                </div>
+
+                                                {/* Статус — только иконка, по центру колонки */}
+                                                <div style={{
+                                                    width: 56,
+                                                    flexShrink: 0,
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                }}>
+                                                    <span style={{
+                                                        fontSize: 20,
+                                                        lineHeight: 1,
+                                                    }}>
+                                                        {isPaid ? '✅' : '⏳'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Легенда */}
+                                <div style={{
+                                    padding: '10px 14px 14px',
+                                    fontSize: 11,
+                                    color: '#888',
+                                    borderTop: `1px solid ${BORDER}`,
+                                    lineHeight: 1.6,
+                                }}>
+                                    ✅ — Подтверждённая оплата<br />
+                                    ⏳ — Не подтверждённая оплата
+                                </div>
+                            </>
+                        );
+                    })()}
                 </Section>
 
                 {/* ── Связанные сделки ─────────────────────────────────────── */}
