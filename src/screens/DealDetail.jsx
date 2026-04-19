@@ -458,6 +458,8 @@ export const DealDetail = ({ deal, onBack }) => {
                             {/* Строки */}
                             {invoices.map((inv, i) => {
                                 const isPaid = inv.stageId === 'DT31_2:P';
+                                const statusLabel = isPaid ? '✅' : '⏳';
+
                                 return (
                                     <div key={inv.id}>
                                         {i > 0 && (
@@ -496,23 +498,15 @@ export const DealDetail = ({ deal, onBack }) => {
                                                 {formatMoney(inv.opportunity)}
                                             </span>
 
-                                            <span style={{ fontSize: 18 }}>
-                                                {isPaid ? '✅' : '⏳'}
+                                            <span style={{
+                                                fontSize: 11
+                                            }}>
+                                                {statusLabel}
                                             </span>
                                         </div>
                                     </div>
                                 );
                             })}
-                            <div style={{
-                                padding: '10px 14px 14px',
-                                fontSize: 11,
-                                color: '#888',
-                                borderTop: `1px solid ${BORDER}`,
-                                lineHeight: 1.4
-                            }}>
-                                ✅ — Подтверждённая оплата<br/>
-                                ⏳ — Не подтверждённая оплата
-                            </div>
                         </div>
                     )}
                 </Section>
