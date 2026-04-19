@@ -52,30 +52,46 @@ const ProgressBar = ({ paid, total }) => {
 const TableHeader = () => (
     <div style={{
         display: 'grid',
-        gridTemplateColumns: '0.9fr 0.9fr 1.6fr',
+        gridTemplateColumns: '90px 110px 1fr',
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
-        gap: 8,
+        alignItems: 'center'
     }}>
-        {['Дата', 'Сумма', 'Статус'].map(h => (
-            <span key={h} style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#999',
-                textTransform: 'uppercase',
-                letterSpacing: 0.3,
-            }}>
-                {h}
-            </span>
-        ))}
+        <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#999',
+            textTransform: 'uppercase'
+        }}>
+            Дата
+        </span>
+
+        <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#999',
+            textTransform: 'uppercase'
+        }}>
+            Сумма
+        </span>
+
+        <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#999',
+            textTransform: 'uppercase',
+            textAlign: 'right'
+        }}>
+            Статус
+        </span>
     </div>
 );
 
 const PaymentsTableHeader = () => (
     <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1.4fr',
+        gridTemplateColumns: '1fr 1fr 1fr',
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
@@ -99,17 +115,45 @@ const TableRow = ({ date, amount, badge, isLast }) => (
     <div>
         <div style={{
             display: 'grid',
-            gridTemplateColumns: '0.9fr 0.9fr 1.6fr',
+            gridTemplateColumns: '90px 110px 1fr',
             padding: '11px 16px',
-            alignItems: 'center',
-            gap: 8,
+            alignItems: 'center'
         }}>
-            <span style={{ fontSize: 13, color: '#1a1a1a' }}>{date}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{amount}</span>
-            <div>{badge}</div>
+            <span style={{
+                fontSize: 13,
+                color: '#1a1a1a',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+            }}>
+                {date}
+            </span>
+
+            <span style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#1a1a1a',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+            }}>
+                {amount}
+            </span>
+
+            <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end'
+            }}>
+                {badge}
+            </div>
         </div>
+
         {!isLast && (
-            <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
+            <div style={{
+                height: 1,
+                backgroundColor: BORDER,
+                margin: '0 16px'
+            }} />
         )}
     </div>
 );
