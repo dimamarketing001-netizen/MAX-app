@@ -50,7 +50,7 @@ const ProgressBar = ({ paid, total }) => {
 const TableHeader = () => (
     <div style={{
         display: 'grid',
-        gridTemplateColumns: '1.1fr 1fr 1.1fr',
+        gridTemplateColumns: '1fr 1fr 1.4fr',
         padding: '8px 16px',
         backgroundColor: 'rgba(0,0,0,0.03)',
         borderBottom: `1px solid ${BORDER}`,
@@ -75,7 +75,7 @@ const TableRow = ({ date, amount, badge, isLast }) => (
     <div>
         <div style={{
             display: 'grid',
-            gridTemplateColumns: '1.1fr 1fr 1.1fr',
+            gridTemplateColumns: '1fr 1fr 1.4fr',
             padding: '11px 16px',
             alignItems: 'center',
             gap: 8,
@@ -162,6 +162,8 @@ const Section = ({ title, children }) => (
 // ─── Мини-карточка дочерней сделки ────────────────────────────────────────────
 const ChildDealCard = ({ deal }) => {
     const dealName = getDealName(deal);
+    const totalAmount = parseFloat(deal.OPPORTUNITY || 0);
+    const paidAmount = deal.paidAmount || 0;
     const { label, bg, text } = getStageDisplay(deal);
 
     const isCollection = parseInt(deal.CATEGORY_ID) === 6;
@@ -175,21 +177,17 @@ const ChildDealCard = ({ deal }) => {
                 border: '1px solid rgba(0,0,0,0.08)',
                 width: '100%',
                 boxSizing: 'border-box',
-                cursor: 'pointer'
             }}
         >
             <Flex direction="column" gap={10} style={{ width: '100%' }}>
 
-                {/* Название + статус */}
                 <Flex justify="space-between" align="flex-start" gap={8}>
                     <span
                         style={{
                             fontWeight: 700,
                             fontSize: 15,
-                            lineHeight: 1.3,
                             color: '#1a1a1a',
                             flex: 1,
-                            minWidth: 0,
                         }}
                     >
                         {dealName}
@@ -197,7 +195,6 @@ const ChildDealCard = ({ deal }) => {
 
                     <span
                         style={{
-                            display: 'inline-block',
                             padding: '3px 10px',
                             borderRadius: 20,
                             fontSize: 11,
@@ -205,30 +202,41 @@ const ChildDealCard = ({ deal }) => {
                             backgroundColor: bg,
                             color: text,
                             whiteSpace: 'nowrap',
-                            flexShrink: 0,
                         }}
                     >
                         {label}
                     </span>
                 </Flex>
 
-                {/* Сумму НЕ показываем для category 6 */}
-                {!isCollection && deal.OPPORTUNITY && (
+                {/* У Сбора документов убираем сумму */}
+                {!isCollection && totalAmount > 0 && (
                     <Flex justify="space-between" align="center">
-                        <span style={{ fontSize: 13, color: '#888' }}>
-                            Сумма
-                        </span>
-                        <span
-                            style={{
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#1a1a1a',
-                                marginLeft: 12,
-                            }}
-                        >
-                            {formatMoney(deal.OPPORTUNITY)}
+                        <span style={{ fontSize: 13, color: '#888' }}>Сумма</span>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>
+                            {formatMoney(totalAmount)}
                         </span>
                     </Flex>
+                )}
+
+                {/* Возвращаем таблицу счетов */}
+                {deal.invoices && deal.invoices.length > 0 && (
+                    <div style={{
+                        borderRadius: 10,
+                        border: '1px solid rgba(0,0,0,0.08)',
+                        overflow: 'hidden',
+                        marginTop: 4,
+                    }}>
+                        <TableHeader />
+                        {deal.invoices.map((inv, i) => (
+                            <TableRow
+                                key={inv.id}
+                                date={formatDate(inv.createdTime)}
+                                amount={formatMoney(inv.opportunity)}
+                                badge={<InvBadge stageId={inv.stageId} />}
+                                isLast={i === deal.invoices.length - 1}
+                            />
+                        ))}
+                    </div>
                 )}
             </Flex>
         </div>
@@ -292,45 +300,55 @@ export const DealDetail = ({ deal, onBack }) => {
 
                     {/* Инфо о сделке */}
                     {!isSimple && (
-                        <div style={{
-                            borderRadius: 14,
-                            padding: '14px 16px',
-                            backgroundColor: CARD_BG,
-                            border: `1px solid ${BORDER}`,
-                            marginBottom: 16,
-                            width: '100%',
-                            boxSizing: 'border-box',
-                        }}>
-                            <Flex direction="column" gap={10}>
+                        <div style={{ padding: '0 16px 16px' }}>
+                            <Flex direction="column" gap={8}>
+
                                 {deal.UF_CRM_CONTRACT_NUM && (
-                                    <Flex justify="space-between" align="center">
-                                        <span style={{ fontSize: 13, color: '#888' }}>Договор №</span>
-                                        <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginLeft: 12 }}>
+                                    <Flex justify="space-between">
+                                        <span style={{ color: '#888' }}>Договор №</span>
+                                        <span style={{ fontWeight: 600 }}>
                                             {deal.UF_CRM_CONTRACT_NUM}
                                         </span>
                                     </Flex>
                                 )}
-                                <Flex justify="space-between" align="center">
-                                    <span style={{ fontSize: 13, color: '#888' }}>Дата начала</span>
-                                    <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginLeft: 12 }}>
+
+                                <Flex justify="space-between">
+                                    <span style={{ color: '#888' }}>Дата начала</span>
+                                    <span style={{ fontWeight: 600 }}>
                                         {formatDate(deal.DATE_CREATE)}
                                     </span>
                                 </Flex>
-                                <Flex justify="space-between" align="center">
-                                    <span style={{ fontSize: 13, color: '#888' }}>Статус</span>
+
+                                <Flex justify="space-between">
+                                    <span style={{ color: '#888' }}>Статус</span>
                                     <span style={{
-                                        display: 'inline-block',
                                         padding: '4px 12px',
                                         borderRadius: 20,
-                                        fontSize: 12,
-                                        fontWeight: 700,
                                         backgroundColor: stageDisplay.bg,
                                         color: stageDisplay.text,
-                                        marginLeft: 12,
+                                        fontWeight: 700,
                                     }}>
                                         {stageDisplay.label}
                                     </span>
                                 </Flex>
+
+                                {deal.contractFile && (
+                                    <button
+                                        style={{
+                                            marginTop: 8,
+                                            padding: '10px',
+                                            borderRadius: 10,
+                                            border: 'none',
+                                            backgroundColor: '#42A5F5',
+                                            color: '#fff',
+                                            fontWeight: 600,
+                                        }}
+                                        onClick={() => window.open(deal.contractFile, '_blank')}
+                                    >
+                                        Скачать договор PDF
+                                    </button>
+                                )}
+
                             </Flex>
                         </div>
                     )}
@@ -433,37 +451,15 @@ export const DealDetail = ({ deal, onBack }) => {
 
                 {/* Связанные сделки (SALE и UC_UABTV4) */}
                 {showRelated && (
-                    <>
-                        {relatedServices.length > 0 && (
-                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
-                                <Flex direction="column" gap={10}>
-                                    {relatedServices.map(d => (
-                                        <ChildDealCard key={d.ID} deal={d} />
-                                    ))}
-                                </Flex>
-                            </div>
-                        )}
-
-                        {publications.length > 0 && (
-                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
-                                <Flex direction="column" gap={10}>
-                                    {publications.map(d => (
-                                        <ChildDealCard key={d.ID} deal={d} />
-                                    ))}
-                                </Flex>
-                            </div>
-                        )}
-
-                        {deposits.length > 0 && (
-                            <div style={{ padding: '0 16px 14px', boxSizing: 'border-box' }}>
-                                <Flex direction="column" gap={10}>
-                                    {deposits.map(d => (
-                                        <ChildDealCard key={d.ID} deal={d} />
-                                    ))}
-                                </Flex>
-                            </div>
-                        )}
-                    </>
+                    <Section>
+                        <div style={{ padding: '14px 16px' }}>
+                            <Flex direction="column" gap={10} style={{ width: '100%' }}>
+                                {[...relatedServices, ...publications, ...deposits].map(d => (
+                                    <ChildDealCard key={d.ID} deal={d} />
+                                ))}
+                            </Flex>
+                        </div>
+                    </Section>
                 )}
 
                 {/* Документы */}

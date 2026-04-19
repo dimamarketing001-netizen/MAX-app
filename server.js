@@ -479,6 +479,24 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 products = pr.data.result || [];
             } catch {}
 
+            // ── Документы сделки (PDF договора) ─────────────────────
+            let contractFile = null;
+
+            try {
+                const filesRes = await axios.get(
+                    `${process.env.B24_WEBHOOK_URL}/crm.deal.get`,
+                    { params: { id: deal.ID } }
+                );
+
+                const fullDeal = filesRes.data.result;
+
+                if (fullDeal.UF_CRM_CONTRACT_FILE) {
+                    contractFile = fullDeal.UF_CRM_CONTRACT_FILE;
+                }
+            } catch (e) {
+                console.log('Ошибка получения договора:', e.message);
+            }
+
             // ── Счета (crm.item.list, entityTypeId=31) ─────────────────────
             let invoices = [];
             try {
@@ -573,6 +591,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 products,
                 invoices,
                 paidAmount,
+                contractFile,
                 publications: enrichedPubs,
                 deposits: enrichedDeps,
                 relatedServices: enrichedServices,
