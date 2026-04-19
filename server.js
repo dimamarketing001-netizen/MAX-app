@@ -313,44 +313,117 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
         });
         const deals = dealsRes.data.result || [];
 
-        // Для каждой сделки получаем товары и счета
+        // Получаем стадии для всех воронок
+        const stagesCache = {};
+        const getStages = async (categoryId) => {
+            if (stagesCache[categoryId]) return stagesCache[categoryId];
+            try {
+                const r = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.dealcategory.stage.list`, {
+                    params: { id: categoryId }
+                });
+                stagesCache[categoryId] = r.data.result || [];
+                return stagesCache[categoryId];
+            } catch {
+                return [];
+            }
+        };
+
+        // Для каждой сделки получаем данные
         const enrichedDeals = await Promise.all(deals.map(async (deal) => {
-            // Товары (график платежей)
-            const productsRes = await axios.get(
-                `${process.env.B24_WEBHOOK_URL}/crm.deal.productrows.get`,
-                { params: { id: deal.ID } }
-            );
-            const products = productsRes.data.result || [];
 
-            // Счета (дочерние сделки category_id=16)
-            const invoicesRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
-                params: {
-                    filter: { 'PARENT_ID': deal.ID, 'CATEGORY_ID': 16 },
-                    select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE']
-                }
-            });
-            const invoices = invoicesRes.data.result || [];
+            // Товары сделки (график платежей)
+            let products = [];
+            try {
+                const productsRes = await axios.get(
+                    `${process.env.B24_WEBHOOK_URL}/crm.deal.productrows.get`,
+                    { params: { id: deal.ID } }
+                );
+                products = productsRes.data.result || [];
+            } catch {}
 
-            // Депозиты (category_id=18)
-            const depositsRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
-                params: {
-                    filter: { 'PARENT_ID': deal.ID, 'CATEGORY_ID': 18 },
-                    select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE']
-                }
-            });
-            const deposits = depositsRes.data.result || [];
+            // Счета через crm.item.list (entityTypeId=31, parentId2=dealId)
+            let invoices = [];
+            try {
+                const invoicesRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.item.list`, {
+                    params: {
+                        entityTypeId: 31,
+                        filter: { parentId2: deal.ID },
+                        select: ['id', 'title', 'opportunity', 'currencyId', 'stageId', 'createdTime']
+                    }
+                });
+                const rawInvoices = invoicesRes.data.result?.items || [];
 
-            // Оплаченная сумма = сумма счетов со стадией DT31_2:P
+                // Для каждого счёта получаем товары
+                invoices = await Promise.all(rawInvoices.map(async (inv) => {
+                    let invProducts = [];
+                    try {
+                        const invProdRes = await axios.get(
+                            `${process.env.B24_WEBHOOK_URL}/crm.item.productrow.list`,
+                            {
+                                params: {
+                                    filter: {
+                                        '=ownerType': 'SI',
+                                        '=ownerId': inv.id
+                                    }
+                                }
+                            }
+                        );
+                        invProducts = invProdRes.data.result?.productRows || [];
+                    } catch {}
+                    return { ...inv, products: invProducts };
+                }));
+            } catch {}
+
+            // Дочерние сделки category_id=16 (Публикации) и 18 (Депозиты)
+            let publications = [];
+            let deposits = [];
+            try {
+                const childRes = await axios.get(`${process.env.B24_WEBHOOK_URL}/crm.deal.list`, {
+                    params: {
+                        filter: { PARENT_ID: deal.ID },
+                        select: ['ID', 'TITLE', 'OPPORTUNITY', 'STAGE_ID', 'DATE_CREATE', 'CATEGORY_ID']
+                    }
+                });
+                const children = childRes.data.result || [];
+                publications = children.filter(c => parseInt(c.CATEGORY_ID) === 16);
+                deposits = children.filter(c => parseInt(c.CATEGORY_ID) === 18);
+            } catch {}
+
+            // Стадии основной воронки (category_id=0)
+            const stages0 = await getStages(0);
+
+            // Стадии воронки по type_id
+            const typeMap = {
+                'SALE':      2,  'UC_YHXSUE': 2, 'UC_UABTV4': 2,
+                'COMPLEX':   4,  'GOODS':     8, 'SERVICES':  6,
+                'SERVICE':  10,  '1':        12,
+            };
+            const relatedCategoryId = typeMap[deal.TYPE_ID];
+            let relatedStages = [];
+            if (relatedCategoryId) {
+                relatedStages = await getStages(relatedCategoryId);
+            }
+
+            // Текущая стадия
+            const isWon = deal.STAGE_ID?.endsWith(':WON');
+            const currentStages = isWon ? relatedStages : stages0;
+            const currentStage = currentStages.find(s => s.STATUS_ID === deal.STAGE_ID);
+
+            // Оплаченная сумма = счета со stageId содержащим 'P' (оплачен)
             const paidAmount = invoices
-                .filter(inv => inv.STAGE_ID === 'DT31_2:P')
-                .reduce((sum, inv) => sum + parseFloat(inv.OPPORTUNITY || 0), 0);
+                .filter(inv => inv.stageId === 'DT31_2:P')
+                .reduce((sum, inv) => sum + parseFloat(inv.opportunity || 0), 0);
 
             return {
                 ...deal,
                 products,
                 invoices,
+                publications,
                 deposits,
                 paidAmount,
+                currentStage: currentStage || null,
+                isWon,
+                relatedCategoryId,
             };
         }));
 
