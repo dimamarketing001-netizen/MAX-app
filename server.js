@@ -503,20 +503,18 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             // ── Связанные дочерние сделки (16, 18) ─────────────────────────
             const publications = relatedDeals.filter(
                 rd => parseInt(rd.CATEGORY_ID) === 16
-                    && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
-            );
-            const deposits = relatedDeals.filter(
-                rd => parseInt(rd.CATEGORY_ID) === 18
-                    && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
             );
 
-            // ── Связанные сделки cat=6 для SALE и UC_UABTV4 ───────────────
-            const relatedServices = (typeId === 'SALE' || typeId === 'UC_UABTV4')
-                ? relatedDeals.filter(
-                    rd => parseInt(rd.CATEGORY_ID) === 6
-                        && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
-                )
-                : [];
+            const deposits = relatedDeals.filter(
+                rd => parseInt(rd.CATEGORY_ID) === 18
+            );
+
+            const relatedServices =
+                (typeId === 'SALE' || typeId === 'UC_UABTV4')
+                    ? relatedDeals.filter(
+                        rd => parseInt(rd.CATEGORY_ID) === 6
+                    )
+                    : [];
 
             // Добавляем стадии для дочерних сделок
             const enrichChild = async (child) => {
