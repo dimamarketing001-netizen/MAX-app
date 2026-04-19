@@ -364,41 +364,63 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             const isWon = deal.STAGE_ID?.endsWith(':WON');
             const typeId = deal.TYPE_ID;
 
-            // ── Определяем отображаемый статус ────────────────────────────
             let displayStage = null;
 
             if (!isWon) {
-                // Не WON → всегда "Ожидание первого платежа"
                 displayStage = {
                     NAME: 'Ожидание первого платежа',
-                    COLOR: 'F5A623',
+                    COLOR: 'F5A623'
                 };
             } else {
-                // WON → берём статус из связанной сделки нужной категории
-                const relatedCatId = TYPE_TO_CATEGORY[typeId];
-                if (relatedCatId) {
-                    // Ищем связанную сделку (по PARENT_ID или по контакту+категории)
-                    const relatedDeal = relatedDeals.find(
-                        rd => parseInt(rd.CATEGORY_ID) === relatedCatId
-                            && (rd.PARENT_ID === deal.ID || rd.PARENT_ID == deal.ID)
-                    ) || relatedDeals.find(
-                        rd => parseInt(rd.CATEGORY_ID) === relatedCatId
+
+                // ✅ Таблица соответствия type_id → category_id
+                const TYPE_TO_CATEGORY = {
+                    'SALE': 2,
+                    'COMPLEX': 4,
+                    'GOODS': 8,
+                    'SERVICE': 10,
+                    '1': 12,
+                    'UC_YHXSUE': 2,
+                    'UC_UABTV4': 2
+                };
+
+                const relatedCategoryId = TYPE_TO_CATEGORY[typeId];
+
+                let relatedDeal = null;
+
+                if (relatedCategoryId) {
+
+                    // ✅ Сначала ищем по PARENT_ID
+                    relatedDeal = relatedDeals.find(rd =>
+                        parseInt(rd.CATEGORY_ID) === relatedCategoryId &&
+                        (rd.PARENT_ID == deal.ID)
                     );
 
-                    if (relatedDeal) {
-                        const relStages = stagesCache[relatedCatId] || [];
-                        const relStage = relStages.find(
-                            s => s.STATUS_ID === relatedDeal.STAGE_ID
+                    // ✅ Если не найдено — ищем просто по категории
+                    if (!relatedDeal) {
+                        relatedDeal = relatedDeals.find(rd =>
+                            parseInt(rd.CATEGORY_ID) === relatedCategoryId
                         );
-                        displayStage = relStage || {
-                            NAME: relatedDeal.STAGE_ID,
-                            COLOR: '4CAF50',
-                        };
-                    } else {
-                        displayStage = { NAME: 'Завершено', COLOR: '4CAF50' };
                     }
+                }
+
+                if (relatedDeal) {
+                    const stages = stagesCache[relatedCategoryId] || [];
+
+                    const stageObj = stages.find(
+                        s => s.STATUS_ID === relatedDeal.STAGE_ID
+                    );
+
+                    displayStage = stageObj || {
+                        NAME: relatedDeal.STAGE_ID,
+                        COLOR: '4CAF50'
+                    };
+
                 } else {
-                    displayStage = { NAME: 'Завершено', COLOR: '4CAF50' };
+                    displayStage = {
+                        NAME: 'Завершено',
+                        COLOR: '4CAF50'
+                    };
                 }
             }
 
@@ -455,29 +477,40 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             const enrichChild = async (child) => {
                 const catId = parseInt(child.CATEGORY_ID);
                 const stages = stagesCache[catId] || [];
-                const stage = stages.find(s => s.STATUS_ID === child.STAGE_ID);
-                const childInvoices = await (async () => {
-                    try {
-                        const r = await axios.get(
-                            `${process.env.B24_WEBHOOK_URL}/crm.item.list`,
-                            {
-                                params: {
-                                    entityTypeId: 31,
-                                    filter: { parentId2: child.ID },
-                                    select: ['id', 'title', 'opportunity', 'stageId', 'createdTime']
-                                }
+
+                const stageObj = stages.find(
+                    s => s.STATUS_ID === child.STAGE_ID
+                );
+
+                // ✅ Берём стадию ИМЕННО этой сделки (без подмены)
+                const displayStage = stageObj || {
+                    NAME: child.STAGE_ID,
+                    COLOR: '9E9E9E'
+                };
+
+                // ✅ Получаем счета ребёнка
+                let childInvoices = [];
+                try {
+                    const r = await axios.get(
+                        `${process.env.B24_WEBHOOK_URL}/crm.item.list`,
+                        {
+                            params: {
+                                entityTypeId: 31,
+                                filter: { parentId2: child.ID },
+                                select: ['id', 'title', 'opportunity', 'stageId', 'createdTime']
                             }
-                        );
-                        return r.data.result?.items || [];
-                    } catch { return []; }
-                })();
+                        }
+                    );
+                    childInvoices = r.data.result?.items || [];
+                } catch {}
+
                 const childPaid = childInvoices
                     .filter(i => i.stageId === 'DT31_2:P')
                     .reduce((s, i) => s + parseFloat(i.opportunity || 0), 0);
+
                 return {
                     ...child,
-                    currentStage: stage || null,
-                    displayStage: stage || { NAME: child.STAGE_ID, COLOR: '9E9E9E' },
+                    displayStage,
                     invoices: childInvoices,
                     paidAmount: childPaid,
                     isWon: child.STAGE_ID?.endsWith(':WON'),
