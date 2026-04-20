@@ -361,14 +361,13 @@ export const DealDetail = ({ deal, onBack }) => {
 
                     {/* ── Инфо о сделке ───────────────────────────────────── */}
                     {!isSimple && (
-                        <div style={{ padding: '0 0 20px' }}>
+                        <div style={{ padding: '0 16px 20px' }}>
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 12,
                             }}>
-                                {/* Договор № */}
-                                {deal.UF_CRM_CONTRACT_NUM && (
+                                {(deal.contractNumber) && (
                                     <div style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
@@ -376,12 +375,11 @@ export const DealDetail = ({ deal, onBack }) => {
                                     }}>
                                         <span style={{ color: '#888', fontSize: 15 }}>Договор №</span>
                                         <span style={{ fontWeight: 600, fontSize: 15 }}>
-                                            {deal.UF_CRM_CONTRACT_NUM}
+                                            {deal.contractNumber}
                                         </span>
                                     </div>
                                 )}
 
-                                {/* Дата начала */}
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
@@ -393,7 +391,6 @@ export const DealDetail = ({ deal, onBack }) => {
                                     </span>
                                 </div>
 
-                                {/* Статус */}
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
@@ -406,7 +403,7 @@ export const DealDetail = ({ deal, onBack }) => {
                                         backgroundColor: stageDisplay.bg,
                                         color: stageDisplay.text,
                                         fontWeight: 700,
-                                        fontSize: 13,
+                                        fontSize: 15,
                                     }}>
                                         {stageDisplay.label}
                                     </span>

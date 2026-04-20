@@ -503,6 +503,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
             // ── Получение договора через Document Generator ─────────────────
             let contractFile = null;
+            let contractNumber = null;
 
             try {
                 const docRes = await axios.post(
@@ -511,7 +512,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                         select: ['*'],
                         order: { id: 'DESC' },
                         filter: {
-                            entityTypeId: 2,      // 2 = сделка
+                            entityTypeId: 2,
                             entityId: deal.ID
                         },
                         start: 0
@@ -520,10 +521,19 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
                 const documents = docRes.data?.result?.documents || [];
 
+                console.log(`📄 Документов для сделки ${deal.ID}: ${documents.length}`);
+                if (documents.length > 0) {
+                    console.log('📄 Первый документ:', {
+                        id:       documents[0].id,
+                        title:    documents[0].title,
+                        number:   documents[0].number,
+                        pdfUrl:   documents[0].pdfUrl,
+                    });
+                }
+
                 if (documents.length > 0) {
                     const doc = documents[0];
-
-                    // Берём PDF ссылку для машинного доступа
+                    contractNumber = doc.number || null;
                     contractFile =
                         doc.pdfUrlMachine ||
                         doc.downloadUrlMachine ||
@@ -535,6 +545,8 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             } catch (e) {
                 console.log('Ошибка получения договора:', e.response?.data || e.message);
             }
+
+            console.log(`📄 Договор сделки ${deal.ID}: number=${contractNumber}, file=${contractFile}`);
 
             // ── Счета (crm.item.list, entityTypeId=31) ─────────────────────
             let invoices = [];
@@ -636,6 +648,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 invoices,
                 paidAmount,
                 contractFile,
+                contractNumber,
                 publications: enrichedPubs,
                 deposits: enrichedDeps,
                 relatedServices: enrichedServices,
