@@ -330,7 +330,7 @@ export const DealDetail = ({ deal, onBack }) => {
                             style={{
                                 background: 'none',
                                 border: 'none',
-                                fontSize: 28,
+                                fontSize: 30,        // было 28
                                 cursor: 'pointer',
                                 color: '#1a1a1a',
                                 padding: '0 8px 0 0',
@@ -340,17 +340,18 @@ export const DealDetail = ({ deal, onBack }) => {
                                 touchAction: 'manipulation',
                                 WebkitTapHighlightColor: 'transparent',
                                 outline: 'none',
+                                display: 'flex',
+                                alignItems: 'center', // центрируем по вертикали
                             }}
                         >
                             ‹
                         </button>
                         <span style={{
-                            fontSize: 17,
+                            fontSize: 19,            // было 17
                             fontWeight: 700,
                             color: '#1a1a1a',
                             flex: 1,
                             lineHeight: 1.3,
-                            // Длинное название не ломает шапку
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
