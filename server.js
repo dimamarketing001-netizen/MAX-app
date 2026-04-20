@@ -366,12 +366,29 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
         console.log('=========================================\n');
 
         // Кэш стадий воронок
-        // Кэш стадий воронок (через crm.status.list — содержит COLOR)
         const stagesCache = {};
         const getStages = async (categoryId) => {
             if (stagesCache[categoryId] !== undefined) return stagesCache[categoryId];
             try {
-                // ENTITY_ID для cat=0 → 'DEAL_STAGE', для cat=2 → 'DEAL_STAGE_C2' и т.д.
+                const r = await axios.get(
+                    `${process.env.B24_WEBHOOK_URL}/crm.dealcategory.stage.list`,
+                    { params: { id: categoryId } }
+                );
+
+                stagesCache[categoryId] = r.data.result || [];
+
+            } catch (e) {
+                console.error(`❌ Ошибка getStages(${categoryId}):`, e.response?.data || e.message);
+                stagesCache[categoryId] = [];
+            }
+            return stagesCache[categoryId];
+        };
+
+        // Кэш цветов стадий (crm.status.list)
+        const colorsCache = {};
+        const getStageColors = async (categoryId) => {
+            if (colorsCache[categoryId] !== undefined) return colorsCache[categoryId];
+            try {
                 const entityId = categoryId === 0
                     ? 'DEAL_STAGE'
                     : `DEAL_STAGE_C${categoryId}`;
@@ -384,27 +401,27 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     }
                 );
 
-                stagesCache[categoryId] = r.data.result || [];
-
-                console.log(`\n===== СТАДИИ (crm.status.list) cat=${categoryId} entity=${entityId} =====`);
-                stagesCache[categoryId].forEach(s => {
-                    console.log({
-                        STATUS_ID: s.STATUS_ID,
-                        NAME:      s.NAME,
-                        COLOR:     s.COLOR,
-                    });
+                // Строим мапу STATUS_ID → COLOR
+                // STATUS_ID здесь без префикса: 'NEW', 'WON' и т.д.
+                const colorMap = {};
+                (r.data.result || []).forEach(s => {
+                    colorMap[s.STATUS_ID] = s.COLOR || null;
                 });
-                console.log(`======================================================================\n`);
+
+                colorsCache[categoryId] = colorMap;
+
+                console.log(`🎨 Цвета стадий cat=${categoryId}:`, colorMap);
 
             } catch (e) {
-                console.error(`❌ Ошибка getStages(${categoryId}):`, e.response?.data || e.message);
-                stagesCache[categoryId] = [];
+                console.error(`❌ Ошибка getStageColors(${categoryId}):`, e.response?.data || e.message);
+                colorsCache[categoryId] = {};
             }
-            return stagesCache[categoryId];
+            return colorsCache[categoryId];
         };
 
         // Предзагружаем стадии всех нужных воронок
         await Promise.all([0, 2, 4, 6, 8, 10, 12, 16, 18].map(getStages));
+        await Promise.all([0, 2, 4, 6, 8, 10, 12, 16, 18].map(getStageColors));
 
         // Обогащаем каждую основную сделку
         const enrichedDeals = await Promise.all(deals.map(async (deal) => {
@@ -473,14 +490,20 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
                 if (relatedDeal) {
                     const stages = stagesCache[relatedCategoryId] || [];
-
                     const stageObj = stages.find(
                         s => s.STATUS_ID === relatedDeal.STAGE_ID
                     );
 
-                    displayStage = stageObj || {
-                        NAME: relatedDeal.STAGE_ID,
-                        COLOR: '4CAF50'
+                    // Берём цвет из colorsCache
+                    // STAGE_ID сделки: 'C2:EXECUTING' → ключ 'EXECUTING'
+                    const stageKey = relatedDeal.STAGE_ID?.includes(':')
+                        ? relatedDeal.STAGE_ID.split(':').pop()
+                        : relatedDeal.STAGE_ID;
+                    const color = colorsCache[relatedCategoryId]?.[stageKey] || '4CAF50';
+
+                    displayStage = {
+                        NAME:  stageObj?.NAME || relatedDeal.STAGE_ID,
+                        COLOR: color,
                     };
 
                 } else {
@@ -583,17 +606,16 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     s => s.STATUS_ID === child.STAGE_ID
                 );
 
-                // stageObj из crm.dealcategory.stage.list уже содержит COLOR
-                // { NAME, STATUS_ID, COLOR, ... }
-                const displayStage = stageObj
-                    ? {
-                        NAME:  stageObj.NAME,
-                        COLOR: stageObj.COLOR || '9E9E9E',
-                      }
-                    : {
-                        NAME:  child.STAGE_ID,
-                        COLOR: '9E9E9E',
-                      };
+                // Берём цвет из colorsCache по ключу без префикса
+                const stageKey = child.STAGE_ID?.includes(':')
+                    ? child.STAGE_ID.split(':').pop()
+                    : child.STAGE_ID;
+                const color = colorsCache[catId]?.[stageKey] || '9E9E9E';
+
+                const displayStage = {
+                    NAME:  stageObj?.NAME || child.STAGE_ID,
+                    COLOR: color,
+                };
 
                 // Получаем счета ребёнка
                 let childInvoices = [];
