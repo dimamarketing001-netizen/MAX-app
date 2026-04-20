@@ -243,23 +243,23 @@ const PaymentsTable = ({ items }) => {
                                 {formatMoney(item.amount)}
                             </span>
                             <span style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 3,
-                                padding: '3px 7px',
-                                borderRadius: 10,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                color: sc.color,
-                                backgroundColor: sc.bg,
-                                whiteSpace: 'nowrap',
-                                // Центрируем содержимое и убираем лишнюю ширину
-                                width: 'fit-content',
-                                justifyContent: 'center',
-                            }}>
-                                <span style={{ fontSize: 11, lineHeight: 1 }}>{sc.icon}</span>
-                                <span>{sc.label}</span>
-                            </span>
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'flex-start',
+                            gap: 4,
+                            width: 100,
+                            padding: '4px 8px',
+                            borderRadius: 10,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: sc.color,
+                            backgroundColor: sc.bg,
+                            whiteSpace: 'nowrap',
+                            boxSizing: 'border-box',
+                        }}>
+                            <span style={{ fontSize: 11, lineHeight: 1, flexShrink: 0 }}>{sc.icon}</span>
+                            <span>{sc.label}</span>
+                        </span>
                         </div>
                     </div>
                 );
