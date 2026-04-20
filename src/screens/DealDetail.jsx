@@ -319,45 +319,51 @@ export const DealDetail = ({ deal, onBack }) => {
 
                 {/* ── Шапка ───────────────────────────────────────────────── */}
                 <div style={{ padding: '16px 16px 0' }}>
+
+                    {/* Кнопка назад */}
+                    <button
+                        onClick={onBack}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#42A5F5',
+                            fontSize: 16,
+                            fontWeight: 600,
+                            fontFamily: 'inherit',
+                            padding: '4px 0',
+                            marginBottom: 12,
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            outline: 'none',
+                        }}
+                        onTouchStart={e => e.currentTarget.style.opacity = '0.6'}
+                        onTouchEnd={e => e.currentTarget.style.opacity = '1'}
+                        onMouseDown={e => e.currentTarget.style.opacity = '0.6'}
+                        onMouseUp={e => e.currentTarget.style.opacity = '1'}
+                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                    >
+                        <span style={{ fontSize: 20, lineHeight: 1 }}>‹</span>
+                        <span>Назад</span>
+                    </button>
+
+                    {/* Название сделки */}
                     <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
+                        fontSize: 22,
+                        fontWeight: 700,
+                        color: '#1a1a1a',
+                        lineHeight: 1.3,
                         marginBottom: 16,
+                        overflow: 'hidden',
+                        // Длинное название переносим на 2 строки
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
                     }}>
-                        <button
-                            onClick={onBack}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                fontSize: 30,        // было 28
-                                cursor: 'pointer',
-                                color: '#1a1a1a',
-                                padding: '0 8px 0 0',
-                                lineHeight: 1,
-                                flexShrink: 0,
-                                fontFamily: 'inherit',
-                                touchAction: 'manipulation',
-                                WebkitTapHighlightColor: 'transparent',
-                                outline: 'none',
-                                display: 'flex',
-                                alignItems: 'center', // центрируем по вертикали
-                            }}
-                        >
-                            ‹
-                        </button>
-                        <span style={{
-                            fontSize: 19,            // было 17
-                            fontWeight: 700,
-                            color: '#1a1a1a',
-                            flex: 1,
-                            lineHeight: 1.3,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                        }}>
-                            {dealName}
-                        </span>
+                        {dealName}
                     </div>
 
                     {/* ── Инфо о сделке ───────────────────────────────────── */}
@@ -368,7 +374,7 @@ export const DealDetail = ({ deal, onBack }) => {
                                 flexDirection: 'column',
                                 gap: 12,
                             }}>
-                                {(deal.contractNumber) && (
+                                {(deal.contractNumber || deal.UF_CRM_CONTRACT_NUM) && (
                                     <div style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
@@ -376,7 +382,7 @@ export const DealDetail = ({ deal, onBack }) => {
                                     }}>
                                         <span style={{ color: '#888', fontSize: 15 }}>Договор №</span>
                                         <span style={{ fontWeight: 600, fontSize: 15 }}>
-                                            {deal.contractNumber}
+                                            {deal.contractNumber || deal.UF_CRM_CONTRACT_NUM}
                                         </span>
                                     </div>
                                 )}
