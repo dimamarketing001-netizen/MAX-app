@@ -253,6 +253,9 @@ const PaymentsTable = ({ items }) => {
                                 color: sc.color,
                                 backgroundColor: sc.bg,
                                 whiteSpace: 'nowrap',
+                                // Центрируем содержимое и убираем лишнюю ширину
+                                width: 'fit-content',
+                                justifyContent: 'center',
                             }}>
                                 <span style={{ fontSize: 11, lineHeight: 1 }}>{sc.icon}</span>
                                 <span>{sc.label}</span>
