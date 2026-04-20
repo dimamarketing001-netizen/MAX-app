@@ -757,13 +757,6 @@ export const DealDetail = ({ deal, onBack }) => {
                                 const name = getDealName(d);
                                 const catId = parseInt(d.CATEGORY_ID);
 
-                                // Только три реальных типа из кода
-                                const catConfig = catId === 16
-                                    ? { icon: '📰', label: 'Публикация',       accent: '#AB47BC' }
-                                    : catId === 18
-                                    ? { icon: '💰', label: 'Депозит',          accent: '#26A69A' }
-                                    : { icon: '📁', label: 'Сбор документов',  accent: '#42A5F5' };
-
                                 return (
                                     <div
                                         key={d.ID || idx}
@@ -776,11 +769,11 @@ export const DealDetail = ({ deal, onBack }) => {
                                             display: 'flex',
                                         }}
                                     >
-                                        {/* Цветная полоска слева */}
+                                        {/* Цветная полоска — цвет текста статуса */}
                                         <div style={{
                                             width: 4,
                                             flexShrink: 0,
-                                            backgroundColor: catConfig.accent,
+                                            backgroundColor: text,
                                         }} />
 
                                         {/* Контент */}
@@ -793,26 +786,32 @@ export const DealDetail = ({ deal, onBack }) => {
                                             minWidth: 0,
                                         }}>
 
-                                            {/* Строка 1: название + статус-бейдж */}
+                                            {/* Строка 1: название */}
+                                            <span style={{
+                                                fontSize: 14,
+                                                fontWeight: 700,
+                                                color: '#1a1a1a',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                                lineHeight: 1.3,
+                                            }}>
+                                                {name}
+                                            </span>
+
+                                            {/* Разделитель */}
+                                            <div style={{
+                                                height: 1,
+                                                backgroundColor: BORDER,
+                                            }} />
+
+                                            {/* Строка 2: статус-бейдж слева, сумма справа */}
                                             <div style={{
                                                 display: 'flex',
-                                                alignItems: 'flex-start',
+                                                alignItems: 'center',
                                                 justifyContent: 'space-between',
-                                                gap: 8,
                                             }}>
-                                                <span style={{
-                                                    flex: 1,
-                                                    minWidth: 0,
-                                                    fontSize: 14,
-                                                    fontWeight: 700,
-                                                    color: '#1a1a1a',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                    lineHeight: 1.3,
-                                                }}>
-                                                    {name}
-                                                </span>
+                                                {/* Статус вместо иконки */}
                                                 <span style={{
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
@@ -827,33 +826,8 @@ export const DealDetail = ({ deal, onBack }) => {
                                                 }}>
                                                     {label}
                                                 </span>
-                                            </div>
 
-                                            {/* Разделитель */}
-                                            <div style={{
-                                                height: 1,
-                                                backgroundColor: BORDER,
-                                            }} />
-
-                                            {/* Строка 2: тип (иконка + подпись) слева, сумма справа */}
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                            }}>
-                                                <span style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: 5,
-                                                    fontSize: 12,
-                                                    fontWeight: 600,
-                                                    color: catConfig.accent,
-                                                }}>
-                                                    <span style={{ fontSize: 14 }}>{catConfig.icon}</span>
-                                                    {catConfig.label}
-                                                </span>
-
-                                                {/* Сумма для публикации и депозита, "Бесплатно" для сбора документов */}
+                                                {/* Сумма */}
                                                 {(catId === 16 || catId === 18) && sum > 0 ? (
                                                     <span style={{
                                                         fontSize: 14,
