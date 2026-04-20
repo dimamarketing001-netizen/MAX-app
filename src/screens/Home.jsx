@@ -73,6 +73,7 @@ const StageBadge = ({ deal }) => {
 };
 
 // ─── Карточка сделки ──────────────────────────────────────────────────────────
+// ─── Карточка сделки ──────────────────────────────────────────────────────────
 const DealCard = ({ deal, onClick }) => {
     if (parseInt(deal.CATEGORY_ID) === 16 || parseInt(deal.CATEGORY_ID) === 18) return null;
 
@@ -155,9 +156,27 @@ const DealCard = ({ deal, onClick }) => {
 
                 <ProgressBar paid={paidAmount} total={totalAmount} />
 
+                {/* Разделитель */}
+                <div style={{
+                    height: 1,
+                    backgroundColor: BORDER,
+                    margin: '2px 0 0',
+                }} />
+
+                {/* Кнопка "Открыть" — стиль как "← Назад" в DealDetail */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: 13, color: '#42A5F5', fontWeight: 600 }}>
-                        Открыть →
+                    <span
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            color: '#42A5F5',
+                            fontSize: 16,
+                            fontWeight: 600,
+                        }}
+                    >
+                        <span>Открыть</span>
+                        <span style={{ fontSize: 16, fontWeight: 600 }}>→</span>
                     </span>
                 </div>
 
