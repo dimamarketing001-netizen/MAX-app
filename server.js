@@ -375,7 +375,24 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     { params: { id: categoryId } }
                 );
                 stagesCache[categoryId] = r.data.result || [];
-            } catch {
+
+                // ── ЛОГИ — смотрим структуру стадий ──────────────────────────────
+                console.log(`\n===== СТАДИИ ДЛЯ КАТЕГОРИИ ${categoryId} =====`);
+                console.log(`Всего стадий: ${stagesCache[categoryId].length}`);
+                stagesCache[categoryId].forEach(s => {
+                    console.log({
+                        STATUS_ID: s.STATUS_ID,
+                        NAME:      s.NAME,
+                        COLOR:     s.COLOR,
+                        // Выводим ВСЕ ключи чтобы увидеть где цвет
+                        ALL_KEYS:  Object.keys(s),
+                        FULL:      s,
+                    });
+                });
+                console.log(`==============================================\n`);
+
+            } catch (e) {
+                console.error(`❌ Ошибка getStages(${categoryId}):`, e.message);
                 stagesCache[categoryId] = [];
             }
             return stagesCache[categoryId];
