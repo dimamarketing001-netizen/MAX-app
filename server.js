@@ -384,53 +384,25 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             return stagesCache[categoryId];
         };
 
-        // Кэш цветов стадий (crm.status.list) — общая мапа stageKey → color
-        const colorsCache = {};
-        const allColorsMap = {};
-
-        const getStageColors = async (categoryId) => {
-            if (colorsCache[categoryId] !== undefined) return colorsCache[categoryId];
-            try {
-                // Временно — запрашиваем ВСЕ статусы без фильтра
-                // чтобы увидеть реальные ENTITY_ID для каждой воронки
-                const r = await axios.post(
-                    `${process.env.B24_WEBHOOK_URL}/crm.status.list`,
-                    {
-                        order: { SORT: 'ASC' },
-                    }
-                );
-
-                // Выводим только уникальные ENTITY_ID
-                if (categoryId === 0) {
-                    const entityIds = [...new Set(
-                        (r.data.result || []).map(s => s.ENTITY_ID)
-                    )];
-                    console.log(`\n🔍 ВСЕ ENTITY_ID в системе:`, entityIds);
-                    console.log(`\n🔍 Полный список статусов со STAGE_ID:`);
-                    (r.data.result || []).forEach(s => {
-                        if (s.ENTITY_ID?.includes('DEAL')) {
-                            console.log({
-                                ENTITY_ID: s.ENTITY_ID,
-                                STATUS_ID: s.STATUS_ID,
-                                NAME: s.NAME,
-                                COLOR: s.COLOR,
-                            });
-                        }
-                    });
-                }
-
-                colorsCache[categoryId] = {};
-
-            } catch (e) {
-                console.error(`❌ Ошибка getStageColors(${categoryId}):`, e.response?.data || e.message);
-                colorsCache[categoryId] = {};
-            }
-            return colorsCache[categoryId];
-        };
-
         // Предзагружаем стадии всех нужных воронок
         await Promise.all([0, 2, 4, 6, 8, 10, 12, 16, 18].map(getStages));
-        await Promise.all([0, 2, 4, 6, 8, 10, 12, 16, 18].map(getStageColors));
+
+        // Единая мапа STATUS_ID → COLOR для всех категорий
+        const allColorsMap = {};
+        try {
+            const r = await axios.post(
+                `${process.env.B24_WEBHOOK_URL}/crm.status.list`,
+                { order: { SORT: 'ASC' } }
+            );
+            (r.data.result || []).forEach(s => {
+                if (s.STATUS_ID && s.COLOR && s.COLOR !== '#') {
+                    allColorsMap[s.STATUS_ID] = s.COLOR;
+                }
+            });
+            console.log(`🎨 Загружено цветов: ${Object.keys(allColorsMap).length}`);
+        } catch (e) {
+            console.error('❌ Ошибка загрузки цветов:', e.message);
+        }
 
         // Обогащаем каждую основную сделку
         const enrichedDeals = await Promise.all(deals.map(async (deal) => {
@@ -503,9 +475,8 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                         s => s.STATUS_ID === relatedDeal.STAGE_ID
                     );
 
-                    // STAGE_ID уже правильный ключ: 'C2:FINAL_INVOICE'
-                    // для cat=0 WON → просто 'WON'
-                    const color = allColorsMap[relatedDeal.STAGE_ID] || '9E9E9E';
+                    // STATUS_ID сделки 'C2:FINAL_INVOICE' — прямой ключ в allColorsMap
+                    const color = allColorsMap[relatedDeal.STAGE_ID] || '4CAF50';
 
                     displayStage = {
                         NAME:  stageObj?.NAME || relatedDeal.STAGE_ID,
@@ -612,7 +583,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     s => s.STATUS_ID === child.STAGE_ID
                 );
 
-                // Берём из общей мапы всех категорий
+                // STATUS_ID: 'C16:FINAL_INVOICE' — прямой ключ в allColorsMap
                 const color = allColorsMap[child.STAGE_ID] || '9E9E9E';
 
                 const displayStage = {
