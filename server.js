@@ -384,8 +384,10 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
             return stagesCache[categoryId];
         };
 
-        // Кэш цветов стадий (crm.status.list)
+        // Кэш цветов стадий (crm.status.list) — общая мапа stageKey → color
         const colorsCache = {};
+        const allColorsMap = {}; // единая мапа по stageKey без префикса
+
         const getStageColors = async (categoryId) => {
             if (colorsCache[categoryId] !== undefined) return colorsCache[categoryId];
             try {
@@ -401,16 +403,18 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     }
                 );
 
-                // Строим мапу STATUS_ID → COLOR
-                // STATUS_ID здесь без префикса: 'NEW', 'WON' и т.д.
                 const colorMap = {};
                 (r.data.result || []).forEach(s => {
-                    colorMap[s.STATUS_ID] = s.COLOR || null;
+                    if (s.COLOR) {
+                        colorMap[s.STATUS_ID] = s.COLOR;
+                        // Добавляем в общую мапу — перезапись не страшна,
+                        // цвета одинаковых стадий совпадают
+                        allColorsMap[s.STATUS_ID] = s.COLOR;
+                    }
                 });
 
                 colorsCache[categoryId] = colorMap;
-
-                console.log(`🎨 Цвета стадий cat=${categoryId}:`, colorMap);
+                console.log(`🎨 Цвета cat=${categoryId}:`, colorMap);
 
             } catch (e) {
                 console.error(`❌ Ошибка getStageColors(${categoryId}):`, e.response?.data || e.message);
@@ -494,12 +498,13 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                         s => s.STATUS_ID === relatedDeal.STAGE_ID
                     );
 
-                    // Берём цвет из colorsCache
-                    // STAGE_ID сделки: 'C2:EXECUTING' → ключ 'EXECUTING'
+                    // stageKey: 'C2:FINAL_INVOICE' → 'FINAL_INVOICE'
                     const stageKey = relatedDeal.STAGE_ID?.includes(':')
                         ? relatedDeal.STAGE_ID.split(':').pop()
                         : relatedDeal.STAGE_ID;
-                    const color = colorsCache[relatedCategoryId]?.[stageKey] || '4CAF50';
+
+                    // Берём из общей мапы всех категорий
+                    const color = allColorsMap[stageKey] || '9E9E9E';
 
                     displayStage = {
                         NAME:  stageObj?.NAME || relatedDeal.STAGE_ID,
@@ -508,8 +513,8 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
                 } else {
                     displayStage = {
-                        NAME: 'Завершено',
-                        COLOR: '4CAF50'
+                        NAME: 'Не известно',
+                        COLOR: '9E9E9E'
                     };
                 }
             }
@@ -606,11 +611,12 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     s => s.STATUS_ID === child.STAGE_ID
                 );
 
-                // Берём цвет из colorsCache по ключу без префикса
                 const stageKey = child.STAGE_ID?.includes(':')
                     ? child.STAGE_ID.split(':').pop()
                     : child.STAGE_ID;
-                const color = colorsCache[catId]?.[stageKey] || '9E9E9E';
+
+                // Берём из общей мапы всех категорий
+                const color = allColorsMap[stageKey] || '9E9E9E';
 
                 const displayStage = {
                     NAME:  stageObj?.NAME || child.STAGE_ID,
