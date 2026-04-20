@@ -386,7 +386,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
 
         // Кэш цветов стадий (crm.status.list) — общая мапа stageKey → color
         const colorsCache = {};
-        const allColorsMap = {}; // единая мапа по stageKey без префикса
+        const allColorsMap = {};
 
         const getStageColors = async (categoryId) => {
             if (colorsCache[categoryId] !== undefined) return colorsCache[categoryId];
@@ -406,10 +406,14 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 const colorMap = {};
                 (r.data.result || []).forEach(s => {
                     if (s.COLOR) {
-                        colorMap[s.STATUS_ID] = s.COLOR;
-                        // Добавляем в общую мапу — перезапись не страшна,
-                        // цвета одинаковых стадий совпадают
-                        allColorsMap[s.STATUS_ID] = s.COLOR;
+                        // Для cat=0 ключ без префикса: 'FINAL_INVOICE'
+                        // Для cat=2 ключ с префиксом: 'C2:FINAL_INVOICE'
+                        const key = categoryId === 0
+                            ? s.STATUS_ID
+                            : `C${categoryId}:${s.STATUS_ID}`;
+
+                        colorMap[key] = s.COLOR;
+                        allColorsMap[key] = s.COLOR;
                     }
                 });
 
@@ -498,13 +502,9 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                         s => s.STATUS_ID === relatedDeal.STAGE_ID
                     );
 
-                    // stageKey: 'C2:FINAL_INVOICE' → 'FINAL_INVOICE'
-                    const stageKey = relatedDeal.STAGE_ID?.includes(':')
-                        ? relatedDeal.STAGE_ID.split(':').pop()
-                        : relatedDeal.STAGE_ID;
-
-                    // Берём из общей мапы всех категорий
-                    const color = allColorsMap[stageKey] || '9E9E9E';
+                    // STAGE_ID уже правильный ключ: 'C2:FINAL_INVOICE'
+                    // для cat=0 WON → просто 'WON'
+                    const color = allColorsMap[relatedDeal.STAGE_ID] || '9E9E9E';
 
                     displayStage = {
                         NAME:  stageObj?.NAME || relatedDeal.STAGE_ID,
@@ -611,12 +611,8 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     s => s.STATUS_ID === child.STAGE_ID
                 );
 
-                const stageKey = child.STAGE_ID?.includes(':')
-                    ? child.STAGE_ID.split(':').pop()
-                    : child.STAGE_ID;
-
                 // Берём из общей мапы всех категорий
-                const color = allColorsMap[stageKey] || '9E9E9E';
+                const color = allColorsMap[child.STAGE_ID] || '9E9E9E';
 
                 const displayStage = {
                     NAME:  stageObj?.NAME || child.STAGE_ID,
