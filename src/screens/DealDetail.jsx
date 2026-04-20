@@ -853,8 +853,8 @@ export const DealDetail = ({ deal, onBack }) => {
                                                     {catConfig.label}
                                                 </span>
 
-                                                {/* Сумма — только для публикации и депозита */}
-                                                {(catId === 16 || catId === 18) && sum > 0 && (
+                                                {/* Сумма для публикации и депозита, "Бесплатно" для сбора документов */}
+                                                {(catId === 16 || catId === 18) && sum > 0 ? (
                                                     <span style={{
                                                         fontSize: 14,
                                                         fontWeight: 700,
@@ -863,7 +863,15 @@ export const DealDetail = ({ deal, onBack }) => {
                                                     }}>
                                                         {formatMoney(sum)}
                                                     </span>
-                                                )}
+                                                ) : catId !== 16 && catId !== 18 ? (
+                                                    <span style={{
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        color: '#43A047',
+                                                    }}>
+                                                        Бесплатно
+                                                    </span>
+                                                ) : null}
                                             </div>
 
                                         </div>
