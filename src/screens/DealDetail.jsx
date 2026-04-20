@@ -730,7 +730,7 @@ export const DealDetail = ({ deal, onBack }) => {
                 </Section>
 
 
-                {/* ── Связанные услуги ─────────────────────────────────────── */}
+                {/* ── Связанные услуги ─────────────────────────────────────────── */}
                 {(relatedServices.length > 0 ||
                     publications.length > 0 ||
                     deposits.length > 0) && (
@@ -757,6 +757,13 @@ export const DealDetail = ({ deal, onBack }) => {
                                 const name = getDealName(d);
                                 const catId = parseInt(d.CATEGORY_ID);
 
+                                // Только три реальных типа из кода
+                                const catConfig = catId === 16
+                                    ? { icon: '📰', label: 'Публикация',       accent: '#AB47BC' }
+                                    : catId === 18
+                                    ? { icon: '💰', label: 'Депозит',          accent: '#26A69A' }
+                                    : { icon: '📁', label: 'Сбор документов',  accent: '#42A5F5' };
+
                                 return (
                                     <div
                                         key={d.ID || idx}
@@ -764,58 +771,101 @@ export const DealDetail = ({ deal, onBack }) => {
                                             borderRadius: 14,
                                             backgroundColor: CARD_BG,
                                             border: `1px solid ${BORDER}`,
-                                            padding: '12px 14px',
+                                            overflow: 'hidden',
                                             boxSizing: 'border-box',
+                                            display: 'flex',
                                         }}
                                     >
-                                        {/* Одна строка: название | сумма | статус */}
+                                        {/* Цветная полоска слева */}
                                         <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 8,
-                                        }}>
-                                            {/* Название */}
-                                            <span style={{
-                                                flex: 1,
-                                                minWidth: 0,
-                                                fontSize: 14,
-                                                fontWeight: 700,
-                                                color: '#1a1a1a',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}>
-                                                {name}
-                                            </span>
+                                            width: 4,
+                                            flexShrink: 0,
+                                            backgroundColor: catConfig.accent,
+                                        }} />
 
-                                            {/* Сумма — только если есть и не cat 6 */}
-                                            {catId !== 6 && sum > 0 && (
+                                        {/* Контент */}
+                                        <div style={{
+                                            flex: 1,
+                                            padding: '12px 14px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 8,
+                                            minWidth: 0,
+                                        }}>
+
+                                            {/* Строка 1: название + статус-бейдж */}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                justifyContent: 'space-between',
+                                                gap: 8,
+                                            }}>
                                                 <span style={{
-                                                    fontSize: 13,
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    fontSize: 14,
                                                     fontWeight: 700,
                                                     color: '#1a1a1a',
-                                                    flexShrink: 0,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap',
+                                                    lineHeight: 1.3,
                                                 }}>
-                                                    {formatMoney(sum)}
+                                                    {name}
                                                 </span>
-                                            )}
+                                                <span style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    padding: '3px 10px',
+                                                    borderRadius: 20,
+                                                    fontSize: 11,
+                                                    fontWeight: 600,
+                                                    backgroundColor: bg,
+                                                    color: text,
+                                                    whiteSpace: 'nowrap',
+                                                    flexShrink: 0,
+                                                }}>
+                                                    {label}
+                                                </span>
+                                            </div>
 
-                                            {/* Статус */}
-                                            <span style={{
-                                                display: 'inline-flex',
+                                            {/* Разделитель */}
+                                            <div style={{
+                                                height: 1,
+                                                backgroundColor: BORDER,
+                                            }} />
+
+                                            {/* Строка 2: тип (иконка + подпись) слева, сумма справа */}
+                                            <div style={{
+                                                display: 'flex',
                                                 alignItems: 'center',
-                                                padding: '4px 10px',
-                                                borderRadius: 20,
-                                                fontSize: 11,
-                                                fontWeight: 600,
-                                                backgroundColor: bg,
-                                                color: text,
-                                                whiteSpace: 'nowrap',
-                                                flexShrink: 0,
+                                                justifyContent: 'space-between',
                                             }}>
-                                                {label}
-                                            </span>
+                                                <span style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 5,
+                                                    fontSize: 12,
+                                                    fontWeight: 600,
+                                                    color: catConfig.accent,
+                                                }}>
+                                                    <span style={{ fontSize: 14 }}>{catConfig.icon}</span>
+                                                    {catConfig.label}
+                                                </span>
+
+                                                {/* Сумма — только для публикации и депозита */}
+                                                {(catId === 16 || catId === 18) && sum > 0 && (
+                                                    <span style={{
+                                                        fontSize: 14,
+                                                        fontWeight: 700,
+                                                        color: '#1a1a1a',
+                                                        whiteSpace: 'nowrap',
+                                                    }}>
+                                                        {formatMoney(sum)}
+                                                    </span>
+                                                )}
+                                            </div>
+
                                         </div>
                                     </div>
                                 );
