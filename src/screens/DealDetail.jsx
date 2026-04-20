@@ -489,6 +489,7 @@ export const DealDetail = ({ deal, onBack }) => {
 
                     <div style={{ padding: '12px 16px' }}>
                         <button
+                            onClick={() => window.open('https://qr.nspk.ru/AS2A0050939MITH48SKQO5OLNGARN0GB', '_blank')}
                             style={{
                                 width: '100%',
                                 padding: '12px 16px',
