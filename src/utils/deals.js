@@ -48,72 +48,27 @@ export function isDealWon(stageId) {
 export function getStageDisplay(deal) {
     const displayStage = deal.displayStage;
     const stageId = deal.STAGE_ID;
-    const catId = parseInt(deal.CATEGORY_ID);
 
-    // ── Цвета для категорий 16 и 18 (Публикация / Депозит) ──
-    if (catId === 16 || catId === 18) {
-        if (stageId?.endsWith(':WON')) {
-            return { label: 'Завершено',    bg: '#7BD50025', text: '#7BD500' };
-        }
-        if (stageId?.endsWith(':FINAL_INVOICE')) {
-            return { label: 'Финальный счёт', bg: '#FAAA0825', text: '#FAAA08' };
-        }
-        // Любой другой статус
-        const hex = '#FAAA08';
-        return {
-            label: displayStage?.NAME || stageId || 'В работе',
-            bg: hex + '25',
-            text: hex,
-        };
-    }
-
-    // ── Цвета для категории 6 (Сбор документов) ──
-    if (catId === 6) {
-        const C6_COLORS = {
-            'NEW':                { label: 'Новая',            color: '#39A8EF' },
-            'PREPARATION':        { label: 'Подготовка',       color: '#2fc6f6' },
-            'PREPAYMENT_INVOICE': { label: 'Счёт на оплату',   color: '#55d0e0' },
-            'WON':                { label: 'Завершено',         color: '#7BD500' },
-        };
-
-        // stageId для cat6 выглядит как "C6:NEW" или просто "NEW"
-        const key = stageId?.includes(':') ? stageId.split(':').pop() : stageId;
-        const found = C6_COLORS[key];
-
-        if (found) {
-            return {
-                label: found.label,
-                bg: found.color + '25',
-                text: found.color,
-            };
-        }
-
-        return {
-            label: displayStage?.NAME || stageId || 'В работе',
-            bg: '#39A8EF25',
-            text: '#39A8EF',
-        };
-    }
-
-    // ── Стандартная логика для остальных категорий ──
     let label = 'Ожидание первого платежа';
     let colorHex = 'F5A623';
 
     if (displayStage) {
-        label    = displayStage.NAME  || label;
+        label = displayStage.NAME || label;
         colorHex = displayStage.COLOR || colorHex;
     } else if (stageId?.endsWith(':WON')) {
-        label    = 'Завершено';
+        label = 'Завершено';
         colorHex = '4CAF50';
     } else if (stageId?.endsWith(':LOSE')) {
-        label    = 'Закрыто';
+        label = 'Закрыто';
         colorHex = 'E53935';
     }
 
+    // Нормализуем hex
     const hex = colorHex.startsWith('#') ? colorHex : `#${colorHex}`;
+
     return {
         label,
-        bg:   hex + '25',
+        bg: hex + '25',
         text: hex,
     };
 }

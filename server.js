@@ -556,17 +556,24 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 const catId = parseInt(child.CATEGORY_ID);
                 const stages = stagesCache[catId] || [];
 
+                // Ищем стадию по STATUS_ID
                 const stageObj = stages.find(
                     s => s.STATUS_ID === child.STAGE_ID
                 );
 
-                // ✅ Берём стадию ИМЕННО этой сделки (без подмены)
-                const displayStage = stageObj || {
-                    NAME: child.STAGE_ID,
-                    COLOR: '9E9E9E'
-                };
+                // stageObj из crm.dealcategory.stage.list уже содержит COLOR
+                // { NAME, STATUS_ID, COLOR, ... }
+                const displayStage = stageObj
+                    ? {
+                        NAME:  stageObj.NAME,
+                        COLOR: stageObj.COLOR || '9E9E9E',
+                      }
+                    : {
+                        NAME:  child.STAGE_ID,
+                        COLOR: '9E9E9E',
+                      };
 
-                // ✅ Получаем счета ребёнка
+                // Получаем счета ребёнка
                 let childInvoices = [];
                 try {
                     const r = await axios.get(
