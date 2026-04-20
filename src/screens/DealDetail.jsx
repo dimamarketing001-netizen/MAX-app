@@ -677,7 +677,7 @@ export const DealDetail = ({ deal, onBack }) => {
                                                     alignItems: 'center',
                                                 }}>
                                                     <span style={{
-                                                        fontSize: 18,
+                                                        fontSize: 14,
                                                         lineHeight: 1,
                                                     }}>
                                                         {isPaid ? '✅' : '⏳'}
