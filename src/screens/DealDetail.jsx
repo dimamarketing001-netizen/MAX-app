@@ -705,7 +705,7 @@ export const DealDetail = ({ deal, onBack }) => {
                 </Section>
 
 
-                {/* ── Связанные сделки ─────────────────────────────────────── */}
+                {/* ── Связанные услуги ─────────────────────────────────────── */}
                 {(relatedServices.length > 0 ||
                     publications.length > 0 ||
                     deposits.length > 0) && (
@@ -720,71 +720,81 @@ export const DealDetail = ({ deal, onBack }) => {
                         }}>
                             Связанные услуги
                         </span>
+
                         <div style={{
-                            borderRadius: 14,
-                            backgroundColor: CARD_BG,
-                            border: `1px solid ${BORDER}`,
-                            padding: '16px',
-                            boxSizing: 'border-box',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
                         }}>
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 18,
-                            }}>
-                                {[...relatedServices, ...publications, ...deposits].map(d => {
-                                    const { label, bg, text } = getStageDisplay(d);
-                                    const sum = parseFloat(d.OPPORTUNITY || 0);
+                            {[...relatedServices, ...publications, ...deposits].map((d, idx) => {
+                                const { label, bg, text } = getStageDisplay(d);
+                                const sum = parseFloat(d.OPPORTUNITY || 0);
+                                const name = getDealName(d);
+                                const catId = parseInt(d.CATEGORY_ID);
 
-                                    return (
-                                        <div key={d.ID}>
-                                            {/* Название + статус */}
-                                            <div style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                gap: 8,
+                                return (
+                                    <div
+                                        key={d.ID || idx}
+                                        style={{
+                                            borderRadius: 14,
+                                            backgroundColor: CARD_BG,
+                                            border: `1px solid ${BORDER}`,
+                                            padding: '12px 14px',
+                                            boxSizing: 'border-box',
+                                        }}
+                                    >
+                                        {/* Одна строка: название | сумма | статус */}
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                        }}>
+                                            {/* Название */}
+                                            <span style={{
+                                                flex: 1,
+                                                minWidth: 0,
+                                                fontSize: 14,
+                                                fontWeight: 700,
+                                                color: '#1a1a1a',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
                                             }}>
-                                                <span style={{
-                                                    fontWeight: 700,
-                                                    fontSize: 15,
-                                                    flex: 1,
-                                                    minWidth: 0,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                }}>
-                                                    {getDealName(d)}
-                                                </span>
-                                                <span style={{
-                                                    padding: '3px 10px',
-                                                    borderRadius: 20,
-                                                    fontSize: 11,
-                                                    fontWeight: 600,
-                                                    backgroundColor: bg,
-                                                    color: text,
-                                                    whiteSpace: 'nowrap',
-                                                    flexShrink: 0,
-                                                }}>
-                                                    {label}
-                                                </span>
-                                            </div>
+                                                {name}
+                                            </span>
 
-                                            {/* Сумма */}
-                                            {sum > 0 && (
-                                                <div style={{ marginTop: 6, fontSize: 14 }}>
-                                                    <span style={{ color: '#888', marginRight: 6 }}>
-                                                        Сумма
-                                                    </span>
-                                                    <span style={{ fontWeight: 700 }}>
-                                                        {formatMoney(sum)}
-                                                    </span>
-                                                </div>
+                                            {/* Сумма — только если есть и не cat 6 */}
+                                            {catId !== 6 && sum > 0 && (
+                                                <span style={{
+                                                    fontSize: 13,
+                                                    fontWeight: 700,
+                                                    color: '#1a1a1a',
+                                                    flexShrink: 0,
+                                                    whiteSpace: 'nowrap',
+                                                }}>
+                                                    {formatMoney(sum)}
+                                                </span>
                                             )}
+
+                                            {/* Статус */}
+                                            <span style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                padding: '4px 10px',
+                                                borderRadius: 20,
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                backgroundColor: bg,
+                                                color: text,
+                                                whiteSpace: 'nowrap',
+                                                flexShrink: 0,
+                                            }}>
+                                                {label}
+                                            </span>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
