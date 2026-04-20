@@ -509,24 +509,42 @@ export const DealDetail = ({ deal, onBack }) => {
 
                 {/* ── Оплаченные счета ─────────────────────────────────────── */}
                 <Section title="Оплаченные счета">
-                    {invoices.length === 0 &&
-                     publications.length === 0 &&
-                     deposits.length === 0 ? (
-                        <div style={{
-                            padding: '20px 16px',
-                            textAlign: 'center',
-                            fontSize: 14,
-                            color: '#888',
-                        }}>
-                            Нет оплат
-                        </div>
-                    ) : (() => {
-                        // Собираем все счета с типом
+                    {(() => {
+                        // Собираем ВСЕ счета с типом
                         const allInvoices = [
-                            ...invoices.map(inv => ({ ...inv, _type: getShortName(dealName) })),
-                            ...publications.map(inv => ({ ...inv, _type: 'Публикация' })),
-                            ...deposits.map(inv => ({ ...inv, _type: 'Депозит' })),
+                            // Основные счета сделки
+                            ...invoices.map(inv => ({
+                                ...inv,
+                                _typeLabel: getShortName(dealName),
+                            })),
+                            // Счета из публикаций (category 16)
+                            ...publications.flatMap(pub =>
+                                (pub.invoices || []).map(inv => ({
+                                    ...inv,
+                                    _typeLabel: 'Публикация',
+                                }))
+                            ),
+                            // Счета из депозитов (category 18)
+                            ...deposits.flatMap(dep =>
+                                (dep.invoices || []).map(inv => ({
+                                    ...inv,
+                                    _typeLabel: 'Депозит',
+                                }))
+                            ),
                         ];
+
+                        if (allInvoices.length === 0) {
+                            return (
+                                <div style={{
+                                    padding: '20px 16px',
+                                    textAlign: 'center',
+                                    fontSize: 14,
+                                    color: '#888',
+                                }}>
+                                    Нет оплат
+                                </div>
+                            );
+                        }
 
                         return (
                             <>
@@ -539,7 +557,7 @@ export const DealDetail = ({ deal, onBack }) => {
                                     borderBottom: `1px solid ${BORDER}`,
                                 }}>
                                     {/* ТИП */}
-                                    <div style={{ width: 80, flexShrink: 0 }}>
+                                    <div style={{ width: 88, flexShrink: 0 }}>
                                         <span style={{
                                             fontSize: 10,
                                             fontWeight: 700,
@@ -579,7 +597,7 @@ export const DealDetail = ({ deal, onBack }) => {
 
                                     {/* СТАТУС */}
                                     <div style={{
-                                        width: 56,
+                                        width: 48,
                                         flexShrink: 0,
                                         display: 'flex',
                                         justifyContent: 'center',
@@ -599,6 +617,7 @@ export const DealDetail = ({ deal, onBack }) => {
                                 {/* Строки счетов */}
                                 {allInvoices.map((inv, i) => {
                                     const isPaid = inv.stageId === 'DT31_2:P';
+
                                     return (
                                         <div key={inv.id || i}>
                                             {i > 0 && (
@@ -614,9 +633,9 @@ export const DealDetail = ({ deal, onBack }) => {
                                                 padding: '11px 14px',
                                             }}>
                                                 {/* Тип */}
-                                                <div style={{ width: 80, flexShrink: 0 }}>
+                                                <div style={{ width: 88, flexShrink: 0 }}>
                                                     <span style={{
-                                                        fontSize: 12,
+                                                        fontSize: 11,
                                                         fontWeight: 700,
                                                         color: '#1a1a1a',
                                                         overflow: 'hidden',
@@ -624,7 +643,7 @@ export const DealDetail = ({ deal, onBack }) => {
                                                         whiteSpace: 'nowrap',
                                                         display: 'block',
                                                     }}>
-                                                        {inv._type}
+                                                        {inv._typeLabel}
                                                     </span>
                                                 </div>
 
@@ -649,16 +668,16 @@ export const DealDetail = ({ deal, onBack }) => {
                                                     </span>
                                                 </div>
 
-                                                {/* Статус — только иконка, по центру колонки */}
+                                                {/* Статус — только иконка по центру */}
                                                 <div style={{
-                                                    width: 56,
+                                                    width: 48,
                                                     flexShrink: 0,
                                                     display: 'flex',
                                                     justifyContent: 'center',
                                                     alignItems: 'center',
                                                 }}>
                                                     <span style={{
-                                                        fontSize: 20,
+                                                        fontSize: 18,
                                                         lineHeight: 1,
                                                     }}>
                                                         {isPaid ? '✅' : '⏳'}
@@ -684,6 +703,7 @@ export const DealDetail = ({ deal, onBack }) => {
                         );
                     })()}
                 </Section>
+
 
                 {/* ── Связанные сделки ─────────────────────────────────────── */}
                 {(relatedServices.length > 0 ||
