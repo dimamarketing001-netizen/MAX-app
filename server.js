@@ -366,21 +366,35 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
         console.log('=========================================\n');
 
         // Кэш стадий воронок
+        // Кэш стадий воронок (через crm.status.list — содержит COLOR)
         const stagesCache = {};
         const getStages = async (categoryId) => {
             if (stagesCache[categoryId] !== undefined) return stagesCache[categoryId];
             try {
-                const r = await axios.get(
-                    `${process.env.B24_WEBHOOK_URL}/crm.dealcategory.stage.list`,
-                    { params: { id: categoryId } }
+                // ENTITY_ID для cat=0 → 'DEAL_STAGE', для cat=2 → 'DEAL_STAGE_C2' и т.д.
+                const entityId = categoryId === 0
+                    ? 'DEAL_STAGE'
+                    : `DEAL_STAGE_C${categoryId}`;
+
+                const r = await axios.post(
+                    `${process.env.B24_WEBHOOK_URL}/crm.status.list`,
+                    {
+                        order: { SORT: 'ASC' },
+                        filter: { ENTITY_ID: entityId }
+                    }
                 );
 
-                // ── СЫРОЙ ОТВЕТ ОТ Б24 ───────────────────────────────────────────
-                console.log(`\n===== RAW ОТВЕТ Б24 crm.dealcategory.stage.list (cat=${categoryId}) =====`);
-                console.log(JSON.stringify(r.data, null, 2));
-                console.log(`=======================================================================\n`);
-
                 stagesCache[categoryId] = r.data.result || [];
+
+                console.log(`\n===== СТАДИИ (crm.status.list) cat=${categoryId} entity=${entityId} =====`);
+                stagesCache[categoryId].forEach(s => {
+                    console.log({
+                        STATUS_ID: s.STATUS_ID,
+                        NAME:      s.NAME,
+                        COLOR:     s.COLOR,
+                    });
+                });
+                console.log(`======================================================================\n`);
 
             } catch (e) {
                 console.error(`❌ Ошибка getStages(${categoryId}):`, e.response?.data || e.message);
