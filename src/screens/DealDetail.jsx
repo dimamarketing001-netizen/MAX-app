@@ -334,7 +334,7 @@ export const DealDetail = ({ deal, onBack }) => {
                             fontSize: 16,
                             fontWeight: 600,
                             fontFamily: 'inherit',
-                            padding: '4px 0',
+                            padding: '0',
                             marginBottom: 12,
                             touchAction: 'manipulation',
                             WebkitTapHighlightColor: 'transparent',
@@ -346,8 +346,9 @@ export const DealDetail = ({ deal, onBack }) => {
                         onMouseUp={e => e.currentTarget.style.opacity = '1'}
                         onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                     >
-                        <span style={{ fontSize: 20, lineHeight: 1 }}>‹</span>
-                        <span>Назад</span>
+                        {/* Стрелка как у "Открыть →" только влево */}
+                        <span style={{ fontSize: 16, fontWeight: 600 }}>←</span>
+                        <span style={{ marginLeft: 4 }}>Назад</span>
                     </button>
 
                     {/* Название сделки */}
@@ -357,34 +358,46 @@ export const DealDetail = ({ deal, onBack }) => {
                         color: '#1a1a1a',
                         lineHeight: 1.3,
                         marginBottom: 16,
-                        overflow: 'hidden',
-                        // Длинное название переносим на 2 строки
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
                     }}>
                         {dealName}
                     </div>
 
-                    {/* ── Инфо о сделке ───────────────────────────────────── */}
+                    {/* ── Инфо о сделке — по ширине карточки ─────────────── */}
                     {!isSimple && (
-                        <div style={{ padding: '0 16px 20px' }}>
+                        <div style={{
+                            borderRadius: 14,
+                            backgroundColor: CARD_BG,
+                            border: `1px solid ${BORDER}`,
+                            padding: '14px 16px',
+                            marginBottom: 16,
+                            boxSizing: 'border-box',
+                        }}>
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 12,
                             }}>
                                 {(deal.contractNumber || deal.UF_CRM_CONTRACT_NUM) && (
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                    }}>
-                                        <span style={{ color: '#888', fontSize: 15 }}>Договор №</span>
-                                        <span style={{ fontWeight: 600, fontSize: 15 }}>
-                                            {deal.contractNumber || deal.UF_CRM_CONTRACT_NUM}
-                                        </span>
-                                    </div>
+                                    <>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                        }}>
+                                            <span style={{ color: '#888', fontSize: 15 }}>Договор №</span>
+                                            <span style={{ fontWeight: 600, fontSize: 15 }}>
+                                                {deal.contractNumber || deal.UF_CRM_CONTRACT_NUM}
+                                            </span>
+                                        </div>
+                                        <div style={{
+                                            height: 1,
+                                            backgroundColor: BORDER,
+                                        }} />
+                                    </>
                                 )}
 
                                 <div style={{
@@ -397,6 +410,11 @@ export const DealDetail = ({ deal, onBack }) => {
                                         {formatDate(deal.DATE_CREATE)}
                                     </span>
                                 </div>
+
+                                <div style={{
+                                    height: 1,
+                                    backgroundColor: BORDER,
+                                }} />
 
                                 <div style={{
                                     display: 'flex',
