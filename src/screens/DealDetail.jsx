@@ -62,7 +62,7 @@ const PaymentsTableHeader = () => (
         borderBottom: `1px solid ${BORDER}`,
     }}>
         {/* ДАТА */}
-        <div style={{ width: 90, flexShrink: 0 }}>
+        <div style={{ width: 110, flexShrink: 0 }}>
             <span style={{
                 fontSize: 10,
                 fontWeight: 700,
@@ -108,7 +108,7 @@ const PaymentRow = ({ date, amount, badge, isLast }) => (
             padding: '12px 16px',
         }}>
             {/* Дата — фиксированная ширина как заголовок */}
-            <div style={{ width: 90, flexShrink: 0 }}>
+            <div style={{ width: 110, flexShrink: 0 }}>
                 <span style={{
                     fontSize: 13,
                     color: '#1a1a1a',
