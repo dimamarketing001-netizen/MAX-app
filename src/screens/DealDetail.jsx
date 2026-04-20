@@ -361,42 +361,45 @@ export const DealDetail = ({ deal, onBack }) => {
 
                     {/* ── Инфо о сделке ───────────────────────────────────── */}
                     {!isSimple && (
-                        <div style={{ padding: '0 16px 20px' }}>
+                        <div style={{ padding: '0 0 20px' }}>
                             <div style={{
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 12,
                             }}>
+                                {/* Договор № */}
                                 {deal.UF_CRM_CONTRACT_NUM && (
                                     <div style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
                                     }}>
-                                        <span style={{ color: '#888' }}>Договор №</span>
-                                        <span style={{ fontWeight: 600 }}>
+                                        <span style={{ color: '#888', fontSize: 15 }}>Договор №</span>
+                                        <span style={{ fontWeight: 600, fontSize: 15 }}>
                                             {deal.UF_CRM_CONTRACT_NUM}
                                         </span>
                                     </div>
                                 )}
 
+                                {/* Дата начала */}
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                 }}>
-                                    <span style={{ color: '#888' }}>Дата начала</span>
-                                    <span style={{ fontWeight: 600 }}>
+                                    <span style={{ color: '#888', fontSize: 15 }}>Дата начала</span>
+                                    <span style={{ fontWeight: 600, fontSize: 15 }}>
                                         {formatDate(deal.DATE_CREATE)}
                                     </span>
                                 </div>
 
+                                {/* Статус */}
                                 <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                 }}>
-                                    <span style={{ color: '#888' }}>Статус</span>
+                                    <span style={{ color: '#888', fontSize: 15 }}>Статус</span>
                                     <span style={{
                                         padding: '4px 12px',
                                         borderRadius: 20,
