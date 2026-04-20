@@ -391,36 +391,35 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
         const getStageColors = async (categoryId) => {
             if (colorsCache[categoryId] !== undefined) return colorsCache[categoryId];
             try {
-                const entityId = categoryId === 0
-                    ? 'DEAL_STAGE'
-                    : `DEAL_STAGE_C${categoryId}`;
-
+                // Временно — запрашиваем ВСЕ статусы без фильтра
+                // чтобы увидеть реальные ENTITY_ID для каждой воронки
                 const r = await axios.post(
                     `${process.env.B24_WEBHOOK_URL}/crm.status.list`,
                     {
                         order: { SORT: 'ASC' },
-                        filter: { ENTITY_ID: entityId }
                     }
                 );
 
-                console.log(`🎨 сырой ответ --- ${r.data.result}`);
+                // Выводим только уникальные ENTITY_ID
+                if (categoryId === 0) {
+                    const entityIds = [...new Set(
+                        (r.data.result || []).map(s => s.ENTITY_ID)
+                    )];
+                    console.log(`\n🔍 ВСЕ ENTITY_ID в системе:`, entityIds);
+                    console.log(`\n🔍 Полный список статусов со STAGE_ID:`);
+                    (r.data.result || []).forEach(s => {
+                        if (s.ENTITY_ID?.includes('DEAL')) {
+                            console.log({
+                                ENTITY_ID: s.ENTITY_ID,
+                                STATUS_ID: s.STATUS_ID,
+                                NAME: s.NAME,
+                                COLOR: s.COLOR,
+                            });
+                        }
+                    });
+                }
 
-                const colorMap = {};
-                (r.data.result || []).forEach(s => {
-                    if (s.COLOR) {
-                        // Для cat=0 ключ без префикса: 'FINAL_INVOICE'
-                        // Для cat=2 ключ с префиксом: 'C2:FINAL_INVOICE'
-                        const key = categoryId === 0
-                            ? s.STATUS_ID
-                            : `C${categoryId}:${s.STATUS_ID}`;
-
-                        colorMap[key] = s.COLOR;
-                        allColorsMap[key] = s.COLOR;
-                    }
-                });
-
-                colorsCache[categoryId] = colorMap;
-                console.log(`🎨 Цвета cat=${categoryId}:`, colorMap);
+                colorsCache[categoryId] = {};
 
             } catch (e) {
                 console.error(`❌ Ошибка getStageColors(${categoryId}):`, e.response?.data || e.message);
