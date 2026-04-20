@@ -171,9 +171,9 @@ const PaymentsTable = ({ items }) => {
     if (items.length === 0) return null;
 
     const statusConfig = {
-        paid:    { label: '✅ Оплачен',   color: '#43A047' },
-        pending: { label: '⏳ Ожидает',   color: '#FB8C00' },
-        overdue: { label: '⚠ Просрочен', color: '#E53935' },
+        paid:    { label: 'Оплачен',   color: '#43A047', bg: '#E8F5E9', icon: '✅' },
+        pending: { label: 'Ожидает',   color: '#FB8C00', bg: '#FFF3E0', icon: '⏳' },
+        overdue: { label: 'Просрочен', color: '#E53935', bg: '#FFEBEE', icon: '❌' },
     };
 
     return (
@@ -242,8 +242,20 @@ const PaymentsTable = ({ items }) => {
                             <span style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a' }}>
                                 {formatMoney(item.amount)}
                             </span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: sc.color }}>
-                                {sc.label}
+                            <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                padding: '3px 7px',
+                                borderRadius: 10,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: sc.color,
+                                backgroundColor: sc.bg,
+                                whiteSpace: 'nowrap',
+                            }}>
+                                <span style={{ fontSize: 11, lineHeight: 1 }}>{sc.icon}</span>
+                                <span>{sc.label}</span>
                             </span>
                         </div>
                     </div>
@@ -342,29 +354,30 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
             <div style={{ padding: '24px 16px 20px' }}>
                 <div style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
+                    alignItems: 'stretch', // растягиваем по высоте
+                    gap: 14,
                 }}>
 
-                    {/* Аватар */}
-                    <UserAvatar user={user} size={60} />
+                    {/* Аватар — растянут по высоте блока */}
+                    <div style={{ flexShrink: 0, display: 'flex', alignItems: 'stretch' }}>
+                        <UserAvatar user={user} size={90} />
+                    </div>
 
                     {/* Текст + кнопка */}
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: 10,
+                        gap: 8,
                         flex: 1,
                         minWidth: 0,
                     }}>
                         <div>
                             <div style={{
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: 700,
                                 color: '#1a1a1a',
                                 lineHeight: 1.2,
                                 marginBottom: 2,
-                                // Обрезаем длинное имя
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -385,7 +398,9 @@ export const HomeScreen = ({ user, deals, onContactLawyer }) => {
                                 justifyContent: 'center',
                                 gap: 8,
                                 width: '100%',
-                                padding: '10px 16px',
+                                // flex: 1 чтобы кнопка заняла оставшееся место по высоте
+                                flex: 1,
+                                padding: '8px 12px',
                                 borderRadius: 12,
                                 border: 'none',
                                 backgroundColor: '#42A5F5',

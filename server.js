@@ -558,13 +558,15 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                 .reduce((sum, inv) => sum + parseFloat(inv.opportunity || 0), 0);
 
             // ── Связанные дочерние сделки (16, 18) ─────────────────────────
-            const publications = relatedDeals.filter(
-                rd => parseInt(rd.CATEGORY_ID) === 16
-            );
+            const publications =
+                (typeId === 'SALE' || typeId === 'UC_UABTV4')
+                    ? relatedDeals.filter(rd => parseInt(rd.CATEGORY_ID) === 16)
+                    : [];
 
-            const deposits = relatedDeals.filter(
-                rd => parseInt(rd.CATEGORY_ID) === 18
-            );
+            const deposits =
+                (typeId === 'SALE' || typeId === 'UC_UABTV4')
+                    ? relatedDeals.filter(rd => parseInt(rd.CATEGORY_ID) === 18)
+                    : [];
 
             const relatedServices =
                 (typeId === 'SALE' || typeId === 'UC_UABTV4')
