@@ -403,7 +403,7 @@ app.get('/api/deals-full/:maxUserId', async (req, res) => {
                     }
                 );
 
-                console.log(`🎨 сырой ответ --- ${r}`);
+                console.log(`🎨 сырой ответ --- ${r.data.result}`);
 
                 const colorMap = {};
                 (r.data.result || []).forEach(s => {
