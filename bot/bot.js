@@ -2,6 +2,7 @@ import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import dotenv from 'dotenv';
 import { findUserByMaxId, saveUser } from './db.js';
 import { findByPhone } from './bitrix.js';
+import { startWorker } from './worker.js';
 
 dotenv.config();
 
@@ -306,7 +307,7 @@ bot.on('message_callback', async (ctx) => {
   console.log(`[BOT] message_callback update:`, JSON.stringify(ctx.update, null, 2));
 });
 
-// ─── Запуск ───────────────────────────────────────────────────────────────────
 console.log('\n🤖 [BOT] Запуск бота...');
+startWorker(); // ← ЗАПУСКАЕМ ВОРКЕР
 bot.start();
 console.log('✅ [BOT] Бот запущен и ожидает сообщений\n');

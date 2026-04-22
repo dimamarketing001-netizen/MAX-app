@@ -22,23 +22,15 @@ const pool = mysql.createPool({
   connectTimeout: 10000,
 });
 
-// Проверяем подключение при старте
 try {
   const conn = await pool.getConnection();
   console.log('✅ [DB] Подключение к MySQL успешно!');
   conn.release();
 } catch (error) {
-  console.error('❌ [DB] Ошибка подключения к MySQL:');
-  console.error('   host:', process.env.DB_HOST);
-  console.error('   port:', process.env.DB_PORT || 3306);
-  console.error('   error:', error.message);
-  console.error('\n💡 Возможные причины:');
-  console.error('   1. Неверный хост или порт');
-  console.error('   2. MySQL не принимает внешние подключения (bind-address)');
-  console.error('   3. Файрвол блокирует порт 3306');
-  console.error('   4. Неверный логин/пароль');
-  console.error('   5. Пользователь не имеет прав для подключения с этого IP');
+  console.error('❌ [DB] Ошибка подключения к MySQL:', error.message);
 }
+
+// ─── Методы для пользователей ─────────────────────────────────────────────────
 
 export async function findUserByMaxId(maxUserId) {
   console.log(`\n[DB] findUserByMaxId: поиск пользователя max_user_id=${maxUserId}`);
@@ -60,12 +52,7 @@ export async function findUserByMaxId(maxUserId) {
 
 export async function saveUser({ maxUserId, bitrixContactId, bitrixLeadId, phone }) {
   console.log(`\n[DB] saveUser: сохранение пользователя`);
-  console.log(`[DB] saveUser: данные=`, {
-    maxUserId,
-    bitrixContactId,
-    bitrixLeadId,
-    phone,
-  });
+  console.log(`[DB] saveUser: данные=`, { maxUserId, bitrixContactId, bitrixLeadId, phone });
 
   try {
     const [result] = await pool.execute(
@@ -87,6 +74,74 @@ export async function saveUser({ maxUserId, bitrixContactId, bitrixLeadId, phone
   } catch (error) {
     console.error('[DB] Ошибка saveUser:', error.message);
     throw error;
+  }
+}
+
+// ─── Методы для уведомлений ───────────────────────────────────────────────────
+
+/**
+ * Получить все pending уведомления
+ */
+export async function getPendingNotifications() {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT * FROM notifications 
+       WHERE status = 'pending' 
+       ORDER BY created_at ASC`
+    );
+    return rows;
+  } catch (error) {
+    console.error('[DB] Ошибка getPendingNotifications:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Найти пользователя MAX по contact_id
+ */
+export async function findUserByContactId(contactId) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT * FROM users WHERE bitrix_contact_id = ?',
+      [contactId]
+    );
+    return rows[0] || null;
+  } catch (error) {
+    console.error('[DB] Ошибка findUserByContactId:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Найти пользователя MAX по lead_id
+ */
+export async function findUserByLeadId(leadId) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT * FROM users WHERE bitrix_lead_id = ?',
+      [leadId]
+    );
+    return rows[0] || null;
+  } catch (error) {
+    console.error('[DB] Ошибка findUserByLeadId:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Обновить статус уведомления
+ */
+export async function updateNotificationStatus(id, status, errorMessage = null) {
+  try {
+    await pool.execute(
+      `UPDATE notifications 
+       SET status = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [status, errorMessage, id]
+    );
+    console.log(`[DB] Уведомление id=${id} → статус="${status}"`);
+  } catch (error) {
+    console.error('[DB] Ошибка updateNotificationStatus:', error.message);
   }
 }
 
