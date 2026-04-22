@@ -183,6 +183,48 @@ bot.command('start', async (ctx) => {
   await askForPhone(ctx);
 });
 
+// ─── Извлечение телефона из контакта ─────────────────────────────────────────
+function extractPhoneFromContact(contactAttachment) {
+  console.log('[BOT] extractPhoneFromContact: начало извлечения телефона');
+
+  // Вариант 1: прямое поле phone
+  if (contactAttachment.payload?.phone) {
+    console.log('[BOT] extractPhoneFromContact: найден payload.phone =', contactAttachment.payload.phone);
+    return contactAttachment.payload.phone;
+  }
+
+  if (contactAttachment.phone) {
+    console.log('[BOT] extractPhoneFromContact: найден phone =', contactAttachment.phone);
+    return contactAttachment.phone;
+  }
+
+  // Вариант 2: парсим vCard
+  const vcfInfo = contactAttachment.payload?.vcf_info;
+  if (vcfInfo) {
+    console.log('[BOT] extractPhoneFromContact: парсим vCard...');
+    console.log('[BOT] vCard содержимое:\n', vcfInfo);
+
+    // Ищем строки с TEL в vCard
+    // Форматы: TEL:79991234567 или TEL;TYPE=cell:79991234567
+    const lines = vcfInfo.split(/\r?\n/);
+    for (const line of lines) {
+      if (line.startsWith('TEL')) {
+        // Берём всё после последнего ':'
+        const parts = line.split(':');
+        const phone = parts[parts.length - 1].trim();
+        if (phone) {
+          console.log('[BOT] extractPhoneFromContact: телефон из vCard =', phone);
+          return '+' + phone.replace(/\D/g, '');
+        }
+      }
+    }
+    console.log('[BOT] extractPhoneFromContact: TEL не найден в vCard');
+  }
+
+  console.log('[BOT] extractPhoneFromContact: телефон не найден');
+  return null;
+}
+
 // ─── Входящие сообщения ───────────────────────────────────────────────────────
 bot.on('message_created', async (ctx) => {
   const userId = getUserId(ctx);
@@ -205,10 +247,8 @@ bot.on('message_created', async (ctx) => {
   console.log(`[BOT] message_created: contactAttachment=`, JSON.stringify(contactAttachment, null, 2));
 
   if (contactAttachment) {
-    const phone =
-      contactAttachment.payload?.phone ||
-      contactAttachment.phone ||
-      null;
+    // Извлекаем телефон из vCard строки
+    const phone = extractPhoneFromContact(contactAttachment);
 
     console.log(`[BOT] message_created: телефон из контакта="${phone}"`);
 
