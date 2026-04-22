@@ -5,6 +5,10 @@ import { findByPhone } from './bitrix.js';
 
 dotenv.config();
 
+console.log('[BOT] Инициализация...');
+console.log('[BOT] BOT_TOKEN:', process.env.BOT_TOKEN ? '***установлен***' : '❌ НЕ ЗАДАН');
+console.log('[BOT] BITRIX_WEBHOOK:', process.env.BITRIX_WEBHOOK || '❌ НЕ ЗАДАН');
+
 const bot = new Bot(process.env.BOT_TOKEN);
 
 const userStates = new Map();
@@ -15,16 +19,15 @@ const STATE = {
   REGISTERED: 'registered',
 };
 
-// ─── Клавиатура с кнопкой запроса контакта ────────────────────────────────────
 function getContactKeyboard() {
   return Keyboard.inlineKeyboard([
     [Keyboard.button.requestContact('📱 Поделиться номером телефона')],
   ]);
 }
 
-// ─── Запрос телефона у пользователя ───────────────────────────────────────────
 async function askForPhone(ctx) {
   const userId = getUserId(ctx);
+  console.log(`\n[BOT] askForPhone: запрос телефона у userId=${userId}`);
   userStates.set(userId, STATE.WAITING_PHONE);
 
   await ctx.reply(
@@ -39,13 +42,15 @@ async function askForPhone(ctx) {
   );
 }
 
-// ─── Обработка полученного телефона ───────────────────────────────────────────
 async function handlePhone(ctx, phone, userId) {
+  console.log(`\n[BOT] handlePhone: userId=${userId}, phone="${phone}"`);
   phone = phone.trim();
 
-  // Валидация формата номера
   const phoneRegex = /^[\+\d][\d\s\-\(\)]{6,20}$/;
-  if (!phoneRegex.test(phone)) {
+  const isValid = phoneRegex.test(phone);
+  console.log(`[BOT] handlePhone: валидация номера="${phone}" → ${isValid ? '✅ ОК' : '❌ Неверный формат'}`);
+
+  if (!isValid) {
     await ctx.reply(
       '❌ Некорректный формат номера телефона.\n\n' +
       'Я не смог найти ваш номер телефона в базе, пожалуйста проверьте телефон ' +
@@ -62,10 +67,12 @@ async function handlePhone(ctx, phone, userId) {
   await ctx.reply('🔍 Ищу вас в базе данных...');
 
   try {
+    console.log(`[BOT] handlePhone: вызов findByPhone("${phone}")`);
     const bitrixData = await findByPhone(phone);
+    console.log(`[BOT] handlePhone: результат findByPhone=`, JSON.stringify(bitrixData, null, 2));
 
-    // ─── Ничего не найдено ─────────────────────────────────────────────────
     if (!bitrixData) {
+      console.log(`[BOT] handlePhone: данные не найдены в Битрикс24, ждём новый номер`);
       await ctx.reply(
         'Я не смог найти ваш номер телефона в базе, пожалуйста проверьте телефон ' +
         'и укажите его вручную в формате **+79999999999**',
@@ -74,22 +81,20 @@ async function handlePhone(ctx, phone, userId) {
           attachments: [getContactKeyboard()],
         }
       );
-      // Ждём — пользователь введёт другой номер
       userStates.set(userId, STATE.WAITING_PHONE);
       return;
     }
 
-    // ─── Найдено — сохраняем в БД ──────────────────────────────────────────
+    console.log(`[BOT] handlePhone: сохраняем в БД...`);
     await saveUser({
       maxUserId: userId,
-      bitrixContactId: bitrixData.contactId,  // может быть null
-      bitrixLeadId: bitrixData.leadId,         // может быть null
+      bitrixContactId: bitrixData.contactId,
+      bitrixLeadId: bitrixData.leadId,
       phone: phone,
     });
 
     userStates.set(userId, STATE.REGISTERED);
 
-    // Формируем сообщение об успехе
     const nameText = bitrixData.name ? `, **${bitrixData.name}**` : '';
     let successMsg =
       `✅ Отлично${nameText}! Вы успешно авторизованы.\n\n` +
@@ -109,16 +114,12 @@ async function handlePhone(ctx, phone, userId) {
 
     await ctx.reply(successMsg, { format: 'markdown' });
 
-    console.log(
-      `✅ Сохранено: MAX ID=${userId}, ` +
-      `Lead=${bitrixData.leadId}, ` +
-      `Contact=${bitrixData.contactId}, ` +
-      `Phone=${phone}, ` +
-      `Source=${bitrixData.source}`
-    );
+    console.log(`✅ [BOT] Пользователь успешно зарегистрирован: MAX ID=${userId}`);
 
   } catch (error) {
-    console.error('Ошибка при обработке телефона:', error);
+    console.error('[BOT] ❌ Ошибка в handlePhone:');
+    console.error('   message:', error.message);
+    console.error('   stack:', error.stack);
     await ctx.reply(
       '⚠️ Произошла техническая ошибка. Попробуйте позже или введите номер ещё раз.',
       { attachments: [getContactKeyboard()] }
@@ -127,24 +128,29 @@ async function handlePhone(ctx, phone, userId) {
   }
 }
 
-// ─── Получение user_id ────────────────────────────────────────────────────────
 function getUserId(ctx) {
-  return (
+  const id =
     ctx.update?.user?.user_id ||
     ctx.user?.user_id ||
-    null
-  );
+    null;
+  return id;
 }
 
 // ─── bot_started ──────────────────────────────────────────────────────────────
 bot.on('bot_started', async (ctx) => {
   const userId = getUserId(ctx);
-  if (!userId) return;
+  console.log(`\n[BOT] ▶️  bot_started: userId=${userId}`);
+  console.log(`[BOT] bot_started update:`, JSON.stringify(ctx.update, null, 2));
 
-  console.log(`▶️  bot_started: user_id=${userId}`);
+  if (!userId) {
+    console.log('[BOT] bot_started: userId не определён, выходим');
+    return;
+  }
 
   const existingUser = await findUserByMaxId(userId);
+
   if (existingUser) {
+    console.log(`[BOT] bot_started: пользователь уже есть в БД`);
     userStates.set(userId, STATE.REGISTERED);
     await ctx.reply(
       `👋 С возвращением! Вы уже авторизованы.\n📞 Телефон: ${existingUser.phone}`
@@ -152,16 +158,21 @@ bot.on('bot_started', async (ctx) => {
     return;
   }
 
+  console.log(`[BOT] bot_started: новый пользователь, запрашиваем телефон`);
   await askForPhone(ctx);
 });
 
 // ─── /start ───────────────────────────────────────────────────────────────────
 bot.command('start', async (ctx) => {
   const userId = getUserId(ctx);
+  console.log(`\n[BOT] /start: userId=${userId}`);
+
   if (!userId) return;
 
   const existingUser = await findUserByMaxId(userId);
+
   if (existingUser) {
+    console.log(`[BOT] /start: пользователь уже есть в БД`);
     userStates.set(userId, STATE.REGISTERED);
     await ctx.reply(
       `👋 С возвращением! Вы уже авторизованы.\n📞 Телефон: ${existingUser.phone}`
@@ -175,14 +186,23 @@ bot.command('start', async (ctx) => {
 // ─── Входящие сообщения ───────────────────────────────────────────────────────
 bot.on('message_created', async (ctx) => {
   const userId = getUserId(ctx);
-  if (!userId) return;
+
+  console.log(`\n[BOT] 📨 message_created: userId=${userId}`);
+  console.log(`[BOT] message_created полное сообщение:`, JSON.stringify(ctx.message, null, 2));
+
+  if (!userId) {
+    console.log('[BOT] message_created: userId не определён, выходим');
+    return;
+  }
 
   const message = ctx.message;
 
-  // Контакт через кнопку requestContact
-  const contactAttachment = message?.body?.attachments?.find(
-    (a) => a.type === 'contact'
-  );
+  // Проверяем контакт через кнопку
+  const attachments = message?.body?.attachments;
+  console.log(`[BOT] message_created: attachments=`, JSON.stringify(attachments, null, 2));
+
+  const contactAttachment = attachments?.find((a) => a.type === 'contact');
+  console.log(`[BOT] message_created: contactAttachment=`, JSON.stringify(contactAttachment, null, 2));
 
   if (contactAttachment) {
     const phone =
@@ -190,48 +210,63 @@ bot.on('message_created', async (ctx) => {
       contactAttachment.phone ||
       null;
 
+    console.log(`[BOT] message_created: телефон из контакта="${phone}"`);
+
     if (phone) {
-      console.log(`📱 Контакт через кнопку от ${userId}: ${phone}`);
       await handlePhone(ctx, phone, userId);
       return;
     }
   }
 
   const text = message?.body?.text?.trim();
-  if (!text) return;
-  if (text.startsWith('/')) return;
+  console.log(`[BOT] message_created: text="${text}"`);
+
+  if (!text) {
+    console.log('[BOT] message_created: текст пустой, выходим');
+    return;
+  }
+
+  if (text.startsWith('/')) {
+    console.log('[BOT] message_created: это команда, пропускаем');
+    return;
+  }
 
   const state = userStates.get(userId) || STATE.IDLE;
+  console.log(`[BOT] message_created: состояние пользователя="${state}"`);
 
-  // Ждём телефон — обрабатываем ввод
   if (state === STATE.WAITING_PHONE) {
+    console.log(`[BOT] message_created: ожидаем телефон, обрабатываем...`);
     await handlePhone(ctx, text, userId);
     return;
   }
 
-  // Уже зарегистрирован
   if (state === STATE.REGISTERED) {
+    console.log(`[BOT] message_created: пользователь зарегистрирован`);
     await ctx.reply(`Чем могу помочь?`);
     return;
   }
 
-  // Состояние неизвестно — проверяем БД
+  console.log(`[BOT] message_created: неизвестное состояние, проверяем БД`);
   const existingUser = await findUserByMaxId(userId);
+
   if (existingUser) {
+    console.log(`[BOT] message_created: пользователь найден в БД`);
     userStates.set(userId, STATE.REGISTERED);
     await ctx.reply('Чем могу помочь?');
   } else {
+    console.log(`[BOT] message_created: пользователь не найден в БД, запрашиваем телефон`);
     await askForPhone(ctx);
   }
 });
 
-// ─── Callback кнопки ──────────────────────────────────────────────────────────
+// ─── Callback ─────────────────────────────────────────────────────────────────
 bot.on('message_callback', async (ctx) => {
   const userId = getUserId(ctx);
-  console.log(`🔘 Callback от ${userId}`);
+  console.log(`\n[BOT] 🔘 message_callback: userId=${userId}`);
+  console.log(`[BOT] message_callback update:`, JSON.stringify(ctx.update, null, 2));
 });
 
 // ─── Запуск ───────────────────────────────────────────────────────────────────
-console.log('🤖 Бот запускается...');
+console.log('\n🤖 [BOT] Запуск бота...');
 bot.start();
-console.log('✅ Бот запущен!');
+console.log('✅ [BOT] Бот запущен и ожидает сообщений\n');
