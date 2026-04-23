@@ -30,18 +30,18 @@ try {
   console.error('❌ [DB] Ошибка подключения к MySQL:', error.message);
 }
 
-// ─── Методы для пользователей ─────────────────────────────────────────────────
+// ─── Пользователи ─────────────────────────────────────────────────────────────
 
 export async function findUserByMaxId(maxUserId) {
-  console.log(`\n[DB] findUserByMaxId: поиск пользователя max_user_id=${maxUserId}`);
+  console.log(`\n[DB] findUserByMaxId: max_user_id=${maxUserId}`);
   try {
     const [rows] = await pool.execute(
       'SELECT * FROM users WHERE max_user_id = ?',
       [maxUserId]
     );
-    console.log(`[DB] findUserByMaxId: найдено записей=${rows.length}`);
+    console.log(`[DB] findUserByMaxId: найдено=${rows.length}`);
     if (rows[0]) {
-      console.log(`[DB] findUserByMaxId: запись=`, JSON.stringify(rows[0], null, 2));
+      console.log(`[DB] findUserByMaxId:`, JSON.stringify(rows[0], null, 2));
     }
     return rows[0] || null;
   } catch (error) {
@@ -51,9 +51,7 @@ export async function findUserByMaxId(maxUserId) {
 }
 
 export async function saveUser({ maxUserId, bitrixContactId, bitrixLeadId, phone }) {
-  console.log(`\n[DB] saveUser: сохранение пользователя`);
-  console.log(`[DB] saveUser: данные=`, { maxUserId, bitrixContactId, bitrixLeadId, phone });
-
+  console.log(`\n[DB] saveUser:`, { maxUserId, bitrixContactId, bitrixLeadId, phone });
   try {
     const [result] = await pool.execute(
       `INSERT INTO users (max_user_id, bitrix_contact_id, bitrix_lead_id, phone)
@@ -65,11 +63,10 @@ export async function saveUser({ maxUserId, bitrixContactId, bitrixLeadId, phone
          updated_at = CURRENT_TIMESTAMP`,
       [maxUserId, bitrixContactId || null, bitrixLeadId || null, phone]
     );
-    console.log(`[DB] saveUser: результат=`, {
+    console.log(`✅ [DB] Пользователь сохранён:`, {
       affectedRows: result.affectedRows,
       insertId: result.insertId,
     });
-    console.log(`✅ [DB] Пользователь успешно сохранён`);
     return result;
   } catch (error) {
     console.error('[DB] Ошибка saveUser:', error.message);
@@ -77,34 +74,13 @@ export async function saveUser({ maxUserId, bitrixContactId, bitrixLeadId, phone
   }
 }
 
-// ─── Методы для уведомлений ───────────────────────────────────────────────────
-
-/**
- * Получить все pending уведомления
- */
-export async function getPendingNotifications() {
-  try {
-    const [rows] = await pool.execute(
-      `SELECT * FROM notifications 
-       WHERE status = 'pending' 
-       ORDER BY created_at ASC`
-    );
-    return rows;
-  } catch (error) {
-    console.error('[DB] Ошибка getPendingNotifications:', error.message);
-    return [];
-  }
-}
-
-/**
- * Найти пользователя MAX по contact_id
- */
 export async function findUserByContactId(contactId) {
   try {
     const [rows] = await pool.execute(
       'SELECT * FROM users WHERE bitrix_contact_id = ?',
       [contactId]
     );
+    console.log(`[DB] findUserByContactId=${contactId}: найдено=${rows.length}`);
     return rows[0] || null;
   } catch (error) {
     console.error('[DB] Ошибка findUserByContactId:', error.message);
@@ -112,15 +88,13 @@ export async function findUserByContactId(contactId) {
   }
 }
 
-/**
- * Найти пользователя MAX по lead_id
- */
 export async function findUserByLeadId(leadId) {
   try {
     const [rows] = await pool.execute(
       'SELECT * FROM users WHERE bitrix_lead_id = ?',
       [leadId]
     );
+    console.log(`[DB] findUserByLeadId=${leadId}: найдено=${rows.length}`);
     return rows[0] || null;
   } catch (error) {
     console.error('[DB] Ошибка findUserByLeadId:', error.message);
@@ -128,28 +102,8 @@ export async function findUserByLeadId(leadId) {
   }
 }
 
-/**
- * Обновить статус уведомления
- */
-export async function updateNotificationStatus(id, status, errorMessage = null) {
-  try {
-    await pool.execute(
-      `UPDATE notifications 
-       SET status = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [status, errorMessage, id]
-    );
-    console.log(`[DB] Уведомление id=${id} → статус="${status}"`);
-  } catch (error) {
-    console.error('[DB] Ошибка updateNotificationStatus:', error.message);
-  }
-}
+// ─── Уведомления по договорам ─────────────────────────────────────────────────
 
-// Добавить к существующим методам:
-
-/**
- * Получить pending уведомления по договорам
- */
 export async function getPendingNotifications() {
   try {
     const [rows] = await pool.execute(
@@ -164,26 +118,6 @@ export async function getPendingNotifications() {
   }
 }
 
-/**
- * Получить pending уведомления по счетам
- */
-export async function getPendingInvoiceNotifications() {
-  try {
-    const [rows] = await pool.execute(
-      `SELECT * FROM invoice_notifications 
-       WHERE status = 'pending' 
-       ORDER BY created_at ASC`
-    );
-    return rows;
-  } catch (error) {
-    console.error('[DB] Ошибка getPendingInvoiceNotifications:', error.message);
-    return [];
-  }
-}
-
-/**
- * Обновить статус уведомления по договору
- */
 export async function updateNotificationStatus(id, status, errorMessage = null) {
   try {
     await pool.execute(
@@ -198,9 +132,22 @@ export async function updateNotificationStatus(id, status, errorMessage = null) 
   }
 }
 
-/**
- * Обновить статус уведомления по счёту
- */
+// ─── Уведомления по счетам ────────────────────────────────────────────────────
+
+export async function getPendingInvoiceNotifications() {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT * FROM invoice_notifications 
+       WHERE status = 'pending' 
+       ORDER BY created_at ASC`
+    );
+    return rows;
+  } catch (error) {
+    console.error('[DB] Ошибка getPendingInvoiceNotifications:', error.message);
+    return [];
+  }
+}
+
 export async function updateInvoiceNotificationStatus(id, status, errorMessage = null) {
   try {
     await pool.execute(
