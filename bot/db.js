@@ -145,4 +145,74 @@ export async function updateNotificationStatus(id, status, errorMessage = null) 
   }
 }
 
+// Добавить к существующим методам:
+
+/**
+ * Получить pending уведомления по договорам
+ */
+export async function getPendingNotifications() {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT * FROM notifications 
+       WHERE status = 'pending' 
+       ORDER BY created_at ASC`
+    );
+    return rows;
+  } catch (error) {
+    console.error('[DB] Ошибка getPendingNotifications:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Получить pending уведомления по счетам
+ */
+export async function getPendingInvoiceNotifications() {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT * FROM invoice_notifications 
+       WHERE status = 'pending' 
+       ORDER BY created_at ASC`
+    );
+    return rows;
+  } catch (error) {
+    console.error('[DB] Ошибка getPendingInvoiceNotifications:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Обновить статус уведомления по договору
+ */
+export async function updateNotificationStatus(id, status, errorMessage = null) {
+  try {
+    await pool.execute(
+      `UPDATE notifications 
+       SET status = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [status, errorMessage, id]
+    );
+    console.log(`[DB] notifications id=${id} → ${status}`);
+  } catch (error) {
+    console.error('[DB] Ошибка updateNotificationStatus:', error.message);
+  }
+}
+
+/**
+ * Обновить статус уведомления по счёту
+ */
+export async function updateInvoiceNotificationStatus(id, status, errorMessage = null) {
+  try {
+    await pool.execute(
+      `UPDATE invoice_notifications 
+       SET status = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [status, errorMessage, id]
+    );
+    console.log(`[DB] invoice_notifications id=${id} → ${status}`);
+  } catch (error) {
+    console.error('[DB] Ошибка updateInvoiceNotificationStatus:', error.message);
+  }
+}
+
 export default pool;
