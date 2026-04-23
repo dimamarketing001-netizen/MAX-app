@@ -13,28 +13,58 @@ dotenv.config();
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WORKER_INTERVAL = parseInt(process.env.WORKER_INTERVAL) || 10000;
 
-// Тексты уведомлений
+// ─── Маппинг типов сделок ─────────────────────────────────────────────────────
+const DEAL_TYPE_MAP = {
+  'SALE':      'Банкротство физических лиц',
+  'COMPLEX':   'Юридическая услуга',
+  'GOODS':     'Расторжение кредитного договора',
+  'SERVICES':  'Сбор документов',
+  'SERVICE':   'Кредитный брокер',
+  '1':         'Исправление кредитной истории',
+  'UC_YHXSUE': 'Внесудебное банкротство',
+  'UC_UABTV4': 'Реструктуризация долга',
+};
+
+/**
+ * Получить название типа сделки
+ */
+function getDealTypeName(typeId) {
+  return DEAL_TYPE_MAP[typeId] || `Услуга`;
+}
+
+// ─── Тексты уведомлений ───────────────────────────────────────────────────────
 const MESSAGES = {
+  // Производство началось
+  deal_won: (dealTypeName) =>
+    `⚖️ Ваше дело принято в работу!\n\n` +
+    `По делу: ${dealTypeName}\n\n` +
+    `Мы приступили к производству по вашему делу.\n` +
+    `Наши специалисты уже работают над вашим вопросом.\n\n` +
+    `Если у вас есть вопросы — напишите нам.`,
+
   // Договор
-  contract_ready: (dealTitle) =>
+  contract_ready: (dealTypeName) =>
     `📄 Ваш договор сформирован!\n\n` +
-    `По сделке: ${dealTitle}\n\n` +
+    `По делу: ${dealTypeName}\n\n` +
     `Пожалуйста, ознакомьтесь с документом.\n` +
     `Если есть вопросы — напишите нам.`,
 
   // Счета
-  invoice_unconfirmed: (dealTitle, amount, currency) =>
-    `🧾 Пришла неподтверждённая оплата!\n\n` +
-    `По сделке: ${dealTitle}\n` +
+  invoice_unconfirmed: (dealTypeName, amount, currency) =>
+    `🧾 Получена неподтверждённая оплата!\n\n` +
+    `По делу: ${dealTypeName}\n` +
     `Сумма: ${amount} ${currency}\n\n` +
-    `Ожидайте подтверждения менеджером.`,
+    `Ваш платёж получен и ожидает подтверждения менеджером.\n` +
+    `Мы уведомим вас, как только оплата будет подтверждена.`,
 
-  invoice_confirmed: (dealTitle, amount, currency) =>
+  invoice_confirmed: (dealTypeName, amount, currency) =>
     `✅ Ваша оплата подтверждена!\n\n` +
-    `По сделке: ${dealTitle}\n` +
+    `По делу: ${dealTypeName}\n` +
     `Сумма: ${amount} ${currency}\n\n` +
     `Спасибо за оплату! Если есть вопросы — напишите нам.`,
 };
+
+// ─── Запуск воркера ───────────────────────────────────────────────────────────
 
 export function startWorker() {
   console.log(`\n⚙️  [WORKER] Запуск воркера`);
@@ -45,20 +75,17 @@ export function startWorker() {
 }
 
 async function processAll() {
-  // Обрабатываем договоры
   await processContractNotifications();
-
-  // Обрабатываем счета
   await processInvoiceNotifications();
 }
 
-// ─── Договоры ─────────────────────────────────────────────────────────────────
+// ─── Договоры и производство ──────────────────────────────────────────────────
 
 async function processContractNotifications() {
   const pending = await getPendingNotifications();
   if (pending.length === 0) return;
 
-  console.log(`\n⚙️  [WORKER] Договоры pending: ${pending.length}`);
+  console.log(`\n⚙️  [WORKER] Уведомления pending: ${pending.length}`);
 
   for (const notification of pending) {
     await processOneContract(notification);
@@ -66,27 +93,43 @@ async function processContractNotifications() {
 }
 
 async function processOneContract(notification) {
-  const { id, deal_id, type, contact_id, lead_id, deal_title } = notification;
+  const { id, deal_id, type, contact_id, lead_id, deal_title, deal_type_id } = notification;
 
-  console.log(`\n[WORKER] Договор id=${id}, type=${type}, deal_id=${deal_id}`);
+  console.log(`\n[WORKER] Уведомление id=${id}, type=${type}, deal_id=${deal_id}`);
+  console.log(`[WORKER]   deal_type_id: ${deal_type_id}`);
 
   try {
     const maxUser = await findMaxUser(contact_id, lead_id);
     if (!maxUser) {
       console.log(`[WORKER] ❌ Пользователь MAX не найден`);
-      await updateNotificationStatus(id, 'error', `Пользователь не найден`);
+      await updateNotificationStatus(id, 'error', 'Пользователь не найден');
       return;
     }
 
-    const text = MESSAGES[type]
-      ? MESSAGES[type](deal_title || `Сделка #${deal_id}`)
-      : `Уведомление по сделке ${deal_title}`;
+    // Получаем название типа сделки
+    const dealTypeName = getDealTypeName(deal_type_id);
+    console.log(`[WORKER]   dealTypeName: ${dealTypeName}`);
+
+    let text = null;
+
+    switch (type) {
+      case 'deal_won':
+        text = MESSAGES.deal_won(dealTypeName);
+        break;
+
+      case 'contract_ready':
+        text = MESSAGES.contract_ready(dealTypeName);
+        break;
+
+      default:
+        text = `Уведомление по делу: ${dealTypeName}`;
+    }
 
     const sent = await sendMaxMessage(maxUser.max_user_id, text);
 
     if (sent) {
       await updateNotificationStatus(id, 'sent');
-      console.log(`✅ [WORKER] Договор отправлен → user_id=${maxUser.max_user_id}`);
+      console.log(`✅ [WORKER] Отправлено → user_id=${maxUser.max_user_id}`);
     } else {
       await updateNotificationStatus(id, 'error', 'Ошибка отправки в MAX');
     }
@@ -112,10 +155,11 @@ async function processInvoiceNotifications() {
 async function processOneInvoice(notification) {
   const {
     id, invoice_id, deal_id, contact_id, lead_id,
-    deal_title, amount, currency, notification_type,
+    amount, currency, notification_type, deal_type_id,
   } = notification;
 
   console.log(`\n[WORKER] Счёт id=${id}, invoice_id=${invoice_id}, type=${notification_type}`);
+  console.log(`[WORKER]   deal_type_id: ${deal_type_id}`);
 
   try {
     const maxUser = await findMaxUser(contact_id, lead_id);
@@ -125,14 +169,28 @@ async function processOneInvoice(notification) {
       return;
     }
 
-    const dealTitle = deal_title || `Сделка #${deal_id}`;
-    const amountStr = amount ? parseFloat(amount).toLocaleString('ru-RU') : '—';
+    const dealTypeName = getDealTypeName(deal_type_id);
+    console.log(`[WORKER]   dealTypeName: ${dealTypeName}`);
+
+    const amountStr = amount
+      ? parseFloat(amount).toLocaleString('ru-RU')
+      : '—';
     const currencyStr = currency || 'RUB';
 
-    const messageFn = MESSAGES[notification_type];
-    const text = messageFn
-      ? messageFn(dealTitle, amountStr, currencyStr)
-      : `Уведомление по счёту #${invoice_id}`;
+    let text = null;
+
+    switch (notification_type) {
+      case 'invoice_unconfirmed':
+        text = MESSAGES.invoice_unconfirmed(dealTypeName, amountStr, currencyStr);
+        break;
+
+      case 'invoice_confirmed':
+        text = MESSAGES.invoice_confirmed(dealTypeName, amountStr, currencyStr);
+        break;
+
+      default:
+        text = `Уведомление по счёту #${invoice_id}`;
+    }
 
     const sent = await sendMaxMessage(maxUser.max_user_id, text);
 
