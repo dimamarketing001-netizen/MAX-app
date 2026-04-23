@@ -14,6 +14,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const WORKER_INTERVAL = parseInt(process.env.WORKER_INTERVAL) || 10000;
 
 // ─── Маппинг типов сделок ─────────────────────────────────────────────────────
+// ─── Маппинг типов сделок ─────────────────────────────────────────────────────
 const DEAL_TYPE_MAP = {
   'SALE':      'Банкротство физических лиц',
   'COMPLEX':   'Юридическая услуга',
@@ -27,9 +28,26 @@ const DEAL_TYPE_MAP = {
 
 /**
  * Получить название типа сделки
+ * Приводим к строке — Б24 может слать и число и строку
  */
 function getDealTypeName(typeId) {
-  return DEAL_TYPE_MAP[typeId] || `Услуга`;
+  if (typeId === null || typeId === undefined) {
+    console.log(`[WORKER] ⚠️ deal_type_id пустой → "Услуга"`);
+    return 'Услуга';
+  }
+
+  // Приводим к строке для надёжного сравнения
+  const key = String(typeId).trim();
+  console.log(`[WORKER] getDealTypeName: typeId="${typeId}" → key="${key}"`);
+
+  const name = DEAL_TYPE_MAP[key];
+  if (!name) {
+    console.log(`[WORKER] ⚠️ Тип "${key}" не найден в маппинге → "Услуга"`);
+    return 'Услуга';
+  }
+
+  console.log(`[WORKER] ✅ Тип найден: "${name}"`);
+  return name;
 }
 
 // ─── Тексты уведомлений ───────────────────────────────────────────────────────
