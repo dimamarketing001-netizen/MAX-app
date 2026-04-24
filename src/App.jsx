@@ -243,7 +243,7 @@ function App() {
         try {
             const webApp = window.WebApp;
             if (webApp?.openMaxLink) {
-                webApp.openMaxLink('https://max.ru/id6658577091_bot');
+                webApp.openMaxLink('https://max.ru/id6658577091_bot?startapp=lawyer');
             }
         } catch (e) {
             console.warn('openMaxLink error:', e);
@@ -253,11 +253,11 @@ function App() {
     const handleUploadDocument = () => {
         try {
             const webApp = window.WebApp;
-            if (webApp?.close) {
-                webApp.close();
+            if (webApp?.openMaxLink) {
+                webApp.openMaxLink('https://max.ru/id6658577091_bot?startapp=upload');
             }
         } catch (e) {
-            console.warn('webApp.close error:', e);
+            console.warn('openMaxLink error:', e);
         }
     };
 
