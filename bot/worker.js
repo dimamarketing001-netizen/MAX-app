@@ -104,39 +104,42 @@ const OVERDUE_MESSAGES = {
     `Если платёж уже произведён — просим проигнорировать данное сообщение.\n\n` +
     `С уважением,\nООО «Мой юрист»\nмойюрист24.рф`,
 
-  3: (name, contractNumber, contractDate) =>
+  3: (name, contractNumber, contractDate, amount) =>
     `📩 Просрочка оплаты по договору\n\n` +
     `Уважаемый(ая) ${name},\n\n` +
-    `Просрочка оплаты по договору № ${contractNumber} составляет 3 дня.\n\n` +
+    `по договору № ${contractNumber} от ${contractDate} на сумму ${amount} руб. ` +
+    `просрочка составляет 3 дня.\n\n` +
     `Напоминаем, что при нарушении сроков оплаты компания «Мой юрист» ` +
     `вправе приостановить оказание услуг до момента поступления оплаты.\n\n` +
     `Просим произвести оплату в кратчайшие сроки ` +
     `во избежание приостановки работы по вашему делу.\n\n` +
     `С уважением,\nООО «Мой юрист»\nмойюрист24.рф`,
 
-  7: (name, contractNumber) =>
+  7: (name, contractNumber, contractDate, amount) =>
     `📩 Предупреждение о приостановке работы по делу\n\n` +
     `Уважаемый(ая) ${name},\n\n` +
-    `Просрочка оплаты по договору № ${contractNumber} составляет 7 дней.\n\n` +
+    `по договору № ${contractNumber} от ${contractDate} на сумму ${amount} руб. ` +
+    `просрочка составляет 7 дней.\n\n` +
     `В случае непоступления оплаты работа по вашему делу будет ` +
     `приостановлена до полного погашения задолженности.\n\n` +
     `Просим урегулировать вопрос оплаты в кратчайшие сроки.\n\n` +
     `С уважением,\nООО «Мой юрист»\nмойюрист24.рф`,
 
-  14: (name, contractNumber) =>
+  14: (name, contractNumber, contractDate, amount) =>
     `📩 Уведомление о приостановке оказания услуг\n\n` +
     `Уважаемый(ая) ${name},\n\n` +
-    `В связи с просрочкой оплаты более 14 дней оказание услуг ` +
-    `по договору № ${contractNumber} приостановлено.\n\n` +
+    `В связи с просрочкой оплаты более 14 дней по договору № ${contractNumber} ` +
+    `от ${contractDate} на сумму ${amount} руб. оказание услуг приостановлено.\n\n` +
     `Обращаем внимание, что задержка оплаты может повлиять ` +
     `на сроки и ход вашего дела.\n\n` +
     `Для возобновления работы необходимо полностью погасить задолженность.\n\n` +
     `С уважением,\nООО «Мой юрист»\nмойюрист24.рф`,
 
-  20: (name, contractNumber) =>
+  20: (name, contractNumber, contractDate, amount) =>
     `📩 Уведомление о возможном прекращении дела\n\n` +
     `Уважаемый(ая) ${name},\n\n` +
-    `Просрочка оплаты по договору № ${contractNumber} составляет 20 дней.\n` +
+    `Просрочка оплаты по договору № ${contractNumber} от ${contractDate} ` +
+    `на сумму ${amount} руб. составляет 20 дней.\n` +
     `На текущий момент работа по вашему делу приостановлена.\n\n` +
     `В случае непоступления оплаты в течение 7 календарных дней ` +
     `компания «Мой юрист» будет вынуждена прекратить производство ` +
@@ -144,10 +147,11 @@ const OVERDUE_MESSAGES = {
     `Просим урегулировать вопрос оплаты в указанный срок.\n\n` +
     `С уважением,\nООО «Мой юрист»\nмойюрист24.рф`,
 
-  30: (name, contractNumber) =>
+  30: (name, contractNumber, contractDate, amount) =>
     `📩 Финальное уведомление. Прекращение производства по делу\n\n` +
     `Уважаемый(ая) ${name},\n\n` +
-    `Просрочка оплаты по договору № ${contractNumber} составляет 30 дней.\n\n` +
+    `Просрочка оплаты по договору № ${contractNumber} от ${contractDate} ` +
+    `на сумму ${amount} руб. составляет 30 дней.\n\n` +
     `Ранее вам направлялись уведомления о необходимости погашения задолженности.\n\n` +
     `Если оплата не поступит в течение 7 календарных дней с момента ` +
     `получения данного уведомления, производство по вашему делу будет ` +
@@ -155,10 +159,11 @@ const OVERDUE_MESSAGES = {
     `Просим вас принять решение в установленный срок.\n\n` +
     `С уважением,\nООО «Мой юрист»\nмойюрист24.рф`,
 
-  37: (name, contractNumber) =>
+  37: (name, contractNumber, contractDate, amount) =>
     `📩 Дело остановлено\n\n` +
     `Уважаемый(ая) ${name},\n\n` +
     `В связи с отсутствием оплаты по договору № ${contractNumber} ` +
+    `от ${contractDate} на сумму ${amount} руб. ` +
     `производство по вашему делу в компании «Мой юрист» остановлено.\n\n` +
     `Для получения дальнейшей информации и решения вопроса ` +
     `просим срочно связаться с нами.\n\n` +
@@ -235,17 +240,24 @@ async function checkOnePayment(payment) {
       return;
     }
 
-    const contactName = await getContactNameBot(contact_id);
+    // Получаем имя контакта из Б24 напрямую
+    const contactName = await getContactNameFromB24(contact_id);
+    console.log(`[WORKER]   Имя контакта: ${contactName}`);
+
+    // Получаем дату договора из Б24
+    const contractDate = await getContractDateFromB24(deal_id);
+    console.log(`[WORKER]   Дата договора: ${contractDate}`);
+
     await ensureOverdueClient(contact_id, contactName);
     await updateOverdueClientStatusBot(contact_id, 'overdue');
 
-    // check_date уже строка YYYY-MM-DD из БД — это день 0
     const cycleId = await createOverdueCycleBot({
       contactId: contact_id,
       dealId: deal_id,
       dealTypeId: deal_type_id,
       dealTitle: deal_title,
       contractNumber: contract_number,
+      contractDate: contractDate,
       overduePaymentDate: payment_date,
       overdueAmount,
       paidAmountAtStart: paidAmount,
@@ -363,7 +375,7 @@ async function processOneOverdue(notification) {
           cycle.contract_date || '—',
           overdueAmountStr,
         )
-      : `Уведомление о просрочке (день ${day_number})`;
+      : `Уведомление о просрочке по договору № ${cycle.contract_number || '—'} (день ${day_number})`;
 
     // Отправляем
     const sent = await sendMaxMessage(maxUser.max_user_id, text);
@@ -589,4 +601,46 @@ function addDaysToDate(date, days) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
+}
+
+async function getContactNameFromB24(contactId) {
+  try {
+    const response = await axios.post(
+      `${BITRIX_WEBHOOK}/crm.contact.get`,
+      { id: contactId }
+    );
+    const c = response.data?.result;
+    if (!c) return 'Клиент';
+    const name = [c.LAST_NAME, c.NAME, c.SECOND_NAME]
+      .filter(Boolean).join(' ').trim();
+    return name || 'Клиент';
+  } catch (error) {
+    console.error('[B24] Ошибка getContactNameFromB24:', error.message);
+    return 'Клиент';
+  }
+}
+
+async function getContractDateFromB24(dealId) {
+  try {
+    const response = await axios.post(
+      `${BITRIX_WEBHOOK}/crm.documentgenerator.document.list`,
+      {
+        select: ['*'],
+        order: { id: 'DESC' },
+        filter: { entityTypeId: 2, entityId: dealId },
+        start: 0,
+      }
+    );
+    const documents = response.data?.result?.documents || [];
+    if (documents.length === 0) return '—';
+
+    const doc = documents[0];
+    // createTime: "2026-03-20T13:51:45+03:00"
+    return doc.createTime
+      ? new Date(doc.createTime).toLocaleDateString('ru-RU')
+      : '—';
+  } catch (error) {
+    console.error('[B24] Ошибка getContractDateFromB24:', error.message);
+    return '—';
+  }
 }
