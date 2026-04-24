@@ -254,30 +254,32 @@ bot.on('message_created', async (ctx) => {
   const userId = getUserId(ctx);
 
   console.log(`\n[BOT] 📨 message_created: userId=${userId}`);
-  console.log(`[BOT] message_created полное сообщение:`, JSON.stringify(ctx.message, null, 2));
+  console.log(`[BOT] FULL update:`, JSON.stringify(ctx.update, null, 2));
 
   if (!userId) {
-    console.log('[BOT] message_created: userId не определён, выходим');
+    console.log('[BOT] userId не определён, выходим');
     return;
   }
 
   const message = ctx.message;
 
-  // Проверяем контакт через кнопку
   const attachments =
-  message?.body?.attachments ||
-  ctx.update?.message?.body?.attachments ||
-  [];
-  console.log(`[BOT] message_created: attachments=`, JSON.stringify(attachments, null, 2));
+    message?.body?.attachments ||
+    ctx.update?.message?.body?.attachments ||
+    [];
 
-  const contactAttachment = attachments?.find((a) => a.type === 'contact');
-  console.log(`[BOT] message_created: contactAttachment=`, JSON.stringify(contactAttachment, null, 2));
+  console.log('[BOT] attachments:', JSON.stringify(attachments, null, 2));
+
+  // ───────────────────────────────────────────────
+  // Проверка контакта (кнопка "поделиться номером")
+  // ───────────────────────────────────────────────
+
+  const contactAttachment = attachments.find(a => a.type === 'contact');
 
   if (contactAttachment) {
-    // Извлекаем телефон из vCard строки
     const phone = extractPhoneFromContact(contactAttachment);
 
-    console.log(`[BOT] message_created: телефон из контакта="${phone}"`);
+    console.log(`[BOT] Телефон из контакта: "${phone}"`);
 
     if (phone) {
       await handlePhone(ctx, phone, userId);
@@ -285,129 +287,134 @@ bot.on('message_created', async (ctx) => {
     }
   }
 
-  const text = message?.body?.text?.trim();
-  console.log(`[BOT] message_created: text="${text}"`);
-
-  if (!text) {
-    console.log('[BOT] message_created: текст пустой, выходим');
-    return;
-  }
-
-  if (text.startsWith('/')) {
-    console.log('[BOT] message_created: это команда, пропускаем');
-    return;
-  }
+  // ───────────────────────────────────────────────
+  // Получаем state
+  // ───────────────────────────────────────────────
 
   const dbState = await getUserState(userId);
   const memState = userStates.get(userId);
   const state = dbState || memState || STATE.IDLE;
 
-  console.log(`[BOT] message_created: userId=${userId}, state=${state}, text="${text}"`);
+  console.log(`[BOT] userId=${userId}, state=${state}`);
 
-  // ─── Ожидание вопроса юристу ──────────────────────────────────────────────
-  if (state === 'waiting_lawyer_request') {
-    if (text) {
-      await clearUserState(userId);
-      userStates.set(userId, STATE.REGISTERED);
-      await ctx.reply('✅ Ваш запрос принят!\n\nЮрист свяжется с вами в рабочее время (пн–пт, 9:00–18:00).');
-      console.log(`[BOT] Запрос юристу от userId=${userId}: "${text}"`);
-    } else {
-      await ctx.reply(
-        '✏️ Напишите ваш вопрос текстом.'
-      );
-    }
-    return;
-  }
+  // ───────────────────────────────────────────────
+  // WAITING_DOCUMENT
+  // ───────────────────────────────────────────────
 
-  // ─── Ожидание документа ───────────────────────────────────────────────────
-  if (state === 'waiting_document') {
-    const hasFile = Array.isArray(attachments) && attachments.some(a =>
+  if (state === STATE.WAITING_DOCUMENT) {
+
+    const hasFile = attachments.some(a =>
       ['file', 'image', 'video', 'audio', 'document'].includes(a.type)
     );
 
-    console.log('[BOT] attachments:', JSON.stringify(attachments, null, 2));
+    console.log('[BOT] WAITING_DOCUMENT hasFile=', hasFile);
 
     if (hasFile) {
       await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
-      await ctx.reply('✅ Документ получен!\n\nМенеджер рассмотрит его и свяжется с вами.');
-      console.log(`[BOT] Документ от userId=${userId}`);
-    } else if (text) {
+
+      await ctx.reply(
+        '✅ Документ получен!\n\nМенеджер рассмотрит его и свяжется с вами.'
+      );
+
+      console.log(`[BOT] Документ получен от userId=${userId}`);
+      return;
+    }
+
+    const text = message?.body?.text?.trim();
+
+    if (text) {
       await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
-      await ctx.reply('✅ Сообщение получено!\n\nМенеджер рассмотрит его и свяжется с вами.');
-    } else {
+
       await ctx.reply(
-        '📎 Пожалуйста, отправьте файл.'
+        '✅ Сообщение получено!\n\nМенеджер рассмотрит его и свяжется с вами.'
       );
+
+      console.log(`[BOT] Текст вместо файла от userId=${userId}`);
+      return;
     }
+
+    await ctx.reply('📎 Пожалуйста, отправьте файл.');
     return;
   }
 
-  if (state === STATE.WAITING_PHONE) {
-    console.log(`[BOT] message_created: ожидаем телефон, обрабатываем...`);
-    await handlePhone(ctx, text, userId);
-    return;
-  }
-
-  if (state === STATE.REGISTERED) {
-    console.log(`[BOT] message_created: пользователь зарегистрирован`);
-    await ctx.reply(`Чем могу помочь?`);
-    return;
-  }
+  // ───────────────────────────────────────────────
+  // WAITING_LAWYER_REQUEST
+  // ───────────────────────────────────────────────
 
   if (state === STATE.WAITING_LAWYER_REQUEST) {
-    if (text && !text.startsWith('/')) {
+    const text = message?.body?.text?.trim();
+
+    if (text) {
+      await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
+
       await ctx.reply(
         '✅ Ваш запрос принят!\n\n' +
         'Юрист свяжется с вами в рабочее время (пн–пт, 9:00–18:00).'
       );
+
       console.log(`[BOT] Запрос юристу от userId=${userId}: "${text}"`);
-    } else {
-      await ctx.reply(
-        '✏️ Напишите ваш вопрос текстом.'
-      );
+      return;
     }
+
+    await ctx.reply('✏️ Напишите ваш вопрос текстом.');
     return;
   }
 
-  if (state === STATE.WAITING_DOCUMENT) {
-    const attachments = message?.body?.attachments;
-    const hasFile = attachments?.some(a =>
-      ['file', 'image', 'video', 'audio'].includes(a.type)
-    );
+  // ───────────────────────────────────────────────
+  // WAITING_PHONE
+  // ───────────────────────────────────────────────
 
-    if (hasFile) {
-      userStates.set(userId, STATE.REGISTERED);
-      await ctx.reply(
-        '✅ Документ получен!\n\n' +
-        'Менеджер рассмотрит его и свяжется с вами.'
-      );
-      console.log(`[BOT] Документ от userId=${userId}`);
-    } else if (text && !text.startsWith('/')) {
-      userStates.set(userId, STATE.REGISTERED);
-      await ctx.reply(
-        '✅ Сообщение получено!\n\n' +
-        'Менеджер рассмотрит его и свяжется с вами.'
-      );
+  if (state === STATE.WAITING_PHONE) {
+    const text = message?.body?.text?.trim();
+
+    if (text) {
+      console.log('[BOT] Ожидаем телефон — обрабатываем текст');
+      await handlePhone(ctx, text, userId);
     } else {
       await ctx.reply(
-        '📎 Пожалуйста, отправьте файл.'
+        'Пожалуйста, отправьте номер телефона текстом в формате +79991234567'
       );
     }
+
     return;
   }
 
-  console.log(`[BOT] message_created: неизвестное состояние, проверяем БД`);
+  // ───────────────────────────────────────────────
+  // REGISTERED
+  // ───────────────────────────────────────────────
+
+  if (state === STATE.REGISTERED) {
+    const text = message?.body?.text?.trim();
+
+    if (!text) {
+      console.log('[BOT] REGISTERED: сообщение без текста — ничего не делаем');
+      return;
+    }
+
+    if (text.startsWith('/')) {
+      console.log('[BOT] REGISTERED: команда — пропускаем');
+      return;
+    }
+
+    await ctx.reply('Чем могу помочь?');
+    return;
+  }
+
+  // ───────────────────────────────────────────────
+  // IDLE или неизвестное состояние
+  // ───────────────────────────────────────────────
+
+  console.log('[BOT] Состояние неизвестно или idle — проверяем БД');
+
   const existingUser = await findUserByMaxId(userId);
 
   if (existingUser) {
-    console.log(`[BOT] message_created: пользователь найден в БД`);
     userStates.set(userId, STATE.REGISTERED);
     await ctx.reply('Чем могу помочь?');
   } else {
-    console.log(`[BOT] message_created: пользователь не найден в БД, запрашиваем телефон`);
     await askForPhone(ctx);
   }
 });
