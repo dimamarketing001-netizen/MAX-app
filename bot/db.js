@@ -162,4 +162,34 @@ export async function updateInvoiceNotificationStatus(id, status, errorMessage =
   }
 }
 
+// Добавить к существующим методам в db.js бота:
+
+export async function getPendingStageNotifications() {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT * FROM deal_stage_notifications 
+       WHERE status = 'pending' 
+       ORDER BY created_at ASC`
+    );
+    return rows;
+  } catch (error) {
+    console.error('[DB] Ошибка getPendingStageNotifications:', error.message);
+    return [];
+  }
+}
+
+export async function updateStageNotificationStatus(id, status, errorMessage = null) {
+  try {
+    await pool.execute(
+      `UPDATE deal_stage_notifications 
+       SET status = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [status, errorMessage, id]
+    );
+    console.log(`[DB] deal_stage_notifications id=${id} → ${status}`);
+  } catch (error) {
+    console.error('[DB] Ошибка updateStageNotificationStatus:', error.message);
+  }
+}
+
 export default pool;
