@@ -239,26 +239,57 @@ function App() {
         }
     };
 
-    const handleContactLawyer = () => {
-        try {
-            const webApp = window.WebApp;
-            if (webApp?.openMaxLink) {
-                webApp.openMaxLink('https://max.ru/id6658577091_bot?startapp=lawyer');
-            }
-        } catch (e) {
-            console.warn('openMaxLink error:', e);
+    const handleContactLawyer = async () => {
+      try {
+        const webApp = window.WebApp;
+
+        // Получаем user_id из initDataUnsafe
+        const userId = webApp?.initDataUnsafe?.user?.id;
+
+        if (!userId) {
+          console.warn('userId не найден');
+          return;
         }
+
+        // Отправляем сообщение от имени пользователя через ваш бэкенд
+        await fetch('https://xn--b1ajdba5acbodeeeaj1qb.xn--p1ai/bot-command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            command: 'lawyer'  // или 'upload'
+          }),
+        });
+
+        // Закрываем мини-приложение и открываем чат с ботом
+        webApp.openMaxLink('https://max.ru/id6658577091_bot');
+
+      } catch (e) {
+        console.warn('Ошибка:', e);
+      }
     };
 
-    const handleUploadDocument = () => {
-        try {
-            const webApp = window.WebApp;
-            if (webApp?.openMaxLink) {
-                webApp.openMaxLink('https://max.ru/id6658577091_bot?startapp=upload');
-            }
-        } catch (e) {
-            console.warn('openMaxLink error:', e);
-        }
+    const handleUploadDocument = async () => {
+      try {
+        const webApp = window.WebApp;
+        const userId = webApp?.initDataUnsafe?.user?.id;
+
+        if (!userId) return;
+
+        await fetch('https://xn--b1ajdba5acbodeeeaj1qb.xn--p1ai/bot-command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            command: 'upload'
+          }),
+        });
+
+        webApp.openMaxLink('https://max.ru/id6658577091_bot');
+
+      } catch (e) {
+        console.warn('Ошибка:', e);
+      }
     };
 
     // ── Рендер экранов ─────────────────────────────────────────────────────────

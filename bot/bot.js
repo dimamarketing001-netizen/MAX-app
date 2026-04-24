@@ -18,7 +18,16 @@ const STATE = {
   IDLE: 'idle',
   WAITING_PHONE: 'waiting_phone',
   REGISTERED: 'registered',
+  WAITING_LAWYER_REQUEST: 'waiting_lawyer_request',
+  WAITING_DOCUMENT: 'waiting_document',
 };
+
+// Кнопка отмены:
+function getCancelKeyboard() {
+  return Keyboard.inlineKeyboard([
+    [Keyboard.button.callback('❌ Отмена', 'cancel')],
+  ]);
+}
 
 function getContactKeyboard() {
   return Keyboard.inlineKeyboard([
@@ -275,6 +284,43 @@ bot.on('message_created', async (ctx) => {
     return;
   }
 
+  // ─── Служебные команды от мини-приложения ────────────────────────────────
+  if (text === '__lawyer_request__') {
+    const existingUser = await findUserByMaxId(userId);
+    if (!existingUser) {
+      await askForPhone(ctx);
+      return;
+    }
+    userStates.set(userId, STATE.WAITING_LAWYER_REQUEST);
+    await ctx.reply(
+      '👨‍⚖️ *Связь с юристом*\n\n' +
+      'Напишите ваш вопрос — юрист свяжется с вами в рабочее время (пн–пт, 9:00–18:00).',
+      {
+        format: 'markdown',
+        attachments: [getCancelKeyboard()],
+      }
+    );
+    return;
+  }
+
+  if (text === '__upload_document__') {
+    const existingUser = await findUserByMaxId(userId);
+    if (!existingUser) {
+      await askForPhone(ctx);
+      return;
+    }
+    userStates.set(userId, STATE.WAITING_DOCUMENT);
+    await ctx.reply(
+      '📎 *Загрузка документа*\n\n' +
+      'Отправьте файл — менеджер рассмотрит его и свяжется с вами.',
+      {
+        format: 'markdown',
+        attachments: [getCancelKeyboard()],
+      }
+    );
+    return;
+  }
+
   const state = userStates.get(userId) || STATE.IDLE;
   console.log(`[BOT] message_created: состояние пользователя="${state}"`);
 
@@ -287,6 +333,51 @@ bot.on('message_created', async (ctx) => {
   if (state === STATE.REGISTERED) {
     console.log(`[BOT] message_created: пользователь зарегистрирован`);
     await ctx.reply(`Чем могу помочь?`);
+    return;
+  }
+
+  if (state === STATE.WAITING_LAWYER_REQUEST) {
+    if (text && !text.startsWith('/')) {
+      userStates.set(userId, STATE.REGISTERED);
+      await ctx.reply(
+        '✅ Ваш запрос принят!\n\n' +
+        'Юрист свяжется с вами в рабочее время (пн–пт, 9:00–18:00).'
+      );
+      console.log(`[BOT] Запрос юристу от userId=${userId}: "${text}"`);
+    } else {
+      await ctx.reply(
+        '✏️ Напишите ваш вопрос текстом.',
+        { attachments: [getCancelKeyboard()] }
+      );
+    }
+    return;
+  }
+
+  if (state === STATE.WAITING_DOCUMENT) {
+    const attachments = message?.body?.attachments;
+    const hasFile = attachments?.some(a =>
+      ['file', 'image', 'video', 'audio'].includes(a.type)
+    );
+
+    if (hasFile) {
+      userStates.set(userId, STATE.REGISTERED);
+      await ctx.reply(
+        '✅ Документ получен!\n\n' +
+        'Менеджер рассмотрит его и свяжется с вами.'
+      );
+      console.log(`[BOT] Документ от userId=${userId}`);
+    } else if (text && !text.startsWith('/')) {
+      userStates.set(userId, STATE.REGISTERED);
+      await ctx.reply(
+        '✅ Сообщение получено!\n\n' +
+        'Менеджер рассмотрит его и свяжется с вами.'
+      );
+    } else {
+      await ctx.reply(
+        '📎 Пожалуйста, отправьте файл.',
+        { attachments: [getCancelKeyboard()] }
+      );
+    }
     return;
   }
 
@@ -306,10 +397,29 @@ bot.on('message_created', async (ctx) => {
 // ─── Callback ─────────────────────────────────────────────────────────────────
 bot.on('message_callback', async (ctx) => {
   const userId = getUserId(ctx);
-  console.log(`\n[BOT] 🔘 message_callback: userId=${userId}`);
-  console.log(`[BOT] message_callback update:`, JSON.stringify(ctx.update, null, 2));
-});
+  console.log(`\n[BOT] message_callback: userId=${userId}`);
+  console.log(`[BOT] callback update:`, JSON.stringify(ctx.update, null, 2));
 
+  // Пробуем разные поля где может быть payload
+  const payload =
+    ctx.update?.callback?.payload ||
+    ctx.update?.payload ||
+    ctx.update?.data ||
+    null;
+
+  console.log(`[BOT] callback payload: "${payload}"`);
+
+  if (payload === 'cancel') {
+    const state = userStates.get(userId);
+    if (
+      state === STATE.WAITING_LAWYER_REQUEST ||
+      state === STATE.WAITING_DOCUMENT
+    ) {
+      userStates.set(userId, STATE.REGISTERED);
+      await ctx.reply('✅ Действие отменено.');
+    }
+  }
+});
 
 console.log('\n🤖 [BOT] Запуск бота...');
 startWorker(); // ← ЗАПУСКАЕМ ВОРКЕР
