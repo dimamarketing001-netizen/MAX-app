@@ -143,6 +143,9 @@ bot.on('bot_started', async (ctx) => {
   console.log(`\n[BOT] ▶️  bot_started: userId=${userId}`);
   console.log(`[BOT] bot_started update:`, JSON.stringify(ctx.update, null, 2));
 
+  // ← ВОТ ЭТОТ ЛОГ ДОБАВИТЬ:
+  console.log('[BOT] bot_started ПОЛНЫЙ update:', JSON.stringify(ctx.update, null, 2));
+
   if (!userId) {
     console.log('[BOT] bot_started: userId не определён, выходим');
     return;
@@ -307,9 +310,6 @@ bot.on('message_callback', async (ctx) => {
   console.log(`[BOT] message_callback update:`, JSON.stringify(ctx.update, null, 2));
 });
 
-bot.on('bot_started', async (ctx) => {
-  console.log('[BOT] bot_started update:', JSON.stringify(ctx.update, null, 2));
-});
 
 console.log('\n🤖 [BOT] Запуск бота...');
 startWorker(); // ← ЗАПУСКАЕМ ВОРКЕР
