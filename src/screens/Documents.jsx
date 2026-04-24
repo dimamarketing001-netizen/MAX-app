@@ -23,40 +23,28 @@ const DocRow = ({ emoji, name, onDownload, isLast }) => (
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '14px 16px',
-                cursor: onDownload ? 'pointer' : 'default',
+                cursor: 'pointer',
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
                 transition: 'opacity 0.15s',
             }}
-            onTouchStart={e => onDownload && (e.currentTarget.style.opacity = '0.6')}
-            onTouchEnd={e => (e.currentTarget.style.opacity = '1')}
-            onMouseDown={e => onDownload && (e.currentTarget.style.opacity = '0.6')}
-            onMouseUp={e => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            onTouchStart={e => e.currentTarget.style.opacity = '0.6'}
+            onTouchEnd={e => e.currentTarget.style.opacity = '1'}
+            onMouseDown={e => e.currentTarget.style.opacity = '0.6'}
+            onMouseUp={e => e.currentTarget.style.opacity = '1'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 20 }}>{emoji}</span>
                 <span style={{ fontSize: 15, color: '#1a1a1a' }}>{name}</span>
             </div>
-            <span style={{
-                fontSize: 13,
-                color: onDownload ? '#42A5F5' : '#ccc',
-                fontWeight: onDownload ? 600 : 400,
-            }}>
-                {onDownload ? 'Скачать ›' : 'Нет файла'}
+            <span style={{ fontSize: 13, color: '#42A5F5', fontWeight: 600 }}>
+                Скачать ›
             </span>
         </div>
 
         {!isLast && (
-            <div style={{
-                height: 1,
-                backgroundColor: BORDER,
-                margin: '0 16px',
-            }} />
+            <div style={{ height: 1, backgroundColor: BORDER, margin: '0 16px' }} />
         )}
     </div>
 );
@@ -65,11 +53,21 @@ const DocRow = ({ emoji, name, onDownload, isLast }) => (
 const DealDocsCard = ({ deal }) => {
     const name = getDealName(deal);
 
+    // Собираем только те документы, для которых реально есть файл
+    const availableDocs = DOC_TYPES.filter(doc =>
+        doc.key === 'contract' && deal.contractFile
+        // сюда легко добавить другие типы когда появятся:
+        // || doc.key === 'acts' && deal.actsFile
+        // || doc.key === 'court' && deal.courtFile
+        // || doc.key === 'proxy' && deal.proxyFile
+    );
+
+    // Если нет ни одного документа — не рендерим карточку вообще
+    if (availableDocs.length === 0) return null;
+
     return (
-        <div style={{
-            width: '100%',
-            boxSizing: 'border-box',
-        }}>
+        <div style={{ width: '100%', boxSizing: 'border-box' }}>
+
             {/* Заголовок сделки */}
             <div style={{
                 display: 'flex',
@@ -108,9 +106,8 @@ const DealDocsCard = ({ deal }) => {
                 border: `1px solid ${BORDER}`,
                 overflow: 'hidden',
             }}>
-                {DOC_TYPES.map((doc, i) => {
-                    // Только договор реально скачивается
-                    const handler = doc.key === 'contract' && deal.contractFile
+                {availableDocs.map((doc, i) => {
+                    const handler = doc.key === 'contract'
                         ? () => window.open(deal.contractFile, '_blank')
                         : null;
 
@@ -120,7 +117,7 @@ const DealDocsCard = ({ deal }) => {
                             emoji={doc.emoji}
                             name={doc.name}
                             onDownload={handler}
-                            isLast={i === DOC_TYPES.length - 1}
+                            isLast={i === availableDocs.length - 1}
                         />
                     );
                 })}
@@ -131,10 +128,12 @@ const DealDocsCard = ({ deal }) => {
 
 // ─── Экран документов ─────────────────────────────────────────────────────────
 export const DocumentsScreen = ({ deals, onUploadDocument }) => {
-    // Только основные сделки (не публикации и не депозиты)
     const mainDeals = deals.filter(
         d => parseInt(d.CATEGORY_ID) !== 16 && parseInt(d.CATEGORY_ID) !== 18
     );
+
+    // Только сделки у которых есть хотя бы один документ
+    const dealsWithDocs = mainDeals.filter(d => d.contractFile /* || d.actsFile || ... */);
 
     return (
         <div style={{
@@ -146,12 +145,7 @@ export const DocumentsScreen = ({ deals, onUploadDocument }) => {
 
             {/* ── Шапка ───────────────────────────────────────────────────── */}
             <div style={{ padding: '24px 16px 16px' }}>
-                <div style={{
-                    fontSize: 22,
-                    fontWeight: 700,
-                    color: '#1a1a1a',
-                    marginBottom: 4,
-                }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>
                     Документы
                 </div>
                 <div style={{ fontSize: 13, color: '#888' }}>
@@ -168,7 +162,7 @@ export const DocumentsScreen = ({ deals, onUploadDocument }) => {
                 width: '100%',
                 boxSizing: 'border-box',
             }}>
-                {mainDeals.length === 0 ? (
+                {dealsWithDocs.length === 0 ? (
                     <div style={{
                         borderRadius: 14,
                         padding: '24px 16px',
@@ -178,14 +172,11 @@ export const DocumentsScreen = ({ deals, onUploadDocument }) => {
                         fontSize: 14,
                         color: '#888',
                     }}>
-                        Нет документов
+                        Документы пока не загружены
                     </div>
                 ) : (
-                    mainDeals.map(deal => (
-                        <DealDocsCard
-                            key={deal.ID}
-                            deal={deal}
-                        />
+                    dealsWithDocs.map(deal => (
+                        <DealDocsCard key={deal.ID} deal={deal} />
                     ))
                 )}
             </div>

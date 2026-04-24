@@ -857,14 +857,14 @@ export const DealDetail = ({ deal, onBack }) => {
                     </div>
                 )}
 
-                {/* ── Документы ────────────────────────────────────────────── */}
+                {/* ── Документы ────────────────────────────────────────────────── */}
                 {!isSimple && (
                     <Section title="Документы по делу">
                         {[
-                            { name: 'Договор',            emoji: '📄', type: 'contract' },
-                            { name: 'Акты',               emoji: '📋' },
-                            { name: 'Судебные документы', emoji: '⚖️' },
-                            { name: 'Доверенности',       emoji: '📝' },
+                            { name: 'Договор',            emoji: '📄', type: 'contract', file: deal.contractFile },
+                            { name: 'Акты',               emoji: '📋', type: 'acts',     file: null },
+                            { name: 'Судебные документы', emoji: '⚖️', type: 'court',    file: null },
+                            { name: 'Доверенности',       emoji: '📝', type: 'proxy',    file: null },
                         ].map((doc, i, arr) => (
                             <div key={doc.name}>
                                 <div
@@ -873,13 +873,14 @@ export const DealDetail = ({ deal, onBack }) => {
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
                                         padding: '14px 16px',
-                                        cursor: 'pointer',
+                                        cursor: doc.file ? 'pointer' : 'default',
                                         touchAction: 'manipulation',
                                         WebkitTapHighlightColor: 'transparent',
+                                        opacity: doc.file ? 1 : 0.5,
                                     }}
                                     onClick={() => {
-                                        if (doc.type === 'contract' && deal.contractFile) {
-                                            window.open(deal.contractFile, '_blank');
+                                        if (doc.file) {
+                                            window.open(doc.file, '_blank');
                                         }
                                     }}
                                 >
@@ -893,9 +894,24 @@ export const DealDetail = ({ deal, onBack }) => {
                                             {doc.name}
                                         </span>
                                     </div>
-                                    <span style={{ fontSize: 13, color: '#888' }}>
-                                        Скачать ›
-                                    </span>
+
+                                    {/* Скачать если есть файл, иначе "Нет файла" */}
+                                    {doc.file ? (
+                                        <span style={{
+                                            fontSize: 13,
+                                            color: '#42A5F5',
+                                            fontWeight: 600,
+                                        }}>
+                                            Скачать ›
+                                        </span>
+                                    ) : (
+                                        <span style={{
+                                            fontSize: 13,
+                                            color: '#ccc',
+                                        }}>
+                                            Нет файла
+                                        </span>
+                                    )}
                                 </div>
 
                                 {i < arr.length - 1 && (
