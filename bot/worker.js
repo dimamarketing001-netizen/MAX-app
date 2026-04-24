@@ -315,7 +315,6 @@ async function processOneOverdue(notification) {
   console.log(`\n[WORKER] Просрочка id=${id}, cycle_id=${cycle_id}, день=${day_number}`);
 
   try {
-    // Получаем цикл
     const cycle = await getOverdueCycle(cycle_id);
     if (!cycle) {
       console.log(`[WORKER] ❌ Цикл ${cycle_id} не найден`);
@@ -323,14 +322,12 @@ async function processOneOverdue(notification) {
       return;
     }
 
-    // Проверяем статус цикла
     if (cycle.cycle_status !== 'active') {
       console.log(`[WORKER] ℹ️ Цикл статус="${cycle.cycle_status}" — пропускаем`);
       await updateOverdueNotificationStatus(id, 'skipped', `Цикл ${cycle.cycle_status}`);
       return;
     }
 
-    // Проверяем статус клиента
     const clientStatus = await getOverdueClientStatusBot(contact_id);
     if (clientStatus === 'stopped') {
       console.log(`[WORKER] ℹ️ Клиент на паузе — пропускаем`);
@@ -338,7 +335,6 @@ async function processOneOverdue(notification) {
       return;
     }
 
-    // Актуальная проверка оплаты
     const currentPaid = await getConfirmedPaidAmount(cycle.deal_id);
     const cumulativeNeeded = parseFloat(cycle.paid_amount_at_start) +
       parseFloat(cycle.overdue_amount);
@@ -346,7 +342,6 @@ async function processOneOverdue(notification) {
     console.log(`[WORKER]   Нужно: ${cumulativeNeeded}, оплачено: ${currentPaid}`);
 
     if (currentPaid >= cumulativeNeeded) {
-      // Оплатил — закрываем цикл
       console.log(`[WORKER] ✅ Просрочка погашена! Закрываем цикл`);
       await updateOverdueCycleStatus(cycle_id, 'resolved');
       await updateOverdueClientStatusBot(contact_id, 'active');
@@ -354,7 +349,6 @@ async function processOneOverdue(notification) {
       return;
     }
 
-    // Ищем пользователя MAX
     const maxUser = await findUserByContactId(contact_id);
     if (!maxUser) {
       console.log(`[WORKER] ❌ Пользователь MAX не найден`);
@@ -362,11 +356,12 @@ async function processOneOverdue(notification) {
       return;
     }
 
-    // ФИО клиента
-    const clientName = await getContactNameBot(contact_id);
+    // Берём имя из Б24 напрямую (не из БД)
+    const clientName = await getContactNameFromB24(contact_id);
+    console.log(`[WORKER]   Имя клиента: ${clientName}`);
+
     const overdueAmountStr = parseFloat(cycle.overdue_amount).toLocaleString('ru-RU');
 
-    // Формируем текст
     const messageFn = OVERDUE_MESSAGES[day_number];
     const text = messageFn
       ? messageFn(
@@ -377,14 +372,12 @@ async function processOneOverdue(notification) {
         )
       : `Уведомление о просрочке по договору № ${cycle.contract_number || '—'} (день ${day_number})`;
 
-    // Отправляем
     const sent = await sendMaxMessage(maxUser.max_user_id, text);
 
     if (sent) {
       await updateOverdueNotificationStatus(id, 'sent');
       console.log(`✅ [WORKER] День ${day_number} отправлен → user_id=${maxUser.max_user_id}`);
 
-      // День 37 — закрываем цикл, клиент на стопе
       if (day_number === 37) {
         console.log(`[WORKER] 🔴 День 37 — дело остановлено`);
         await updateOverdueCycleStatus(cycle_id, 'completed');

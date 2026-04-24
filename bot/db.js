@@ -274,9 +274,19 @@ export async function ensureOverdueClient(contactId, contactName) {
       [contactId]
     );
 
-    if (rows.length > 0) return rows[0];
+    if (rows.length > 0) {
+      // Обновляем имя если оно пустое
+      if (contactName && contactName !== 'Клиент') {
+        await pool.execute(
+          `UPDATE overdue_clients 
+           SET contact_name = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE contact_id = ? AND (contact_name IS NULL OR contact_name = '')`,
+          [contactName, contactId]
+        );
+      }
+      return rows[0];
+    }
 
-    // Берём max_user_id из users
     const [userRows] = await pool.execute(
       'SELECT max_user_id FROM users WHERE bitrix_contact_id = ?',
       [contactId]
@@ -316,6 +326,7 @@ export async function updateOverdueClientStatusBot(contactId, status) {
 
 export async function createOverdueCycleBot({
   contactId, dealId, dealTypeId, dealTitle, contractNumber,
+  contractDate,                        // ← добавить параметр
   overduePaymentDate, overdueAmount, paidAmountAtStart,
   totalSchedule, overdueStartDate,
 }) {
@@ -323,12 +334,15 @@ export async function createOverdueCycleBot({
     const [result] = await pool.execute(
       `INSERT INTO overdue_cycles
         (contact_id, deal_id, deal_type_id, deal_title, contract_number,
+         contract_date,
          overdue_payment_date, overdue_amount, paid_amount_at_start,
          total_schedule, overdue_start_date, cycle_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
       [
         contactId, dealId, dealTypeId || null, dealTitle || null,
-        contractNumber || null, overduePaymentDate, overdueAmount,
+        contractNumber || null,
+        contractDate || null,            // ← добавить значение
+        overduePaymentDate, overdueAmount,
         paidAmountAtStart || 0, totalSchedule || 0, overdueStartDate,
       ]
     );
