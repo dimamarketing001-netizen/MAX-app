@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { findUserByMaxId, saveUser } from './db.js';
 import { findByPhone } from './bitrix.js';
 import { startWorker } from './worker.js';
+import { getUserState, setUserState, clearUserState } from './db.js';
 
 dotenv.config();
 
@@ -284,45 +285,51 @@ bot.on('message_created', async (ctx) => {
     return;
   }
 
-  // ─── Служебные команды от мини-приложения ────────────────────────────────
-  if (text === '__lawyer_request__') {
-    const existingUser = await findUserByMaxId(userId);
-    if (!existingUser) {
-      await askForPhone(ctx);
-      return;
+  const dbState = await getUserState(userId);
+  const memState = userStates.get(userId);
+  const state = dbState || memState || STATE.IDLE;
+
+  console.log(`[BOT] message_created: userId=${userId}, state=${state}, text="${text}"`);
+
+  // ─── Ожидание вопроса юристу ──────────────────────────────────────────────
+  if (state === 'waiting_lawyer_request') {
+    if (text) {
+      await clearUserState(userId);
+      userStates.set(userId, STATE.REGISTERED);
+      await ctx.reply('✅ Ваш запрос принят!\n\nЮрист свяжется с вами в рабочее время (пн–пт, 9:00–18:00).');
+      console.log(`[BOT] Запрос юристу от userId=${userId}: "${text}"`);
+    } else {
+      await ctx.reply(
+        '✏️ Напишите ваш вопрос текстом.',
+        { attachments: [getCancelKeyboard()] }
+      );
     }
-    userStates.set(userId, STATE.WAITING_LAWYER_REQUEST);
-    await ctx.reply(
-      '👨‍⚖️ *Связь с юристом*\n\n' +
-      'Напишите ваш вопрос — юрист свяжется с вами в рабочее время (пн–пт, 9:00–18:00).',
-      {
-        format: 'markdown',
-        attachments: [getCancelKeyboard()],
-      }
-    );
     return;
   }
 
-  if (text === '__upload_document__') {
-    const existingUser = await findUserByMaxId(userId);
-    if (!existingUser) {
-      await askForPhone(ctx);
-      return;
-    }
-    userStates.set(userId, STATE.WAITING_DOCUMENT);
-    await ctx.reply(
-      '📎 *Загрузка документа*\n\n' +
-      'Отправьте файл — менеджер рассмотрит его и свяжется с вами.',
-      {
-        format: 'markdown',
-        attachments: [getCancelKeyboard()],
-      }
+  // ─── Ожидание документа ───────────────────────────────────────────────────
+  if (state === 'waiting_document') {
+    const hasFile = attachments?.some(a =>
+      ['file', 'image', 'video', 'audio'].includes(a.type)
     );
+
+    if (hasFile) {
+      await clearUserState(userId);
+      userStates.set(userId, STATE.REGISTERED);
+      await ctx.reply('✅ Документ получен!\n\nМенеджер рассмотрит его и свяжется с вами.');
+      console.log(`[BOT] Документ от userId=${userId}`);
+    } else if (text) {
+      await clearUserState(userId);
+      userStates.set(userId, STATE.REGISTERED);
+      await ctx.reply('✅ Сообщение получено!\n\nМенеджер рассмотрит его и свяжется с вами.');
+    } else {
+      await ctx.reply(
+        '📎 Пожалуйста, отправьте файл.',
+        { attachments: [getCancelKeyboard()] }
+      );
+    }
     return;
   }
-
-  const state = userStates.get(userId) || STATE.IDLE;
-  console.log(`[BOT] message_created: состояние пользователя="${state}"`);
 
   if (state === STATE.WAITING_PHONE) {
     console.log(`[BOT] message_created: ожидаем телефон, обрабатываем...`);
@@ -400,21 +407,15 @@ bot.on('message_callback', async (ctx) => {
   console.log(`\n[BOT] message_callback: userId=${userId}`);
   console.log(`[BOT] callback update:`, JSON.stringify(ctx.update, null, 2));
 
-  // Пробуем разные поля где может быть payload
   const payload =
     ctx.update?.callback?.payload ||
     ctx.update?.payload ||
-    ctx.update?.data ||
     null;
 
-  console.log(`[BOT] callback payload: "${payload}"`);
-
   if (payload === 'cancel') {
-    const state = userStates.get(userId);
-    if (
-      state === STATE.WAITING_LAWYER_REQUEST ||
-      state === STATE.WAITING_DOCUMENT
-    ) {
+    const dbState = await getUserState(userId);
+    if (dbState === 'waiting_lawyer_request' || dbState === 'waiting_document') {
+      await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
       await ctx.reply('✅ Действие отменено.');
     }

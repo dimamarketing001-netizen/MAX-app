@@ -491,4 +491,43 @@ export async function cancelPendingCycleNotifications(cycleId) {
   }
 }
 
+export async function getUserState(userId) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT state FROM user_states WHERE user_id = ?',
+      [userId]
+    );
+    return rows[0]?.state || null;
+  } catch (error) {
+    console.error('[DB] Ошибка getUserState:', error.message);
+    return null;
+  }
+}
+
+export async function setUserState(userId, state) {
+  try {
+    await pool.execute(
+      `INSERT INTO user_states (user_id, state)
+       VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE state = VALUES(state), updated_at = CURRENT_TIMESTAMP`,
+      [userId, state]
+    );
+    console.log(`[DB] user_states userId=${userId} → ${state}`);
+  } catch (error) {
+    console.error('[DB] Ошибка setUserState:', error.message);
+  }
+}
+
+export async function clearUserState(userId) {
+  try {
+    await pool.execute(
+      'DELETE FROM user_states WHERE user_id = ?',
+      [userId]
+    );
+    console.log(`[DB] user_states userId=${userId} → удалено`);
+  } catch (error) {
+    console.error('[DB] Ошибка clearUserState:', error.message);
+  }
+}
+
 export default pool;
