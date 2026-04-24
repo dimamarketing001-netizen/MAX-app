@@ -23,13 +23,6 @@ const STATE = {
   WAITING_DOCUMENT: 'waiting_document',
 };
 
-// Кнопка отмены:
-function getCancelKeyboard() {
-  return Keyboard.inlineKeyboard([
-    [Keyboard.button.callback('❌ Отмена', 'cancel')],
-  ]);
-}
-
 function getContactKeyboard() {
   return Keyboard.inlineKeyboard([
     [Keyboard.button.requestContact('📱 Поделиться номером телефона')],
@@ -239,6 +232,23 @@ function extractPhoneFromContact(contactAttachment) {
   return null;
 }
 
+bot.on('message_callback', async (ctx) => {
+  const userId = getUserId(ctx);
+
+  const payload =
+    ctx.update?.callback?.payload ||
+    ctx.update?.payload ||
+    null;
+
+  console.log('[BOT] Callback:', payload, 'userId=', userId);
+
+  if (payload === 'cancel' && userId) {
+    await clearUserState(userId);
+
+    await ctx.reply('✅ Действие отменено.');
+  }
+});
+
 // ─── Входящие сообщения ───────────────────────────────────────────────────────
 bot.on('message_created', async (ctx) => {
   const userId = getUserId(ctx);
@@ -254,7 +264,10 @@ bot.on('message_created', async (ctx) => {
   const message = ctx.message;
 
   // Проверяем контакт через кнопку
-  const attachments = message?.body?.attachments;
+  const attachments =
+  message?.body?.attachments ||
+  ctx.update?.message?.body?.attachments ||
+  [];
   console.log(`[BOT] message_created: attachments=`, JSON.stringify(attachments, null, 2));
 
   const contactAttachment = attachments?.find((a) => a.type === 'contact');
@@ -300,8 +313,7 @@ bot.on('message_created', async (ctx) => {
       console.log(`[BOT] Запрос юристу от userId=${userId}: "${text}"`);
     } else {
       await ctx.reply(
-        '✏️ Напишите ваш вопрос текстом.',
-        { attachments: [getCancelKeyboard()] }
+        '✏️ Напишите ваш вопрос текстом.'
       );
     }
     return;
@@ -309,9 +321,11 @@ bot.on('message_created', async (ctx) => {
 
   // ─── Ожидание документа ───────────────────────────────────────────────────
   if (state === 'waiting_document') {
-    const hasFile = attachments?.some(a =>
-      ['file', 'image', 'video', 'audio'].includes(a.type)
+    const hasFile = Array.isArray(attachments) && attachments.some(a =>
+      ['file', 'image', 'video', 'audio', 'document'].includes(a.type)
     );
+
+    console.log('[BOT] attachments:', JSON.stringify(attachments, null, 2));
 
     if (hasFile) {
       await clearUserState(userId);
@@ -324,8 +338,7 @@ bot.on('message_created', async (ctx) => {
       await ctx.reply('✅ Сообщение получено!\n\nМенеджер рассмотрит его и свяжется с вами.');
     } else {
       await ctx.reply(
-        '📎 Пожалуйста, отправьте файл.',
-        { attachments: [getCancelKeyboard()] }
+        '📎 Пожалуйста, отправьте файл.'
       );
     }
     return;
@@ -353,8 +366,7 @@ bot.on('message_created', async (ctx) => {
       console.log(`[BOT] Запрос юристу от userId=${userId}: "${text}"`);
     } else {
       await ctx.reply(
-        '✏️ Напишите ваш вопрос текстом.',
-        { attachments: [getCancelKeyboard()] }
+        '✏️ Напишите ваш вопрос текстом.'
       );
     }
     return;
@@ -381,8 +393,7 @@ bot.on('message_created', async (ctx) => {
       );
     } else {
       await ctx.reply(
-        '📎 Пожалуйста, отправьте файл.',
-        { attachments: [getCancelKeyboard()] }
+        '📎 Пожалуйста, отправьте файл.'
       );
     }
     return;
@@ -398,27 +409,6 @@ bot.on('message_created', async (ctx) => {
   } else {
     console.log(`[BOT] message_created: пользователь не найден в БД, запрашиваем телефон`);
     await askForPhone(ctx);
-  }
-});
-
-// ─── Callback ─────────────────────────────────────────────────────────────────
-bot.on('message_callback', async (ctx) => {
-  const userId = getUserId(ctx);
-  console.log(`\n[BOT] message_callback: userId=${userId}`);
-  console.log(`[BOT] callback update:`, JSON.stringify(ctx.update, null, 2));
-
-  const payload =
-    ctx.update?.callback?.payload ||
-    ctx.update?.payload ||
-    null;
-
-  if (payload === 'cancel') {
-    const dbState = await getUserState(userId);
-    if (dbState === 'waiting_lawyer_request' || dbState === 'waiting_document') {
-      await clearUserState(userId);
-      userStates.set(userId, STATE.REGISTERED);
-      await ctx.reply('✅ Действие отменено.');
-    }
   }
 });
 
