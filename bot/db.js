@@ -369,4 +369,67 @@ export async function getContactNameBot(contactId) {
   }
 }
 
+export async function getPendingOverdueNotifications() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const [rows] = await pool.execute(
+      `SELECT * FROM overdue_notifications
+       WHERE status = 'pending'
+         AND scheduled_date <= ?
+       ORDER BY scheduled_date ASC, day_number ASC`,
+      [today]
+    );
+    return rows;
+  } catch (error) {
+    console.error('[DB] Ошибка getPendingOverdueNotifications:', error.message);
+    return [];
+  }
+}
+
+export async function updateOverdueNotificationStatus(id, status, errorMessage = null) {
+  try {
+    await pool.execute(
+      `UPDATE overdue_notifications
+       SET status = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [status, errorMessage, id]
+    );
+    console.log(`[DB] overdue_notifications id=${id} → ${status}`);
+  } catch (error) {
+    console.error('[DB] Ошибка updateOverdueNotificationStatus:', error.message);
+  }
+}
+
+export async function getOverdueCycle(cycleId) {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT * FROM overdue_cycles WHERE id = ? LIMIT 1`,
+      [cycleId]
+    );
+    return rows[0] || null;
+  } catch (error) {
+    console.error('[DB] Ошибка getOverdueCycle:', error.message);
+    return null;
+  }
+}
+
+export async function updateOverdueCycleStatus(cycleId, status) {
+  try {
+    const extra = status === 'resolved'
+      ? ', resolved_at = CURRENT_TIMESTAMP'
+      : status === 'completed'
+        ? ', completed_at = CURRENT_TIMESTAMP'
+        : '';
+
+    await pool.execute(
+      `UPDATE overdue_cycles
+       SET cycle_status = ? ${extra}, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [status, cycleId]
+    );
+    console.log(`[DB] overdue_cycles id=${cycleId} → ${status}`);
+  } catch (error) {
+    console.error('[DB] Ошибка updateOverdueCycleStatus:', error.message);
+  }
+}
 export default pool;
