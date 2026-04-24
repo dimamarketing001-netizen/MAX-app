@@ -401,18 +401,18 @@ async function processContractNotifications() {
 
 async function processOneContract(notification) {
   const { id, deal_id, type, contact_id, lead_id, deal_type_id } = notification;
-  console.log(`\n[WORKER] id=${id}, type=${type}, deal_id=${deal_id}, deal_type_id=${deal_type_id}`);
+  console.log(`\n[WORKER] id=${id}, type=${type}, deal_id=${deal_id}`);
 
   try {
     const maxUser = await findMaxUser(contact_id, lead_id);
     if (!maxUser) {
-      await updateNotificationStatus(id, 'error', 'Пользователь не найден');
-      return;
+      // Не error, а просто пропускаем — попробуем в следующий раз
+      console.log(`[WORKER] ℹ️ Пользователь не найден — пропускаем до регистрации`);
+      return; // ← не меняем статус, остаётся pending
     }
 
     const dealTypeName = getDealTypeName(deal_type_id);
     let text;
-
     switch (type) {
       case 'deal_won':
         text = MESSAGES.deal_won(dealTypeName);
@@ -446,18 +446,13 @@ async function processInvoiceNotifications() {
 }
 
 async function processOneInvoice(notification) {
-  const {
-    id, invoice_id, deal_id, contact_id, lead_id,
-    amount, currency, notification_type, deal_type_id,
-  } = notification;
-
-  console.log(`\n[WORKER] Счёт id=${id}, invoice_id=${invoice_id}, type=${notification_type}`);
+  const { id, invoice_id, deal_id, contact_id, lead_id, amount, currency, notification_type, deal_type_id } = notification;
 
   try {
     const maxUser = await findMaxUser(contact_id, lead_id);
     if (!maxUser) {
-      await updateInvoiceNotificationStatus(id, 'error', 'Пользователь не найден');
-      return;
+      console.log(`[WORKER] ℹ️ Пользователь не найден — пропускаем до регистрации`);
+      return; // ← остаётся pending
     }
 
     const dealTypeName = getDealTypeName(deal_type_id);
@@ -499,13 +494,12 @@ async function processStageNotifications() {
 
 async function processOneStage(notification) {
   const { id, deal_id, stage_id, stage_name, contact_id, lead_id, deal_type_id } = notification;
-  console.log(`\n[WORKER] Стадия id=${id}, stage="${stage_id}", name="${stage_name}"`);
 
   try {
     const maxUser = await findMaxUser(contact_id, lead_id);
     if (!maxUser) {
-      await updateStageNotificationStatus(id, 'error', 'Пользователь не найден');
-      return;
+      console.log(`[WORKER] ℹ️ Пользователь не найден — пропускаем до регистрации`);
+      return; // ← остаётся pending
     }
 
     const dealTypeName = getDealTypeName(deal_type_id);
