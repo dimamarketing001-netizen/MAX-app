@@ -205,11 +205,10 @@ async function checkOnePayment(payment) {
 
   console.log(`\n[WORKER] Платёж id=${id}, deal_id=${deal_id}, №${payment_number}`);
   console.log(`[WORKER]   Дата платежа: ${payment_date}`);
-  console.log(`[WORKER]   Дата проверки: ${check_date}`);
+  console.log(`[WORKER]   День 0 просрочки: ${check_date}`);
   console.log(`[WORKER]   Сумма: ${amount}, кумулятив: ${cumulative_amount}`);
 
   try {
-    // Актуальная оплаченная сумма из Б24 (только подтверждённые)
     const paidAmount = await getConfirmedPaidAmount(deal_id);
     console.log(`[WORKER]   Оплачено подтверждённых: ${paidAmount}`);
 
@@ -219,62 +218,64 @@ async function checkOnePayment(payment) {
       return;
     }
 
-    // Просрочка!
     const overdueAmount = parseFloat(cumulative_amount) - paidAmount;
     console.log(`[WORKER] ❌ Просрочка! Сумма: ${overdueAmount}`);
 
     await updatePaymentStatus(id, 'overdue');
 
-    // Есть активный цикл по этой сделке?
     const activeCycle = await getActiveOverdueCycleBot(deal_id);
     if (activeCycle) {
       console.log(`[WORKER] ℹ️ Активный цикл id=${activeCycle.id} — лояльность, пропускаем`);
       return;
     }
 
-    // Статус клиента
     const clientStatus = await getOverdueClientStatusBot(contact_id);
     if (clientStatus === 'closed') {
       console.log(`[WORKER] ℹ️ Клиент на стопе — новый цикл не запускаем`);
       return;
     }
 
-    // Создаём клиента если нет
     const contactName = await getContactNameBot(contact_id);
     await ensureOverdueClient(contact_id, contactName);
     await updateOverdueClientStatusBot(contact_id, 'overdue');
 
-    // Создаём цикл
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+    // check_date уже строка YYYY-MM-DD из БД — это день 0
     const cycleId = await createOverdueCycleBot({
       contactId: contact_id,
       dealId: deal_id,
       dealTypeId: deal_type_id,
       dealTitle: deal_title,
       contractNumber: contract_number,
-      overduePaymentDate: formatDate(new Date(payment_date)),
+      overduePaymentDate: payment_date,
       overdueAmount,
       paidAmountAtStart: paidAmount,
       totalSchedule: parseFloat(cumulative_amount),
-      overdueStartDate: formatDate(today),
+      overdueStartDate: check_date,
     });
 
-    // Создаём уведомления с датами
+    // Считаем даты уведомлений от check_date (день 0)
+    const overdueStart = new Date(check_date);
+    overdueStart.setHours(0, 0, 0, 0);
+
+    const todayStr = formatDate(new Date());
+
     const notifications = OVERDUE_DAYS.map(day => ({
       cycleId,
       contactId: contact_id,
       dayNumber: day,
-      scheduledDate: formatDate(addDaysToDate(today, day)),
+      scheduledDate: formatDate(addDaysToDate(overdueStart, day)),
     }));
 
     await createOverdueNotificationsBot(notifications);
 
-    console.log(`✅ [WORKER] Цикл просрочки запущен: id=${cycleId}`);
-    console.log(`[WORKER]   Уведомлений создано: ${notifications.length}`);
+    console.log(`✅ [WORKER] Цикл создан: id=${cycleId}, день 0: ${check_date}`);
     notifications.forEach(n => {
-      console.log(`[WORKER]   День ${n.dayNumber}: ${n.scheduledDate}`);
+      const isPast = n.scheduledDate < todayStr;
+      const isToday = n.scheduledDate === todayStr;
+      console.log(
+        `[WORKER]   День ${n.dayNumber}: ${n.scheduledDate}` +
+        `${isPast ? ' ← skipped' : isToday ? ' ← pending (сегодня)' : ' ← pending'}`
+      );
     });
 
   } catch (error) {

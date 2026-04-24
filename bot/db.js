@@ -342,14 +342,40 @@ export async function createOverdueCycleBot({
 
 export async function createOverdueNotificationsBot(notifications) {
   try {
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Находим последний прошедший день (его нужно отправить)
+    const pastNotifications = notifications.filter(n => n.scheduledDate <= todayStr);
+    const futureNotifications = notifications.filter(n => n.scheduledDate > todayStr);
+
+    // Из прошедших берём только последний (максимальный день)
+    const lastPast = pastNotifications.length > 0
+      ? pastNotifications.reduce((max, n) => n.dayNumber > max.dayNumber ? n : max)
+      : null;
+
     for (const n of notifications) {
+      let status = 'pending';
+
+      if (n.scheduledDate <= todayStr) {
+        if (lastPast && n.dayNumber === lastPast.dayNumber) {
+          // Это последний прошедший день — ставим pending (отправится сегодня)
+          status = 'pending';
+        } else {
+          // Остальные прошедшие — пропускаем
+          status = 'skipped';
+        }
+      }
+
       await pool.execute(
         `INSERT INTO overdue_notifications
           (cycle_id, contact_id, day_number, status, scheduled_date)
-         VALUES (?, ?, ?, 'pending', ?)`,
-        [n.cycleId, n.contactId, n.dayNumber, n.scheduledDate]
+         VALUES (?, ?, ?, ?, ?)`,
+        [n.cycleId, n.contactId, n.dayNumber, status, n.scheduledDate]
       );
+
+      console.log(`[DB] overdue_notifications: день ${n.dayNumber} → ${status} (${n.scheduledDate})`);
     }
+
     console.log(`✅ [DB] overdue_notifications: ${notifications.length} записей`);
   } catch (error) {
     console.error('[DB] Ошибка createOverdueNotificationsBot:', error.message);
@@ -428,8 +454,27 @@ export async function updateOverdueCycleStatus(cycleId, status) {
       [status, cycleId]
     );
     console.log(`[DB] overdue_cycles id=${cycleId} → ${status}`);
-  } catch (error) {
-    console.error('[DB] Ошибка updateOverdueCycleStatus:', error.message);
+
+    if (status === 'resolved' || status === 'completed') {
+      await cancelPendingCycleNotifications(cycleId);
+    }
+  } catch (err) {
+    console.error('[DB] Ошибка updateOverdueCycleStatus:', err.message);
   }
 }
+
+export async function cancelPendingCycleNotifications(cycleId) {
+  try {
+    await pool.execute(
+      `UPDATE overdue_notifications
+       SET status = 'skipped', error_message = 'Цикл закрыт', updated_at = CURRENT_TIMESTAMP
+       WHERE cycle_id = ? AND status = 'pending'`,
+      [cycleId]
+    );
+    console.log(`[DB] overdue_notifications cycle_id=${cycleId} pending → skipped`);
+  } catch (err) {
+    console.error('[DB] Ошибка cancelPendingCycleNotifications:', err.message);
+  }
+}
+
 export default pool;
