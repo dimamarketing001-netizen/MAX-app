@@ -1,10 +1,11 @@
 import React from 'react';
 
 const tabs = [
-    { id: 'home',     label: 'Главная',   emoji: '🏠' },
-    { id: 'profile',  label: 'Профиль',   emoji: '👤' },
-    { id: 'help',     label: 'Помощь',    emoji: '💬' },
-    { id: 'partners', label: 'Партнёрам', emoji: '🤝' },
+    { id: 'home',      label: 'Главная',   emoji: '🏠' },
+    { id: 'documents', label: 'Документы', emoji: '📄' },
+    { id: 'profile',   label: 'Профиль',   emoji: '👤' },
+    { id: 'help',      label: 'Помощь',    emoji: '💬' },
+    { id: 'partners',  label: 'Партнёрам', emoji: '🤝' },
 ];
 
 export const TabBar = ({ activeTab, onTabChange }) => (

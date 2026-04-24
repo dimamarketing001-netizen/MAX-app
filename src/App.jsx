@@ -5,6 +5,18 @@ import { HomeScreen } from './screens/Home';
 import { ProfileScreen } from './screens/Profile';
 import { HelpScreen } from './screens/Help';
 import { PartnersScreen } from './screens/Partners';
+import { DocumentsScreen } from './screens/Documents';
+
+const handleUploadDocument = () => {
+    try {
+        const webApp = window.WebApp;
+        if (webApp?.close) {
+            webApp.close();
+        }
+    } catch (e) {
+        console.warn('webApp.close error:', e);
+    }
+};
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -261,6 +273,13 @@ function App() {
                         onContactLawyer={handleContactLawyer}
                     />
                 );
+            case 'documents':
+                return (
+                    <DocumentsScreen
+                        deals={deals}
+                        onUploadDocument={handleUploadDocument}
+                    />
+                );
             case 'profile':
                 return (
                     <ProfileScreen
@@ -375,5 +394,6 @@ function App() {
         </ErrorBoundary>
     );
 }
+
 
 export default App;

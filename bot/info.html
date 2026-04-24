@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Система уведомлений — Мой юрист</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #1a1a2e;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 40px;
+    font-size: 15px;
+  }
+
+  /* ─── Секции ─────────────────────────────────────────── */
+
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title .icon {
+    font-size: 24px;
+  }
+
+  /* ─── Карточки уведомлений ───────────────────────────── */
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    border-left: 5px solid #ccc;
+    transition: box-shadow 0.2s;
+  }
+
+  .card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+  }
+
+  .card.green  { border-left-color: #22c55e; }
+  .card.blue   { border-left-color: #3b82f6; }
+  .card.purple { border-left-color: #a855f7; }
+  .card.orange { border-left-color: #f97316; }
+  .card.red    { border-left-color: #ef4444; }
+  .card.yellow { border-left-color: #eab308; }
+  .card.teal   { border-left-color: #14b8a6; }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .card-emoji {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .card-title {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .card-type {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── Бейджи ─────────────────────────────────────────── */
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+    margin-bottom: 6px;
+  }
+
+  .badge-green  { background: #dcfce7; color: #166534; }
+  .badge-blue   { background: #dbeafe; color: #1e40af; }
+  .badge-purple { background: #f3e8ff; color: #6b21a8; }
+  .badge-orange { background: #ffedd5; color: #9a3412; }
+  .badge-red    { background: #fee2e2; color: #991b1b; }
+  .badge-yellow { background: #fef9c3; color: #713f12; }
+  .badge-gray   { background: #f3f4f6; color: #374151; }
+
+  /* ─── Блоки внутри карточки ──────────────────────────── */
+
+  .card-block {
+    margin-bottom: 14px;
+  }
+
+  .card-block:last-child {
+    margin-bottom: 0;
+  }
+
+  .block-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #999;
+    margin-bottom: 6px;
+  }
+
+  .block-content {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #333;
+  }
+
+  .trigger-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    color: #475569;
+  }
+
+  .condition-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .condition-list li {
+    padding: 3px 0;
+    font-size: 13.5px;
+    color: #444;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+  }
+
+  .condition-list li::before {
+    content: '→';
+    color: #94a3b8;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ─── Таблица просрочек ──────────────────────────────── */
+
+  .overdue-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  .overdue-table th {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .overdue-table td {
+    padding: 13px 16px;
+    font-size: 13.5px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+  }
+
+  .overdue-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .overdue-table tr:hover td {
+    background: #f8fafc;
+  }
+
+  .day-badge {
+    display: inline-block;
+    background: #1a1a2e;
+    color: #fff;
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .day-badge.red    { background: #ef4444; }
+  .day-badge.orange { background: #f97316; }
+  .day-badge.yellow { background: #eab308; color: #1a1a2e; }
+  .day-badge.final  { background: #7f1d1d; }
+
+  .msg-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    max-width: 400px;
+  }
+
+  /* ─── Схема логики ───────────────────────────────────── */
+
+  .flow {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    margin-bottom: 20px;
+  }
+
+  .flow-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #1a1a2e;
+  }
+
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    position: relative;
+  }
+
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 42px;
+    width: 2px;
+    height: calc(100% - 10px);
+    background: #e2e8f0;
+  }
+
+  .step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+    color: #fff;
+    z-index: 1;
+  }
+
+  .step-circle.blue   { background: #3b82f6; }
+  .step-circle.green  { background: #22c55e; }
+  .step-circle.orange { background: #f97316; }
+  .step-circle.red    { background: #ef4444; }
+  .step-circle.purple { background: #a855f7; }
+  .step-circle.gray   { background: #94a3b8; }
+
+  .step-body {
+    padding-bottom: 24px;
+    flex: 1;
+  }
+
+  .step-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    margin-top: 8px;
+    color: #1a1a2e;
+  }
+
+  .step-desc {
+    font-size: 13.5px;
+    color: #555;
+    line-height: 1.6;
+  }
+
+  /* ─── Статусы ────────────────────────────────────────── */
+
+  .statuses-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .status-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  .status-box h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: #1a1a2e;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 13.5px;
+  }
+
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot-green  { background: #22c55e; }
+  .dot-orange { background: #f97316; }
+  .dot-red    { background: #ef4444; }
+  .dot-blue   { background: #3b82f6; }
+  .dot-purple { background: #a855f7; }
+  .dot-gray   { background: #94a3b8; }
+  .dot-yellow { background: #eab308; }
+
+  /* ─── Инфо-блок ──────────────────────────────────────── */
+
+  .info-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 13.5px;
+    color: #1e40af;
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+
+  .info-box strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    .cards { grid-template-columns: 1fr; }
+    .statuses-grid { grid-template-columns: 1fr; }
+    .overdue-table { font-size: 12px; }
+    .overdue-table th, .overdue-table td { padding: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🤖 Система уведомлений бота</h1>
+<p class="subtitle">ООО «Мой юрист» · Автоматические уведомления клиентам в MAX</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  БЛОК 1 — ОСНОВНЫЕ УВЕДОМЛЕНИЯ                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="section-title">
+    <span class="icon">📋</span>
+    Основные уведомления по сделкам
+  </div>
+  <p style="font-size:13.5px;color:#666;margin-bottom:20px;">
+    Срабатывают автоматически при изменениях в Битрикс24. Бот проверяет очередь каждые 10 секунд.
+    Если клиент ещё не зарегистрирован в боте — уведомление ждёт до его регистрации.
+  </p>
+
+  <div class="cards">
+
+    <!-- Карточка 1 — WON -->
+    <div class="card green">
+      <div class="card-header">
+        <div class="card-emoji">⚖️</div>
+        <div>
+          <div class="card-title">Дело принято в работу</div>
+          <div class="card-type">Тип: deal_won</div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Триггер</div>
+        <div class="trigger-box">Сделка → стадия <strong>WON</strong></div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Категория сделки</div>
+        <div>
+          <span class="badge badge-green">Категория 0 (основные)</span>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Условия отправки</div>
+        <ul class="condition-list">
+          <li>Стадия сделки изменилась на WON</li>
+          <li>К сделке привязан контакт или лид</li>
+          <li>Клиент зарегистрирован в боте</li>
+          <li>Уведомление ещё не отправлялось по этой сделке</li>
+        </ul>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Текст сообщения</div>
+        <div class="block-content" style="background:#f0fdf4;border-radius:8px;padding:10px;font-size:13px;color:#166534;">
+          ⚖️ Ваше дело принято в работу!<br><br>
+          По делу: <em>[тип услуги]</em><br><br>
+          Мы приступили к производству по вашему делу...
+        </div>
+      </div>
+    </div>
+
+    <!-- Карточка 2 — Договор -->
+    <div class="card blue">
+      <div class="card-header">
+        <div class="card-emoji">📄</div>
+        <div>
+          <div class="card-title">Договор сформирован</div>
+          <div class="card-type">Тип: contract_ready</div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Триггер</div>
+        <div class="trigger-box">Поле <strong>UF_CRM_1776843426141 = 1</strong></div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Категория сделки</div>
+        <div>
+          <span class="badge badge-blue">Категория 0 (основные)</span>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Что происходит при срабатывании</div>
+        <ul class="condition-list">
+          <li>Отправляется уведомление клиенту о договоре</li>
+          <li>Сохраняется/обновляется график платежей в БД</li>
+          <li>Поле сбрасывается обратно в 0</li>
+          <li>При повторном формировании — старый график заменяется новым</li>
+        </ul>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Текст сообщения</div>
+        <div class="block-content" style="background:#eff6ff;border-radius:8px;padding:10px;font-size:13px;color:#1e40af;">
+          📄 Ваш договор сформирован!<br><br>
+          По делу: <em>[тип услуги]</em><br><br>
+          Пожалуйста, ознакомьтесь с документом...
+        </div>
+      </div>
+    </div>
+
+    <!-- Карточка 3 — Оплата неподтверждённая -->
+    <div class="card yellow">
+      <div class="card-header">
+        <div class="card-emoji">🧾</div>
+        <div>
+          <div class="card-title">Получена неподтверждённая оплата</div>
+          <div class="card-type">Тип: invoice_unconfirmed</div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Триггер</div>
+        <div class="trigger-box">Поле <strong>UF_CRM_1776915819816 = 1</strong> + счёт со статусом <strong>DT31_2:N</strong></div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Категория сделки</div>
+        <div>
+          <span class="badge badge-blue">Категория 0</span>
+          <span class="badge badge-yellow">Категория 16</span>
+          <span class="badge badge-yellow">Категория 18</span>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Условия</div>
+        <ul class="condition-list">
+          <li>Триггер = 1 и по сделке есть счёт со статусом "Ожидает подтверждения"</li>
+          <li>Уведомление по этому счёту с этим статусом ещё не создавалось</li>
+          <li>Триггер сбрасывается в 0 после обработки</li>
+        </ul>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Текст сообщения</div>
+        <div class="block-content" style="background:#fef9c3;border-radius:8px;padding:10px;font-size:13px;color:#713f12;">
+          🧾 Получена неподтверждённая оплата!<br><br>
+          По делу: <em>[тип услуги]</em><br>
+          Сумма: <em>[сумма] RUB</em><br><br>
+          Ваш платёж получен и ожидает подтверждения...
+        </div>
+      </div>
+    </div>
+
+    <!-- Карточка 4 — Оплата подтверждённая -->
+    <div class="card green">
+      <div class="card-header">
+        <div class="card-emoji">✅</div>
+        <div>
+          <div class="card-title">Оплата подтверждена</div>
+          <div class="card-type">Тип: invoice_confirmed</div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Триггер</div>
+        <div class="trigger-box">Поле <strong>UF_CRM_1776915819816 = 1</strong> + счёт со статусом <strong>DT31_2:P</strong></div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Категория сделки</div>
+        <div>
+          <span class="badge badge-blue">Категория 0</span>
+          <span class="badge badge-yellow">Категория 16</span>
+          <span class="badge badge-yellow">Категория 18</span>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Условия</div>
+        <ul class="condition-list">
+          <li>Триггер = 1 и по сделке есть счёт со статусом "Оплачен"</li>
+          <li>Уведомление по этому счёту с этим статусом ещё не создавалось</li>
+          <li>Дополнительно: пересчитывается сумма просрочки если был активный цикл</li>
+        </ul>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Текст сообщения</div>
+        <div class="block-content" style="background:#dcfce7;border-radius:8px;padding:10px;font-size:13px;color:#166534;">
+          ✅ Ваша оплата подтверждена!<br><br>
+          По делу: <em>[тип услуги]</em><br>
+          Сумма: <em>[сумма] RUB</em><br><br>
+          Спасибо за оплату!...
+        </div>
+      </div>
+    </div>
+
+    <!-- Карточка 5 — Стадия -->
+    <div class="card purple">
+      <div class="card-header">
+        <div class="card-emoji">📋</div>
+        <div>
+          <div class="card-title">Изменение стадии дела</div>
+          <div class="card-type">Тип: deal_stage</div>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Триггер</div>
+        <div class="trigger-box">Любое изменение <strong>STAGE_ID</strong> сделки</div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Категории сделки</div>
+        <div>
+          <span class="badge badge-purple">Кат. 2</span>
+          <span class="badge badge-purple">Кат. 4</span>
+          <span class="badge badge-purple">Кат. 6</span>
+          <span class="badge badge-purple">Кат. 8</span>
+          <span class="badge badge-purple">Кат. 10</span>
+          <span class="badge badge-purple">Кат. 12</span>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Исключения (не отправляем)</div>
+        <ul class="condition-list">
+          <li>Стадии с суффиксами: NEW, PREPARATION, 1</li>
+          <li>Если по этой сделке + стадии уже было уведомление со статусом "отправлено"</li>
+        </ul>
+      </div>
+
+      <div class="card-block">
+        <div class="block-label">Текст сообщения</div>
+        <div class="block-content" style="background:#f3e8ff;border-radius:8px;padding:10px;font-size:13px;color:#6b21a8;">
+          📋 Статус вашего дела изменился!<br><br>
+          Дело: <em>[тип услуги]</em><br>
+          Стадия: <em>[название стадии]</em><br><br>
+          Если есть вопросы — напишите нам.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  БЛОК 2 — ТИПЫ УСЛУГ                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="section-title">
+    <span class="icon">🏷️</span>
+    Типы услуг (маппинг)
+  </div>
+  <div style="background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+    <p style="font-size:13.5px;color:#666;margin-bottom:16px;">
+      Тип услуги подставляется в каждое сообщение автоматически по коду типа сделки из Битрикс24.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">SALE</span>
+        &nbsp;→ Банкротство физических лиц
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">COMPLEX</span>
+        &nbsp;→ Юридическая услуга
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">GOODS</span>
+        &nbsp;→ Расторжение кредитного договора
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">SERVICES</span>
+        &nbsp;→ Сбор документов
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">SERVICE</span>
+        &nbsp;→ Кредитный брокер
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">UC_YHXSUE</span>
+        &nbsp;→ Внесудебное банкротство
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">UC_UABTV4</span>
+        &nbsp;→ Реструктуризация долга
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;font-size:13.5px;">
+        <span style="font-family:monospace;background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:12px;">1</span>
+        &nbsp;→ Исправление кредитной истории
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  БЛОК 3 — СИСТЕМА ПРОСРОЧЕК                           -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="section-title">
+    <span class="icon">⏰</span>
+    Система уведомлений о просрочке платежей
+  </div>
+
+  <!-- Логика запуска -->
+  <div class="flow">
+    <div class="flow-title">🔄 Как запускается рассылка просрочки</div>
+    <div class="flow-steps">
+
+      <div class="flow-step">
+        <div class="step-circle blue">1</div>
+        <div class="step-body">
+          <div class="step-title">Формирование договора</div>
+          <div class="step-desc">
+            Менеджер формирует договор в Битрикс24, поле <code>UF_CRM_1776843426141</code> ставится в 1.<br>
+            Система сохраняет <strong>график платежей</strong> из товаров сделки в базу данных.<br>
+            Для каждого платежа записывается: дата платежа, дата проверки (дата + 1 день), сумма, кумулятивная сумма.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle purple">2</div>
+        <div class="step-body">
+          <div class="step-title">Ежедневная проверка платежей</div>
+          <div class="step-desc">
+            Бот каждые 10 секунд проверяет: наступила ли <strong>дата проверки</strong> для какого-либо платежа.<br>
+            Запрашивает в Битрикс24 сумму <strong>подтверждённых</strong> оплат по сделке (только счета со статусом DT31_2:P).<br>
+            Сравнивает с кумулятивной суммой по графику.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle green">3</div>
+        <div class="step-body">
+          <div class="step-title">Оплата поступила</div>
+          <div class="step-desc">
+            Если подтверждённая сумма ≥ кумулятивной суммы платежа → платёж помечается как <strong>оплачен</strong>. Рассылка не запускается.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle red">4</div>
+        <div class="step-body">
+          <div class="step-title">Просрочка обнаружена</div>
+          <div class="step-desc">
+            Если оплата меньше кумулятивной суммы → <strong>просрочка</strong>.<br>
+            Проверяется: нет ли уже активного цикла рассылки по этой сделке (лояльность).<br>
+            Проверяется: не закрыт ли клиент (статус closed — если прошли все 37 дней без оплаты).
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle orange">5</div>
+        <div class="step-body">
+          <div class="step-title">Создание цикла рассылки</div>
+          <div class="step-desc">
+            Создаётся <strong>цикл просрочки</strong> с привязкой к сделке и платежу.<br>
+            Создаётся 7 уведомлений с датами отправки, считая от даты просрочки (check_date).<br>
+            Уже прошедшие даты помечаются skipped, кроме последней прошедшей — она уходит сразу.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Математика -->
+  <div class="flow">
+    <div class="flow-title">🧮 Математика подсчёта просрочки</div>
+    <div style="background:#f8fafc;border-radius:12px;padding:20px;font-size:13.5px;line-height:1.8;">
+      <strong>Пример:</strong> клиент должен платить по 10 000 руб. ежемесячно, оплатил 25 000 руб.<br><br>
+      <table style="border-collapse:collapse;width:100%;">
+        <tr style="background:#1a1a2e;color:#fff;">
+          <th style="padding:8px 12px;text-align:left;border-radius:6px 0 0 0;">Платёж</th>
+          <th style="padding:8px 12px;text-align:left;">Дата</th>
+          <th style="padding:8px 12px;text-align:left;">Кумулятив</th>
+          <th style="padding:8px 12px;text-align:left;border-radius:0 6px 0 0;">Статус</th>
+        </tr>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:8px 12px;">№1 — 10 000 ₽</td>
+          <td style="padding:8px 12px;">01.01</td>
+          <td style="padding:8px 12px;">10 000</td>
+          <td style="padding:8px 12px;"><span class="badge badge-green">✅ Закрыт</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:8px 12px;">№2 — 10 000 ₽</td>
+          <td style="padding:8px 12px;">01.02</td>
+          <td style="padding:8px 12px;">20 000</td>
+          <td style="padding:8px 12px;"><span class="badge badge-green">✅ Закрыт</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:8px 12px;">№3 — 10 000 ₽</td>
+          <td style="padding:8px 12px;">01.03</td>
+          <td style="padding:8px 12px;">30 000</td>
+          <td style="padding:8px 12px;"><span class="badge badge-red">❌ Просрочка 5 000 ₽</span></td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;">№4 — 10 000 ₽</td>
+          <td style="padding:8px 12px;">01.04</td>
+          <td style="padding:8px 12px;">40 000</td>
+          <td style="padding:8px 12px;"><span class="badge badge-gray">⏳ Ожидает</span></td>
+        </tr>
+      </table>
+      <div class="info-box" style="margin-top:14px;">
+        <strong>💡 Принцип лояльности</strong>
+        Пока идёт рассылка по платежу №3 — новый цикл по платежу №4 не запускается.
+        Только после закрытия цикла №3 (оплата или 37 дней) система пересчитает и при необходимости запустит по следующему.
+      </div>
+    </div>
+  </div>
+
+  <!-- Таблица 7 сообщений -->
+  <div style="margin-bottom:20px;">
+    <h3 style="font-size:17px;font-weight:700;margin-bottom:14px;">📅 Расписание 7 сообщений цикла просрочки</h3>
+    <p style="font-size:13.5px;color:#666;margin-bottom:14px;">
+      <strong>День 0</strong> = дата просрочки (дата платежа по графику + 1 день). Все даты считаются от неё.
+      Если на момент создания цикла часть дат уже прошла — более ранние пропускаются (skipped),
+      отправляется последнее актуальное сообщение.
+    </p>
+    <table class="overdue-table">
+      <thead>
+        <tr>
+          <th>День</th>
+          <th>Дата отправки</th>
+          <th>Тема сообщения</th>
+          <th>Краткое содержание</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="day-badge">День 1</span></td>
+          <td>День 0 + 1 день</td>
+          <td>📩 Напоминание об оплате</td>
+          <td class="msg-text">Мягкое уведомление. Возможно техническая задержка. Просьба оплатить. Указывается договор №, дата, сумма.</td>
+        </tr>
+        <tr>
+          <td><span class="day-badge yellow">День 3</span></td>
+          <td>День 0 + 3 дня</td>
+          <td>📩 Просрочка 3 дня</td>
+          <td class="msg-text">Предупреждение. Компания вправе приостановить услуги. Просьба оплатить как можно скорее.</td>
+        </tr>
+        <tr>
+          <td><span class="day-badge orange">День 7</span></td>
+          <td>День 0 + 7 дней</td>
+          <td>📩 Предупреждение о приостановке</td>
+          <td class="msg-text">При отсутствии оплаты работа по делу будет приостановлена.</td>
+        </tr>
+        <tr>
+          <td><span class="day-badge orange">День 14</span></td>
+          <td>День 0 + 14 дней</td>
+          <td>📩 Услуги приостановлены</td>
+          <td class="msg-text">Оказание услуг официально приостановлено. Для возобновления — погасить задолженность.</td>
+        </tr>
+        <tr>
+          <td><span class="day-badge red">День 20</span></td>
+          <td>День 0 + 20 дней</td>
+          <td>📩 Возможное прекращение дела</td>
+          <td class="msg-text">Работа приостановлена. Если в течение 7 дней оплата не поступит — дело прекращается.</td>
+        </tr>
+        <tr>
+          <td><span class="day-badge red">День 30</span></td>
+          <td>День 0 + 30 дней</td>
+          <td>📩 Финальное уведомление</td>
+          <td class="msg-text">Последний шанс. Если через 7 дней оплаты не будет — производство прекращается.</td>
+        </tr>
+        <tr>
+          <td><span class="day-badge final">День 37</span></td>
+          <td>День 0 + 37 дней</td>
+          <td>📩 Дело остановлено</td>
+          <td class="msg-text">Производство по делу остановлено. Клиент получает статус CLOSED. Новые циклы не запускаются.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Что происходит при оплате во время рассылки -->
+  <div class="flow">
+    <div class="flow-title">💳 Что происходит когда клиент платит во время рассылки</div>
+    <div class="flow-steps">
+
+      <div class="flow-step">
+        <div class="step-circle blue">1</div>
+        <div class="step-body">
+          <div class="step-title">Менеджер подтверждает оплату в Битрикс24</div>
+          <div class="step-desc">Счёт переводится в статус DT31_2:P (Оплачен). Менеджер устанавливает триггер UF_CRM_1776915819816 = 1.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle purple">2</div>
+        <div class="step-body">
+          <div class="step-title">Пересчёт суммы просрочки</div>
+          <div class="step-desc">
+            Система пересчитывает сумму подтверждённых оплат.<br>
+            <strong>Полная оплата</strong> → цикл закрывается (resolved), клиент возвращается в статус active.<br>
+            <strong>Частичная оплата</strong> → сумма просрочки в цикле обновляется, рассылка продолжается с новой суммой.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle green">3</div>
+        <div class="step-body">
+          <div class="step-title">Проверка при каждой отправке</div>
+          <div class="step-desc">Перед каждым сообщением о просрочке бот снова проверяет актуальную сумму оплат в Битрикс24. Если клиент уже оплатил — сообщение не отправляется, цикл закрывается.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  БЛОК 4 — СТАТУСЫ                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="section-title">
+    <span class="icon">🔵</span>
+    Статусы в системе
+  </div>
+
+  <div class="statuses-grid">
+
+    <div class="status-box">
+      <h3>👤 Статус клиента (overdue_clients)</h3>
+      <div class="status-item">
+        <div class="status-dot dot-green"></div>
+        <div><strong>active</strong> — платит нормально, нет просрочек</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-orange"></div>
+        <div><strong>overdue</strong> — есть активный цикл просрочки, идёт рассылка</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-yellow"></div>
+        <div><strong>stopped</strong> — менеджер вручную поставил рассылку на паузу</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-red"></div>
+        <div><strong>closed</strong> — 37 дней прошло без оплаты, дело остановлено. Новые циклы не запускаются автоматически</div>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h3>🔄 Статус цикла рассылки (overdue_cycles)</h3>
+      <div class="status-item">
+        <div class="status-dot dot-orange"></div>
+        <div><strong>active</strong> — цикл идёт, уведомления отправляются по расписанию</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-yellow"></div>
+        <div><strong>paused</strong> — менеджер поставил паузу только на текущую рассылку</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-green"></div>
+        <div><strong>resolved</strong> — клиент оплатил, цикл закрыт досрочно</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-red"></div>
+        <div><strong>completed</strong> — все 37 дней прошли без оплаты</div>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h3>📬 Статус уведомления (overdue_notifications)</h3>
+      <div class="status-item">
+        <div class="status-dot dot-blue"></div>
+        <div><strong>pending</strong> — ожидает отправки (дата ещё не наступила или последнее актуальное)</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-green"></div>
+        <div><strong>sent</strong> — успешно отправлено клиенту</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-gray"></div>
+        <div><strong>skipped</strong> — пропущено (дата прошла, цикл закрыт или клиент оплатил)</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-red"></div>
+        <div><strong>error</strong> — ошибка отправки</div>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h3>📅 Статус платежа (payment_schedule)</h3>
+      <div class="status-item">
+        <div class="status-dot dot-blue"></div>
+        <div><strong>pending</strong> — дата проверки ещё не наступила</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-green"></div>
+        <div><strong>paid</strong> — платёж оплачен вовремя</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-red"></div>
+        <div><strong>overdue</strong> — платёж просрочен, запущен цикл рассылки</div>
+      </div>
+      <div class="status-item">
+        <div class="status-dot dot-gray"></div>
+        <div><strong>skipped</strong> — платёж устарел (договор был переформирован)</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  БЛОК 5 — РЕГИСТРАЦИЯ                                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="section">
+  <div class="section-title">
+    <span class="icon">👤</span>
+    Регистрация клиента в боте
+  </div>
+
+  <div class="flow">
+    <div class="flow-title">Как клиент авторизуется</div>
+    <div class="flow-steps">
+
+      <div class="flow-step">
+        <div class="step-circle blue">1</div>
+        <div class="step-body">
+          <div class="step-title">Клиент открывает бота в MAX</div>
+          <div class="step-desc">Бот запрашивает номер телефона — через кнопку «Поделиться номером» или вручную в формате +79991234567.</div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle purple">2</div>
+        <div class="step-body">
+          <div class="step-title">Поиск в Битрикс24</div>
+          <div class="step-desc">
+            Бот ищет номер в Битрикс24 — сначала по лидам, затем по контактам.<br>
+            Пробует разные форматы: +7, 8, без кода страны.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle green">3</div>
+        <div class="step-body">
+          <div class="step-title">Успешная авторизация</div>
+          <div class="step-desc">
+            ID пользователя MAX связывается с контактом/лидом в Битрикс24.<br>
+            Теперь все уведомления по сделкам этого клиента будут приходить ему в бот.
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="step-circle gray">4</div>
+        <div class="step-body">
+          <div class="step-title">Ожидающие уведомления</div>
+          <div class="step-desc">
+            Если на момент регистрации по клиенту уже были события (стадии, договор, WON) —
+            они будут отправлены автоматически при следующем цикле воркера (в течение 10 секунд).
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;color:#aaa;font-size:12px;margin-top:20px;padding-bottom:20px;">
+  Документ сгенерирован автоматически на основе кода системы уведомлений · ООО «Мой юрист»
+</div>
+
+</body>
+</html>
