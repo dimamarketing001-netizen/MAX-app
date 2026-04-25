@@ -313,9 +313,10 @@ bot.on('message_created', async (ctx) => {
       const fileUrl = attachments[0]?.payload?.url;
 
       await sendToBitrixOpenLine({
-        maxUserId: userId,
-        text: `📎 Клиент отправил документ:\n${fileUrl || ''}`
+        contactId: existingUser.bitrix_contact_id,
+        text: `📎 Клиент отправил документ`
       });
+
 
       await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
@@ -355,7 +356,7 @@ bot.on('message_created', async (ctx) => {
 
     if (text) {
       await sendToBitrixOpenLine({
-        maxUserId: userId,
+        contactId: existingUser.bitrix_contact_id,
         text: `👨‍⚖️ Вопрос юристу:\n\n${text}`
       });
 
@@ -411,12 +412,10 @@ bot.on('message_created', async (ctx) => {
       return;
     }
 
-    if (text) {
-      await sendToBitrixOpenLine({
-        maxUserId: userId,
-        text
-      });
-    }
+    await sendToBitrixOpenLine({
+      contactId: existingUser.bitrix_contact_id,
+      text
+    });
 
     await ctx.reply('Чем могу помочь?');
     return;
