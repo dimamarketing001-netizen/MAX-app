@@ -140,6 +140,10 @@ function getUserId(ctx) {
   return id;
 }
 
+bot.on('message_callback', async (ctx) => {
+  console.log('🔥 CALLBACK UPDATE:', JSON.stringify(ctx.update, null, 2));
+});
+
 // ─── bot_started ──────────────────────────────────────────────────────────────
 bot.on('bot_started', async (ctx) => {
   const userId = getUserId(ctx);
