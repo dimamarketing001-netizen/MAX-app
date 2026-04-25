@@ -232,21 +232,14 @@ function extractPhoneFromContact(contactAttachment) {
   return null;
 }
 
-bot.on('message_callback', async (ctx) => {
+bot.action('cancel', async (ctx) => {
   const userId = getUserId(ctx);
 
-  const payload =
-    ctx.update?.callback?.payload ||
-    ctx.update?.payload ||
-    null;
+  console.log('[BOT] Cancel pressed by user:', userId);
 
-  console.log('[BOT] Callback:', payload, 'userId=', userId);
+  await clearUserState(userId);
 
-  if (payload === 'cancel' && userId) {
-    await clearUserState(userId);
-
-    await ctx.reply('✅ Действие отменено.');
-  }
+  await ctx.reply('✅ Действие отменено.');
 });
 
 // ─── Входящие сообщения ───────────────────────────────────────────────────────
@@ -262,6 +255,8 @@ bot.on('message_created', async (ctx) => {
   }
 
   const message = ctx.message;
+
+  const text = message?.body?.text?.trim() || '';
 
   const attachments =
     message?.body?.attachments ||
@@ -336,8 +331,6 @@ bot.on('message_created', async (ctx) => {
       return;
     }
 
-    const text = message?.body?.text?.trim();
-
     if (text) {
       await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
@@ -359,7 +352,8 @@ bot.on('message_created', async (ctx) => {
   // ───────────────────────────────────────────────
 
   if (state === STATE.WAITING_LAWYER_REQUEST) {
-    const text = message?.body?.text?.trim();
+
+    console.log('[BOT] WAITING_LAWYER_REQUEST text:', text);
 
     if (text) {
       await sendToBitrixOpenLine({
@@ -388,8 +382,6 @@ bot.on('message_created', async (ctx) => {
   // ───────────────────────────────────────────────
 
   if (state === STATE.WAITING_PHONE) {
-    const text = message?.body?.text?.trim();
-
     if (text) {
       console.log('[BOT] Ожидаем телефон — обрабатываем текст');
       await handlePhone(ctx, text, userId);
@@ -407,8 +399,6 @@ bot.on('message_created', async (ctx) => {
   // ───────────────────────────────────────────────
 
   if (state === STATE.REGISTERED) {
-    const text = message?.body?.text?.trim();
-
     if (!text) {
       console.log('[BOT] REGISTERED: сообщение без текста — ничего не делаем');
       return;
