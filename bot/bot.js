@@ -297,6 +297,13 @@ bot.on('message_created', async (ctx) => {
 
   console.log(`[BOT] userId=${userId}, state=${state}`);
 
+  // Получаем пользователя из БД
+  const existingUser = await findUserByMaxId(userId);
+
+  if (!existingUser) {
+    console.log('[BOT] Пользователь не найден в БД');
+  }
+
   // ───────────────────────────────────────────────
   // WAITING_DOCUMENT
   // ───────────────────────────────────────────────
@@ -426,8 +433,6 @@ bot.on('message_created', async (ctx) => {
   // ───────────────────────────────────────────────
 
   console.log('[BOT] Состояние неизвестно или idle — проверяем БД');
-
-  const existingUser = await findUserByMaxId(userId);
 
   if (existingUser) {
     userStates.set(userId, STATE.REGISTERED);
