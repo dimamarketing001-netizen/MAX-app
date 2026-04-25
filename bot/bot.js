@@ -448,7 +448,8 @@ bot.on('message_created', async (ctx) => {
   }
 });
 
-console.log('\n🤖 [BOT] Запуск бота...');
+console.log('\n🤖 [BOT] Запуск worker...');
 startWorker();
-bot.start();
-console.log('✅ [BOT] Бот запущен и ожидает сообщений\n');
+console.log('✅ [BOT] Worker запущен');
+
+export default bot;
