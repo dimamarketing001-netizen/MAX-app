@@ -140,8 +140,20 @@ function getUserId(ctx) {
   return id;
 }
 
-bot.on('message_callback', async (ctx) => {
-  console.log('🔥 CALLBACK UPDATE:', JSON.stringify(ctx.update, null, 2));
+bot.command('lawyer', async (ctx) => {
+  await setUserState(ctx.user.user_id, 'waiting_lawyer_request');
+
+  const keyboard = Keyboard.inlineKeyboard([
+    [Keyboard.button.callback('❌ Отмена', 'cancel')]
+  ]);
+
+  await ctx.reply(
+    '👨‍⚖️ *Связь с юристом*\n\nНапишите ваш вопрос.',
+    {
+      format: 'markdown',
+      attachments: [keyboard]
+    }
+  );
 });
 
 // ─── bot_started ──────────────────────────────────────────────────────────────
