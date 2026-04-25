@@ -443,6 +443,6 @@ bot.on('message_created', async (ctx) => {
 });
 
 console.log('\n🤖 [BOT] Запуск бота...');
-startWorker(); // ← ЗАПУСКАЕМ ВОРКЕР
+startWorker();
 bot.start();
 console.log('✅ [BOT] Бот запущен и ожидает сообщений\n');
