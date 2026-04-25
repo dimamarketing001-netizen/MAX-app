@@ -259,3 +259,76 @@ function getPhoneVariants(phone) {
 
   return Array.from(variants);
 }
+
+/**
+ * Открыть или получить существующую сессию открытой линии
+ */
+export async function openLineSession(userCode) {
+  try {
+    console.log('[BITRIX] imopenlines.session.open →', userCode);
+
+    const response = await axios.post(
+      `${BITRIX_WEBHOOK}/imopenlines.session.open`,
+      {
+        USER_CODE: userCode,
+        CONFIG_ID: process.env.OPENLINE_ID, // ID линии
+      }
+    );
+
+    console.log('[BITRIX] session.open result:', response.data?.result);
+    return response.data?.result;
+
+  } catch (error) {
+    console.error('[BITRIX] session.open error:',
+      error.response?.data || error.message
+    );
+    return null;
+  }
+}
+
+/**
+ * Отправить сообщение в открытую линию
+ */
+export async function sendMessageToOpenLine(chatId, text) {
+  try {
+    console.log('[BITRIX] imopenlines.crm.message.add → CHAT_ID=', chatId);
+
+    const response = await axios.post(
+      `${BITRIX_WEBHOOK}/imopenlines.crm.message.add`,
+      {
+        CHAT_ID: chatId,
+        MESSAGE: text,
+      }
+    );
+
+    console.log('[BITRIX] message.add result:', response.data?.result);
+    return response.data?.result;
+
+  } catch (error) {
+    console.error('[BITRIX] message.add error:',
+      error.response?.data || error.message
+    );
+    return null;
+  }
+}
+
+/**
+ * Главная функция отправки сообщения в ОЛ
+ */
+export async function sendToBitrixOpenLine({
+  maxUserId,
+  text
+}) {
+  const userCode = `max_${maxUserId}`;
+
+  const session = await openLineSession(userCode);
+
+  if (!session?.CHAT_ID) {
+    console.error('[BITRIX] Не удалось получить CHAT_ID');
+    return false;
+  }
+
+  await sendMessageToOpenLine(session.CHAT_ID, text);
+
+  return true;
+}

@@ -1,9 +1,9 @@
 import { Bot, Keyboard } from '@maxhub/max-bot-api';
 import dotenv from 'dotenv';
 import { findUserByMaxId, saveUser } from './db.js';
-import { findByPhone } from './bitrix.js';
 import { startWorker } from './worker.js';
 import { getUserState, setUserState, clearUserState } from './db.js';
+import { findByPhone, sendToBitrixOpenLine } from './bitrix.js';
 
 dotenv.config();
 
@@ -310,6 +310,13 @@ bot.on('message_created', async (ctx) => {
     console.log('[BOT] WAITING_DOCUMENT hasFile=', hasFile);
 
     if (hasFile) {
+      const fileUrl = attachments[0]?.payload?.url;
+
+      await sendToBitrixOpenLine({
+        maxUserId: userId,
+        text: `📎 Клиент отправил документ:\n${fileUrl || ''}`
+      });
+
       await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
 
@@ -347,6 +354,11 @@ bot.on('message_created', async (ctx) => {
     const text = message?.body?.text?.trim();
 
     if (text) {
+      await sendToBitrixOpenLine({
+        maxUserId: userId,
+        text: `👨‍⚖️ Вопрос юристу:\n\n${text}`
+      });
+
       await clearUserState(userId);
       userStates.set(userId, STATE.REGISTERED);
 
@@ -397,6 +409,13 @@ bot.on('message_created', async (ctx) => {
     if (text.startsWith('/')) {
       console.log('[BOT] REGISTERED: команда — пропускаем');
       return;
+    }
+
+    if (text) {
+      await sendToBitrixOpenLine({
+        maxUserId: userId,
+        text
+      });
     }
 
     await ctx.reply('Чем могу помочь?');
